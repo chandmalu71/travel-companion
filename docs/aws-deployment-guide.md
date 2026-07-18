@@ -21,7 +21,7 @@
 
 **Domain:** nayya.ai  
 **Domain Registrar:** Squarespace  
-**Cloud Provider:** AWS (us-east-1)  
+**Cloud Provider:** AWS (eu-west-1 — Ireland)  
 **CI/CD:** GitHub Actions  
 **Repository:** github.com/chandmalu71/travel-companion
 
@@ -155,7 +155,7 @@ aws iam create-access-key --user-name nayya-github-deployer
 
 ```bash
 aws configure
-# Region: us-east-1
+# Region: eu-west-1
 # Output: json
 ```
 
@@ -197,6 +197,17 @@ Save the Hosted Zone ID — you'll need it for DNS record creation.
 
 ```bash
 # Request a wildcard certificate (covers nayya.ai and *.nayya.ai)
+# NOTE: For CloudFront, you ALSO need a cert in us-east-1 (CloudFront requirement)
+# For ALB and other services, use eu-west-1
+
+# Certificate for ALB (eu-west-1)
+aws acm request-certificate \
+  --domain-name nayya.ai \
+  --subject-alternative-names "*.nayya.ai" \
+  --validation-method DNS \
+  --region eu-west-1
+
+# Certificate for CloudFront (MUST be us-east-1 — AWS requirement)
 aws acm request-certificate \
   --domain-name nayya.ai \
   --subject-alternative-names "*.nayya.ai" \
@@ -227,7 +238,7 @@ aws acm describe-certificate \
 aws ecr create-repository \
   --repository-name nayya-api \
   --image-scanning-configuration scanOnPush=true \
-  --region us-east-1
+  --region eu-west-1
 ```
 
 ### Step 4: VPC & Network (per environment)
@@ -241,7 +252,7 @@ aws cloudformation deploy \
   --stack-name nayya-qa-network \
   --parameter-overrides Environment=qa ProjectName=nayya \
   --capabilities CAPABILITY_IAM \
-  --region us-east-1
+  --region eu-west-1
 
 # Staging Environment
 aws cloudformation deploy \
@@ -249,7 +260,7 @@ aws cloudformation deploy \
   --stack-name nayya-staging-network \
   --parameter-overrides Environment=staging ProjectName=nayya \
   --capabilities CAPABILITY_IAM \
-  --region us-east-1
+  --region eu-west-1
 
 # Production Environment
 aws cloudformation deploy \
@@ -257,7 +268,7 @@ aws cloudformation deploy \
   --stack-name nayya-production-network \
   --parameter-overrides Environment=production ProjectName=nayya \
   --capabilities CAPABILITY_IAM \
-  --region us-east-1
+  --region eu-west-1
 ```
 
 ### Step 5: RDS PostgreSQL (per environment)
@@ -285,7 +296,7 @@ aws rds create-db-instance \
   --no-publicly-accessible \
   --backup-retention-period 7 \
   --multi-az false \
-  --region us-east-1
+  --region eu-west-1
 ```
 
 **Sizing by environment:**
@@ -319,14 +330,14 @@ aws elasticache create-cache-cluster \
 
 ```bash
 # Web app static assets
-aws s3 mb s3://nayya-web-qa --region us-east-1
-aws s3 mb s3://nayya-web-staging --region us-east-1
-aws s3 mb s3://nayya-web-production --region us-east-1
+aws s3 mb s3://nayya-web-qa --region eu-west-1
+aws s3 mb s3://nayya-web-staging --region eu-west-1
+aws s3 mb s3://nayya-web-production --region eu-west-1
 
 # Document storage
-aws s3 mb s3://nayya-docs-qa --region us-east-1
-aws s3 mb s3://nayya-docs-staging --region us-east-1
-aws s3 mb s3://nayya-docs-production --region us-east-1
+aws s3 mb s3://nayya-docs-qa --region eu-west-1
+aws s3 mb s3://nayya-docs-staging --region eu-west-1
+aws s3 mb s3://nayya-docs-production --region eu-west-1
 
 # Enable versioning on document buckets
 aws s3api put-bucket-versioning \
@@ -376,7 +387,7 @@ aws cognito-idp create-user-pool \
   --auto-verified-attributes email \
   --username-attributes email \
   --policies "PasswordPolicy={MinimumLength=8,RequireUppercase=true,RequireLowercase=true,RequireNumbers=true,RequireSymbols=false}" \
-  --region us-east-1
+  --region eu-west-1
 
 # Create app client
 aws cognito-idp create-user-pool-client \
@@ -466,7 +477,7 @@ Go to: GitHub → Repository → Settings → Secrets and Variables → Actions
 
 | Variable Name | Value |
 |---------------|-------|
-| `AWS_REGION` | us-east-1 |
+| `AWS_REGION` | eu-west-1 |
 | `ECR_REPOSITORY` | nayya-api |
 
 ### GitHub Environments
@@ -520,7 +531,7 @@ After Route 53 hosted zone is active, create these records:
 
 | Record | Type | Priority | Value |
 |--------|------|----------|-------|
-| `nayya.ai` | MX | 10 | `inbound-smtp.us-east-1.amazonaws.com` |
+| `nayya.ai` | MX | 10 | `inbound-smtp.eu-west-1.amazonaws.com` |
 
 ### TXT Records
 
@@ -540,6 +551,10 @@ After Route 53 hosted zone is active, create these records:
 - **Validation:** DNS (add CNAME to Route 53)
 - **Auto-renewal:** Yes (ACM handles this automatically)
 - **Used by:** CloudFront distributions + ALBs
+
+**Important:** You need TWO certificates:
+- **eu-west-1** — for ALB (API load balancer)
+- **us-east-1** — for CloudFront (AWS requires CloudFront certs to be in us-east-1, regardless of your primary region)
 
 ### Verification
 

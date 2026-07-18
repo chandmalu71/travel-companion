@@ -56,7 +56,7 @@ const envSchema = {
     },
     COGNITO_REGION: {
       type: 'string',
-      default: 'us-east-1',
+      default: 'eu-west-1',
     },
     COGNITO_JWKS_URL: {
       type: 'string',
