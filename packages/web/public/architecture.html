@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Travel Companion - Technical Architecture</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      line-height: 1.6;
+    }
+    .header {
+      background: #1e40af;
+      color: white;
+      padding: 2rem;
+      text-align: center;
+    }
+    .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .header p { opacity: 0.85; font-size: 1rem; }
+    .nav {
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .nav a {
+      color: #1e40af;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .nav a:hover { background: #eff6ff; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .section h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: #1e40af;
+    }
+    .section p {
+      color: #64748b;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+      padding: 1rem 0;
+    }
+    .mermaid svg {
+      max-width: 100%;
+      height: auto;
+    }
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: #64748b;
+      font-size: 0.8rem;
+    }
+    @media (max-width: 768px) {
+      .container { padding: 1rem; }
+      .section { padding: 1rem; }
+      .nav { padding: 0.5rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>✈️ Travel Companion — Technical Architecture</h1>
+    <p>System design, deployment topology, and data model</p>
+  </div>
+
+  <div class="nav">
+    <a href="#system">System Architecture</a>
+    <a href="#deployment">Deployment</a>
+    <a href="#erd">Entity Relationships</a>
+    <a href="#flows">Data Flows</a>
+  </div>
+
+  <div class="container">
+
+    <!-- System Architecture -->
+    <div class="section" id="system">
+      <h2>1. System Architecture</h2>
+      <p>High-level view of the client, API, service, data, and external API layers.</p>
+      <div class="mermaid">
+graph TB
+    subgraph "Client Layer"
+        RN[React Native<br/>iOS & Android]
+        NX[Next.js Web App]
+        SL[Shared Logic Package<br/>TypeScript]
+    end
+
+    subgraph "API Layer"
+        GW[API Gateway<br/>AWS ALB]
+        WS[WebSocket Server<br/>Socket.io]
+        API[Fastify API Server<br/>Node.js]
+    end
+
+    subgraph "Service Layer"
+        AUTH[Auth Service<br/>Cognito]
+        EMAIL[Email Parser<br/>Comprehend]
+        AI[AI Search<br/>Bedrock]
+        RECEIPT[Receipt Scanner<br/>Textract]
+        NOTIF[Notification Service<br/>FCM + APNs + SES]
+        SYNC[Sync Engine]
+        CURRENCY[Currency Service]
+        WEATHER[Weather Service]
+        GAP[Gap Detector]
+        CHECKIN[Check-in Service]
+        SHARE[Sharing Service]
+        SOCIAL[Social Sharing]
+    end
+
+    subgraph "Data Layer"
+        PG[(PostgreSQL<br/>RDS)]
+        RD[(Redis<br/>ElastiCache)]
+        S3[(S3<br/>Documents & Receipts)]
+    end
+
+    subgraph "External APIs"
+        GMAIL[Gmail API]
+        OUTLOOK[Outlook API]
+        GMAP[Google Maps & Places]
+        OER[Open Exchange Rates]
+        OWM[OpenWeatherMap]
+        FCM[Firebase Cloud Messaging]
+        AIRLINES[Airline Check-in URLs]
+    end
+
+    RN --> SL
+    NX --> SL
+    SL --> GW
+    SL --> WS
+    GW --> API
+    API --> AUTH
+    API --> EMAIL
+    API --> AI
+    API --> RECEIPT
+    API --> NOTIF
+    API --> SYNC
+    API --> CURRENCY
+    API --> WEATHER
+    API --> GAP
+    API --> CHECKIN
+    API --> SHARE
+    API --> SOCIAL
+    API --> PG
+    API --> RD
+    API --> S3
+    EMAIL --> GMAIL
+    EMAIL --> OUTLOOK
+    AI --> GMAP
+    CURRENCY --> OER
+    WEATHER --> OWM
+    NOTIF --> FCM
+    CHECKIN --> AIRLINES
+      </div>
+    </div>
+
+    <!-- Deployment Architecture -->
+    <div class="section" id="deployment">
+      <h2>2. Deployment Architecture (AWS)</h2>
+      <p>Production deployment topology using AWS managed services.</p>
+      <div class="mermaid">
+graph LR
+    subgraph "AWS Cloud"
+        ALB[Application Load Balancer]
+        ECS[ECS Fargate<br/>API Containers]
+        RDS[(RDS PostgreSQL<br/>Multi-AZ)]
+        EC[(ElastiCache Redis<br/>Cluster)]
+        S3B[(S3 Bucket)]
+        CF[CloudFront CDN]
+        COG[Cognito User Pool]
+        SQS[SQS Queues<br/>Email Processing]
+        LAMBDA[Lambda<br/>Email Webhooks]
+    end
+
+    ALB --> ECS
+    ECS --> RDS
+    ECS --> EC
+    ECS --> S3B
+    S3B --> CF
+    ECS --> COG
+    SQS --> ECS
+    LAMBDA --> SQS
+      </div>
+    </div>
+
+    <!-- Entity Relationship Diagram -->
+    <div class="section" id="erd">
+      <h2>3. Entity Relationship Diagram</h2>
+      <p>Core data model showing relationships between users, trips, bookings, expenses, and supporting entities.</p>
+      <div class="mermaid">
+erDiagram
+    USER ||--o{ TRIP : creates
+    USER ||--o{ USER_PREFERENCE : has
+    USER ||--o{ FAVORITE : saves
+    USER ||--o{ EXPENSE : records
+    USER ||--o{ DOCUMENT : uploads
+    USER ||--o{ NOTIFICATION_PREFERENCE : configures
+
+    TRIP ||--o{ BOOKING : contains
+    TRIP ||--o{ TRIP_MEMBER : "shared with"
+    TRIP ||--o{ FAVORITE : "associated with"
+    TRIP ||--o{ TIMELINE_EVENT : contains
+    TRIP ||--o{ EXPENSE : "incurred during"
+    TRIP ||--o{ DOCUMENT : stores
+    TRIP ||--o{ GAP_ALERT : "detected in"
+    TRIP ||--o{ EXPENSE_GROUP : "has group"
+    TRIP ||--o{ ACTIVITY_FEED : "logs activity"
+    TRIP ||--o{ HIGHLIGHT : "has highlights"
+
+    BOOKING ||--o{ DOCUMENT : "has attachments"
+    BOOKING ||--o{ SCHEDULED_NOTIFICATION : triggers
+    BOOKING ||--o{ EXPENSE : "linked to"
+
+    EXPENSE_GROUP ||--o{ GROUP_MEMBER : contains
+    EXPENSE ||--o{ EXPENSE_SPLIT : "split among"
+
+    FAVORITE ||--o{ COLLECTION : "organized in"
+    FAVORITE ||--o{ VOTE : "voted on"
+
+    TIMELINE_EVENT ||--o{ VOTE : "voted on"
+      </div>
+    </div>
+
+    <!-- Data Flows -->
+    <div class="section" id="flows">
+      <h2>4. Key Data Flows</h2>
+      <p>Email booking extraction, notification scheduling, and offline sync flows.</p>
+
+      <h3 style="margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">4a. Email Booking Extraction</h3>
+      <div class="mermaid">
+sequenceDiagram
+    participant User
+    participant Gmail/Outlook
+    participant Webhook
+    participant SQS
+    participant EmailParser
+    participant Dedup
+    participant DB
+
+    User->>Gmail/Outlook: Receives booking email
+    Gmail/Outlook->>Webhook: Push notification
+    Webhook->>SQS: Enqueue message
+    SQS->>EmailParser: Process email
+    EmailParser->>EmailParser: Extract fields (Comprehend)
+    EmailParser->>Dedup: Check for duplicates
+    alt Not duplicate
+        Dedup->>DB: Create booking
+        DB-->>User: Notify new booking
+    else Duplicate
+        Dedup-->>EmailParser: Discard
+    end
+      </div>
+
+      <h3 style="margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">4b. Notification Scheduling</h3>
+      <div class="mermaid">
+sequenceDiagram
+    participant Booking
+    participant NotifScheduler
+    participant DB
+    participant Worker
+    participant FCM/APNs
+
+    Booking->>NotifScheduler: Booking created/updated
+    NotifScheduler->>NotifScheduler: Calculate fire_at (event - offset)
+    NotifScheduler->>DB: Store scheduled_notification
+    Worker->>DB: Poll due notifications (every 60s)
+    DB-->>Worker: Return due items
+    Worker->>FCM/APNs: Deliver notification
+    Worker->>DB: Mark as sent
+      </div>
+
+      <h3 style="margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">4c. Offline Sync Protocol</h3>
+      <div class="mermaid">
+sequenceDiagram
+    participant Client
+    participant SyncEngine
+    participant Server
+    participant DB
+
+    Client->>Client: Queue local changes while offline
+    Client->>SyncEngine: Connectivity restored
+    SyncEngine->>Server: POST /api/sync {lastSyncTimestamp, localChanges}
+    Server->>DB: Apply non-conflicting changes
+    Server->>Server: Detect conflicts (last-write-wins)
+    Server-->>SyncEngine: {serverChanges, conflicts, newTimestamp}
+    SyncEngine->>Client: Apply server changes
+    SyncEngine->>Client: Notify conflicts to user
+      </div>
+
+      <h3 style="margin: 1.5rem 0 0.5rem; font-size: 1.1rem;">4d. Gap Detection</h3>
+      <div class="mermaid">
+flowchart LR
+    A[Booking Added/Removed] --> B[SQS Message]
+    B --> C[Gap Detector]
+    C --> D{Check Rules}
+    D -->|No hotel| E[Accommodation Gap]
+    D -->|Locations >50km apart| F[Transport Gap]
+    D -->|Overlapping times| G[Scheduling Conflict]
+    D -->|Arrival, no activity| H[Unplanned Arrival]
+    E --> I[Display Advisory Alert]
+    F --> I
+    G --> I
+    H --> I
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    Travel Companion Technical Architecture — Generated from design.md
+  </footer>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      flowchart: { useMaxWidth: true, htmlLabels: true },
+      sequence: { useMaxWidth: true },
+      er: { useMaxWidth: true }
+    });
+  </script>
+</body>
+</html>

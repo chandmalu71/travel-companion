@@ -1,0 +1,71 @@
+name: CI - Tests & Quality
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [develop]
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @travel-companion/shared build
+      - run: pnpm --filter @travel-companion/api typecheck
+
+  unit-tests:
+    name: Unit & Property Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @travel-companion/shared build
+
+      - name: Run Shared Tests
+        run: pnpm --filter @travel-companion/shared test
+
+      - name: Run API Tests
+        run: pnpm --filter @travel-companion/api test
+
+  build:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @travel-companion/shared build
+
+      - name: Build Web
+        run: pnpm --filter @travel-companion/web build
+        env:
+          NEXT_PUBLIC_API_URL: https://api-qa.nayya.ai
+
+      - name: Build Docker Image
+        run: docker build -t nayya-api:test -f packages/api/Dockerfile .
