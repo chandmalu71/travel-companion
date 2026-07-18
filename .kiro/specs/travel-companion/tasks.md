@@ -555,6 +555,41 @@ This implementation plan builds the Travel Companion application incrementally, 
 - [ ] 25. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
+- [x] 26. Public landing page
+  - [x] 26.1 Implement responsive landing page
+    - Create root page with fixed header, hero carousel, features grid, how-it-works, about us, testimonials, FAQ, CTA, and footer
+    - Header: logo, nav links (Features, About Us, How It Works, Help), Login/Sign Up buttons, mobile hamburger menu
+    - Hero: 4-image auto-advancing carousel (5s) with Unsplash photos, headlines, CTAs
+    - Features: 6-card responsive grid with icons and descriptions
+    - Footer: 4-column layout with Privacy Policy, Terms, GDPR, Cookie Policy links
+    - Fully responsive across mobile/tablet/desktop breakpoints
+    - _Requirements: 24.1, 24.2, 24.3, 24.4, 24.5, 24.6, 24.7, 24.8, 24.9, 24.10, 24.11, 24.12_
+
+- [x] 27. End-to-end testing
+  - [x] 27.1 Set up Playwright E2E test suite
+    - Install Playwright with Chromium
+    - Configure auto-start of API and web servers
+    - Create test suites: auth, trips, expenses, search, settings
+    - 28 tests covering registration, login, trip CRUD, expense list, search UI, preference management
+    - Tests run in < 30 seconds locally
+    - _Requirements: 25.1, 25.2, 25.3, 25.4, 25.5, 25.6, 25.7_
+
+- [x] 28. Settings page improvements
+  - [x] 28.1 Add known allergies as selectable chips
+    - Display 10 known allergens (peanuts, tree nuts, shellfish, fish, eggs, milk, soy, wheat, sesame, sulfites) as toggle buttons
+    - Retain custom allergy text input for non-standard allergies
+    - _Requirements: 20.3_
+
+  - [x] 28.2 Add display currency multi-selector
+    - Display 15 major currencies as selectable chips
+    - First selected = default (⭐ indicator), star button to change default
+    - Minimum 1 currency required
+    - _Requirements: 20.7, 20.9_
+
+  - [x] 28.3 Add language selector
+    - Dropdown with 20+ supported languages
+    - _Requirements: 20.12_
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP

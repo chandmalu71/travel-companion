@@ -42,7 +42,7 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 #### Acceptance Criteria
 
 1. THE Auth_Service SHALL allow users to register with a valid email address and a password between 8 and 128 characters containing at least one uppercase letter, one lowercase letter, and one digit
-2. THE Auth_Service SHALL support authentication via OAuth providers (Google, Apple, Yahoo, Amazon)
+2. THE Auth_Service SHALL support authentication via OAuth providers (Google, Facebook, Yahoo, Amazon)
 3. WHEN a User logs in successfully, THE Auth_Service SHALL establish an authenticated session that remains valid for 30 days of inactivity and is accessible across web and mobile platforms
 4. IF a login attempt fails three consecutive times without an intervening successful login, THEN THE Auth_Service SHALL temporarily lock the account for 15 minutes and display a message indicating the lock duration and reason
 5. WHEN a User requests a password reset, THE Auth_Service SHALL send a reset link to the registered email within 60 seconds, and the link SHALL expire after 24 hours
@@ -397,3 +397,36 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 8. THE Social_Sharing SHALL not share any personal booking details (confirmation numbers, addresses, flight numbers) unless the User explicitly includes them in the caption
 9. THE Social_Sharing SHALL allow Users to save a created highlight as a draft within the Trip for later posting
 10. WHEN a User shares a highlight, THE Social_Sharing SHALL record the share event in the Trip activity feed visible to Collaborators
+
+### Requirement 24: Public Landing Page
+
+**User Story:** As a visitor, I want to see an informative and visually appealing landing page so that I can understand the product's value and decide to sign up.
+
+#### Acceptance Criteria
+
+1. THE Application SHALL display a public landing page accessible without authentication at the root URL
+2. THE landing page SHALL include a fixed header with the application logo, navigation links (Features, About Us, How It Works, Help), and Log In / Sign Up buttons
+3. THE header SHALL be responsive: on mobile viewports, navigation links SHALL collapse into a hamburger menu
+4. THE landing page SHALL include a hero section with a rotating image carousel (auto-advancing every 5 seconds) displaying travel imagery with headline text and call-to-action buttons
+5. THE landing page SHALL include a Features section presenting at least 6 key product capabilities in a responsive grid
+6. THE landing page SHALL include a "How It Works" section describing the onboarding flow in 3 steps
+7. THE landing page SHALL include an "About Us" section with a company description and relevant imagery
+8. THE landing page SHALL include a Help/FAQ section with at least 5 expandable questions and answers
+9. THE landing page SHALL include a footer with columns for Product, Company, and Legal links
+10. THE footer SHALL include links to Privacy Policy, Terms of Service, GDPR Compliance, and Cookie Policy
+11. THE landing page SHALL be fully responsive across mobile (< 640px), tablet (640px-1024px), and desktop (> 1024px) viewports
+12. ALL images on the landing page SHALL use royalty-free or properly licensed imagery
+
+### Requirement 25: End-to-End Testing
+
+**User Story:** As a developer, I want automated end-to-end tests covering critical user flows so that I can deploy with confidence.
+
+#### Acceptance Criteria
+
+1. THE project SHALL include an E2E test suite using Playwright covering authentication, trip management, expense tracking, search, and settings flows
+2. THE E2E tests SHALL be runnable locally against the development servers (API on port 3000, web on port 3001)
+3. THE Playwright configuration SHALL auto-start API and web servers when not already running
+4. THE E2E test suite SHALL include tests for: user registration, login, invalid credentials, navigation between pages, trip creation, expense list viewing, search interface interaction, and preference management
+5. THE E2E tests SHALL run in headless mode by default with options for headed and UI debug modes
+6. THE E2E tests SHALL generate an HTML report after each run
+7. THE E2E tests SHALL complete within 2 minutes for the full suite

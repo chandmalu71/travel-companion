@@ -1465,3 +1465,93 @@ deploy-staging:
   - Performance benchmarks
   - Security scan (Snyk)
 ```
+
+## Public Landing Page Design
+
+### Page Architecture
+
+The landing page is a single-page scroll design with smooth section transitions, accessible without authentication. It uses the Next.js App Router with client-side interactivity for the carousel and mobile menu.
+
+### Sections (top-to-bottom flow)
+
+| Section | Purpose | Key Elements |
+|---------|---------|--------------|
+| Header (fixed) | Navigation + auth CTAs | Logo, nav links, Login/Sign Up buttons, mobile hamburger |
+| Hero Carousel | First impression + primary CTA | 4 rotating travel images (5s interval), headline, subline, "Get Started" + "Learn More" buttons |
+| Features | Value proposition | 6-card responsive grid: booking import, maps, AI search, expenses, timeline, collaboration |
+| How It Works | Onboarding clarity | 3-step flow: Connect → Plan → Travel |
+| About Us | Trust building | Company story + team/lifestyle image |
+| Testimonials | Social proof | 3 quote cards from users |
+| FAQ | Objection handling | 5 expandable accordion items |
+| CTA | Conversion | Final "Create Your Free Account" button |
+| Footer | Legal + navigation | 4 columns: Brand, Product, Company, Legal |
+
+### Responsive Breakpoints
+
+- **Mobile** (< 640px): Single column, hamburger menu, stacked cards
+- **Tablet** (640px–1024px): 2-column grid for features, side-by-side about section
+- **Desktop** (> 1024px): 3-column feature grid, full navigation bar
+
+### Footer Legal Requirements
+
+- Privacy Policy link → `/privacy`
+- Terms of Service link → `/terms`
+- GDPR Compliance link → `/gdpr`
+- Cookie Policy link → `/cookies`
+- Compliance badges: GDPR Compliant, SOC 2, 256-bit SSL
+
+### Image Strategy
+
+All hero carousel and section images use Unsplash (royalty-free, no attribution required for web use). Images are loaded with `?w=1920&q=80` parameters for optimized delivery.
+
+## End-to-End Testing Design
+
+### Framework
+
+- **Tool**: Playwright (Chromium headless)
+- **Location**: `packages/web/e2e/`
+- **Runner**: `pnpm --filter @travel-companion/web test:e2e`
+
+### Test Structure
+
+```
+packages/web/e2e/
+├── auth.spec.ts        # Registration, login, validation, wrong password
+├── trips.spec.ts       # Trip CRUD, detail page, navigation
+├── expenses.spec.ts    # Expense list, receipt scan modal
+├── search.spec.ts      # AI search interface, filters
+└── settings.spec.ts    # Preferences, allergies, currencies
+```
+
+### Server Lifecycle
+
+Playwright config defines `webServer` entries that auto-start:
+1. API server (`npx tsx src/server.ts` on port 3000)
+2. Web server (`npx next dev --port 3001` on port 3001)
+
+Existing servers are reused in local dev; CI starts fresh instances.
+
+### Local Development Auth
+
+For E2E tests (and local dev), a `LocalAuthService` bypasses AWS Cognito:
+- SHA-256 password hashing (dev only)
+- Local JWT generation (1h access / 30-day refresh tokens)
+- Auto-confirmed accounts (no email verification)
+- Passthrough `requireAuth` decorator extracts userId from local JWT
+
+## Settings / Preferences UI Design
+
+### Allergies Section
+
+Displays 10 known allergens as selectable chips (toggle on/off):
+- Peanuts, Tree Nuts, Shellfish, Fish, Eggs, Milk/Dairy, Soy, Wheat, Sesame, Sulfites
+
+Plus a custom text input for non-standard allergies (max 50 chars each).
+
+### Display Currencies Section
+
+Multi-select currency chips with default indicator:
+- 15 major currencies available (USD, EUR, GBP, JPY, AUD, CAD, CHF, INR, SGD, NZD, MXN, BRL, KRW, THB, AED)
+- First selected = default (shown with ⭐ indicator)
+- Star button (☆) on non-default currencies to promote to default
+- Minimum 1 currency must remain selected
