@@ -127,7 +127,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Associate favorites with trips; require trip selection or explicit "unassigned" choice
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.6, 7.7_
 
-- [ ] 5. Email integration and booking extraction
+- [x] 5. Email integration and booking extraction
   - [x] 5.1 Implement email connection and OAuth flow
     - Create `packages/api/src/routes/email.ts` with route: `POST /api/email/connect`
     - Implement OAuth flow for Gmail API and Microsoft Graph API
@@ -145,7 +145,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Process within 120 seconds of email receipt
     - _Requirements: 2.3, 2.4, 2.5, 2.9_
 
-  - [ ] 5.3 Implement email polling and webhook ingestion
+  - [x] 5.3 Implement email polling and webhook ingestion
     - Create SQS consumer worker for async email processing
     - Implement Gmail push notification webhook via Lambda
     - Implement forwarded email webhook endpoint: `POST /api/email/forward`
@@ -153,7 +153,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - On connect: scan last 90 days for booking confirmation emails
     - _Requirements: 2.1, 2.2, 2.7_
 
-  - [ ] 5.4 Implement booking deduplication logic
+  - [x] 5.4 Implement booking deduplication logic
     - Before creating a new booking from email, check for duplicates:
       - Flights: same flight number AND date
       - Hotels: same hotel name AND check-in AND check-out dates
@@ -162,12 +162,12 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Notify user of new bookings or extraction failures
     - _Requirements: 2.6, 2.8, 2.9_
 
-  - [ ] 5.5 Write property test for booking deduplication
+  - [x] 5.5 Write property test for booking deduplication
     - **Property 3: Booking Deduplication**
     - Use fast-check to generate pairs of bookings and verify the dedup function identifies duplicates iff they match on the type-specific key
     - **Validates: Requirements 2.8**
 
-- [ ] 6. POI and AI search
+- [x] 6. POI and AI search
   - [x] 6.1 Implement POI engine with Google Places API
     - Create `packages/api/src/services/poi.ts`
     - Create route: `GET /api/trips/:tripId/pois`
@@ -177,12 +177,12 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Handle Google Places API unavailability with error message and retry option
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
 
-  - [ ] 6.2 Write property test for POI distance filtering
+  - [x] 6.2 Write property test for POI distance filtering
     - **Property 6: POI Distance Filtering**
     - Use fast-check to generate sets of POIs with coordinates, a center point, and radius (1-50 km), and verify the filter returns exactly those POIs within haversine distance <= radius
     - **Validates: Requirements 5.5**
 
-  - [ ] 6.3 Implement AI search service with AWS Bedrock
+  - [x] 6.3 Implement AI search service with AWS Bedrock
     - Create `packages/api/src/services/ai-search.ts`
     - Create route: `POST /api/search`
     - Accept query (2-500 chars), tripId, and optional filters (category, priceRange, minRating, maxDistance)
@@ -192,7 +192,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Return within 3 seconds
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9_
 
-  - [ ] 6.4 Write property test for multi-criteria search filtering
+  - [x] 6.4 Write property test for multi-criteria search filtering
     - **Property 7: Multi-Criteria Search Filtering**
     - Use fast-check to generate result sets and filter combinations, and verify the filter returns only results satisfying ALL active criteria and the result set is a subset of the input
     - **Validates: Requirements 6.5**
@@ -200,7 +200,7 @@ This implementation plan builds the Travel Companion application incrementally, 
 - [ ] 7. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 8. Timeline and map views (API layer)
+- [x] 8. Timeline and map views (API layer)
   - [x] 8.1 Implement timeline event routes
     - Create `packages/api/src/routes/timeline.ts` with routes: `GET /api/trips/:tripId/timeline`, `POST /api/trips/:tripId/events`, `PUT /api/trips/:tripId/events/:eventId`, `DELETE /api/trips/:tripId/events/:eventId`
     - Return events grouped by day, sorted chronologically
@@ -219,15 +219,15 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Support day filtering via query param `?day=YYYY-MM-DD`
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.6, 9.7_
 
-  - [ ] 8.3 Implement voting system for collaborative planning
+  - [x] 8.3 Implement voting system for collaborative planning
     - Create routes: `POST /api/trips/:tripId/votes`, `DELETE /api/trips/:tripId/votes/:voteId`
     - Support upvote/downvote on favorites and timeline events
     - Enforce one vote per user per item
     - Return net vote count on favorites and events
     - _Requirements: 12.5_
 
-- [ ] 9. Notification service
-  - [ ] 9.1 Implement notification scheduling engine
+- [x] 9. Notification service
+  - [x] 9.1 Implement notification scheduling engine
     - Create `packages/api/src/services/notifications.ts`
     - On booking create/update: calculate reminder time = event time - user offset
     - Store in `scheduled_notifications` table with `fire_at` timestamp
@@ -236,20 +236,20 @@ This implementation plan builds the Travel Companion application incrementally, 
     - On booking time change: delete old notification, create new one
     - _Requirements: 10.1, 10.2, 10.3, 10.5, 10.7_
 
-  - [ ] 9.2 Implement notification delivery worker
+  - [x] 9.2 Implement notification delivery worker
     - Create background worker polling `scheduled_notifications` every minute for due notifications
     - Deliver via FCM (Android + Web push), APNs (iOS), SES (email fallback)
     - Support notification preferences per user (customizable offsets 15 min - 72h)
     - Create route: `PUT /api/users/:userId/notification-preferences`
     - _Requirements: 10.4, 10.6, 10.8_
 
-  - [ ] 9.3 Write property test for notification rescheduling
+  - [x] 9.3 Write property test for notification rescheduling
     - **Property 15: Notification Rescheduling**
     - Use fast-check to generate booking time changes and user offsets, and verify rescheduled fire time = new event time - offset; if in the past, scheduled within 5 minutes of now
     - **Validates: Requirements 10.5, 10.7**
 
-- [ ] 10. Sharing and collaboration
-  - [ ] 10.1 Implement trip sharing routes
+- [x] 10. Sharing and collaboration
+  - [x] 10.1 Implement trip sharing routes
     - Create `packages/api/src/routes/sharing.ts` with routes: `POST /api/trips/:tripId/share`, `GET /api/trips/:tripId/share/link`, `DELETE /api/trips/:tripId/share/:memberId`
     - Share via email invitation (up to 20 recipients)
     - Generate read-only shareable links expiring in 30 days
@@ -258,7 +258,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Validate email addresses
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.6, 11.7_
 
-  - [ ] 10.2 Implement real-time collaboration with Socket.io
+  - [x] 10.2 Implement real-time collaboration with Socket.io
     - Create `packages/api/src/services/collaboration.ts`
     - Set up Socket.io server with room-based architecture (room per trip)
     - Broadcast events: item_added, item_updated, item_removed, vote_cast
@@ -266,7 +266,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Notify overwritten collaborator via in-app notification within 30 seconds
     - _Requirements: 11.5, 12.1, 12.2, 12.3_
 
-  - [ ] 10.3 Implement activity feed
+  - [x] 10.3 Implement activity feed
     - Create route: `GET /api/trips/:tripId/activity-feed?limit=50`
     - Record all collaborator actions (add, edit, remove items)
     - Display up to 50 most recent entries ordered by timestamp descending
@@ -274,13 +274,13 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Handle collaborator removal: retain items, reassign attribution to owner (explicit revoke) or keep original attribution (voluntary leave)
     - _Requirements: 12.4, 12.6_
 
-  - [ ] 10.4 Write property test for conflict resolution
+  - [x] 10.4 Write property test for conflict resolution
     - **Property 16: Conflict Resolution (Last Write Wins)**
     - Use fast-check to generate pairs of conflicting changes with different timestamps and verify the sync engine selects the later timestamp as winner
     - **Validates: Requirements 17.7, 13.5**
 
-- [ ] 11. Offline sync engine
-  - [ ] 11.1 Implement server-side sync protocol
+- [x] 11. Offline sync engine
+  - [x] 11.1 Implement server-side sync protocol
     - Create `packages/api/src/routes/sync.ts` with route: `POST /api/sync`
     - Accept `SyncPayload` with `lastSyncTimestamp` and `localChanges`
     - Return `SyncResponse` with `serverChanges`, `conflicts`, and `newSyncTimestamp`
@@ -289,7 +289,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Synchronize within 10 seconds of connectivity
     - _Requirements: 13.4, 13.5, 17.3, 17.5, 17.6, 17.7_
 
-  - [ ] 11.2 Implement shared package sync utilities
+  - [x] 11.2 Implement shared package sync utilities
     - Create `packages/shared/src/sync/` with offline queue management
     - Define `ChangeEntry` and `ConflictEntry` types
     - Implement change tracking: queue local changes while offline
@@ -301,8 +301,8 @@ This implementation plan builds the Travel Companion application incrementally, 
 - [ ] 12. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 13. Currency and weather services
-  - [ ] 13.1 Implement currency service
+- [x] 13. Currency and weather services
+  - [x] 13.1 Implement currency service
     - Create `packages/api/src/services/currency.ts`
     - Create routes: `GET /api/currency/convert`, `GET /api/currency/rates`
     - Integrate with Open Exchange Rates API
@@ -313,12 +313,12 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Push rate updates via WebSocket within 60 seconds of new rates
     - _Requirements: 14.1, 14.2, 14.3, 14.5, 14.6, 14.7_
 
-  - [ ] 13.2 Write property test for currency conversion
+  - [x] 13.2 Write property test for currency conversion
     - **Property 8: Currency Conversion Correctness**
     - Use fast-check to generate positive amounts, currency pairs, and rates, and verify conversion = amount × rate rounded to 2 decimal places, always positive
     - **Validates: Requirements 14.1**
 
-  - [ ] 13.3 Implement weather service
+  - [x] 13.3 Implement weather service
     - Create `packages/api/src/services/weather.ts`
     - Create route: `GET /api/trips/:tripId/weather`
     - Integrate with OpenWeatherMap One Call 3.0 API
@@ -329,8 +329,8 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Handle API unavailability gracefully
     - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6_
 
-- [ ] 14. Expense tracking and receipt scanning
-  - [ ] 14.1 Implement expense CRUD routes
+- [x] 14. Expense tracking and receipt scanning
+  - [x] 14.1 Implement expense CRUD routes
     - Create `packages/api/src/routes/expenses.ts` with routes: `POST /api/expenses`, `GET /api/expenses`, `GET /api/trips/:tripId/expenses/summary`, `PUT /api/expenses/:expenseId`, `DELETE /api/expenses/:expenseId`
     - Validate amount (0.01 - 999,999,999.99), currency, date, category (7 categories)
     - Support optional fields: merchant name, notes (max 500 chars), associated booking/trip
@@ -356,23 +356,23 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Recalculate on expense add/edit/delete
     - _Requirements: 18.10, 18.11, 18.12, 18.14, 18.17_
 
-  - [ ] 14.4 Write property test for expense aggregation
+  - [x] 14.4 Write property test for expense aggregation
     - **Property 9: Expense Aggregation Invariant**
     - Use fast-check to generate lists of expenses with categories and verify category subtotals sum to grand total
     - **Validates: Requirements 18.7**
 
-  - [ ] 14.5 Write property test for budget threshold detection
+  - [x] 14.5 Write property test for budget threshold detection
     - **Property 10: Budget Threshold Detection**
     - Use fast-check to generate budget amounts and sequences of expense additions/deletions, and verify 80% and 100% alerts fire iff cumulative crosses threshold from below
     - **Validates: Requirements 18.11, 18.12**
 
-  - [ ] 14.6 Implement expense export
+  - [x] 14.6 Implement expense export
     - Create route: `POST /api/trips/:tripId/expenses/export?format=pdf|csv`
     - Generate PDF report with date, merchant, category, original amount+currency, converted amount
     - Generate CSV with same fields
     - _Requirements: 18.13_
 
-  - [ ] 14.7 Implement daily expense breakdown for timeline
+  - [x] 14.7 Implement daily expense breakdown for timeline
     - Add daily expense totals to timeline response
     - Aggregate expenses by day for the trip
     - Display on timeline alongside events
@@ -381,8 +381,8 @@ This implementation plan builds the Travel Companion application incrementally, 
 - [ ] 15. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 16. Flight check-in service
-  - [ ] 16.1 Implement check-in status and URL construction
+- [x] 16. Flight check-in service
+  - [x] 16.1 Implement check-in status and URL construction
     - Create `packages/api/src/services/checkin.ts`
     - Create routes: `GET /api/bookings/:bookingId/checkin-status`, `POST /api/bookings/:bookingId/checkin/complete`
     - Maintain airline IATA code → check-in URL template lookup table for supported airlines (Delta, United, AA, Southwest, BA, Lufthansa, Air France, Emirates)
@@ -399,8 +399,8 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Prompt user to upload boarding pass, store via Document_Store
     - _Requirements: 19.5, 19.6, 19.7, 19.11_
 
-- [ ] 17. User preferences engine
-  - [ ] 17.1 Implement preferences CRUD
+- [x] 17. User preferences engine
+  - [x] 17.1 Implement preferences CRUD
     - Create `packages/api/src/routes/preferences.ts` with route: `PUT /api/users/:userId/preferences`
     - Support interests (12 categories), dietary preferences (11 options), allergies (10 known + custom up to 50 chars each)
     - Support language selection (20+ languages), display currencies (multiple, first = default)
@@ -417,8 +417,8 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Implement in-app currency converter accessible from expense/booking views
     - _Requirements: 20.4, 20.5, 20.6, 20.10, 20.11_
 
-- [ ] 18. Group expense splitting
-  - [ ] 18.1 Implement group expense splitter routes
+- [x] 18. Group expense splitting
+  - [x] 18.1 Implement group expense splitter routes
     - Create `packages/api/src/routes/expense-groups.ts` with routes: `POST /api/trips/:tripId/groups`, `GET /api/trips/:tripId/groups/:groupId/balances`, `POST /api/expenses/:expenseId/split`, `PUT /api/settlements/:settlementId`
     - Create groups with trip owner + collaborators or manually added members
     - Support split types: equal, percentage (must sum to 100), per-item
@@ -428,18 +428,18 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Recalculate balances within 5 seconds of expense edit/delete
     - _Requirements: 21.1, 21.2, 21.3, 21.4, 21.5, 21.6, 21.7, 21.8, 21.9, 21.10_
 
-  - [ ] 18.2 Write property test for equal expense split conservation
+  - [x] 18.2 Write property test for equal expense split conservation
     - **Property 11: Equal Expense Split Conservation**
     - Use fast-check to generate positive amounts and group sizes (N >= 2), and verify equal split member amounts sum to original (within 1 cent); for percentage splits, verify percentages sum to 100
     - **Validates: Requirements 21.2, 21.7**
 
-  - [ ] 18.3 Write property test for group balance zero-sum
+  - [x] 18.3 Write property test for group balance zero-sum
     - **Property 12: Group Balance Zero-Sum**
     - Use fast-check to generate groups with sets of shared expenses and splits, and verify sum of all net balances across all members equals zero
     - **Validates: Requirements 21.5**
 
-- [ ] 19. Gap detection
-  - [ ] 19.1 Implement gap detector service
+- [x] 19. Gap detection
+  - [x] 19.1 Implement gap detector service
     - Create `packages/api/src/services/gap-detector.ts`
     - Create route: `GET /api/trips/:tripId/gaps`
     - Implement detection rules:
@@ -453,18 +453,18 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Skip analysis for trips without dates set
     - _Requirements: 22.1, 22.2, 22.3, 22.4, 22.5, 22.6, 22.7, 22.8, 22.9, 22.10_
 
-  - [ ] 19.2 Write property test for accommodation gap detection
+  - [x] 19.2 Write property test for accommodation gap detection
     - **Property 13: Accommodation Gap Detection**
     - Use fast-check to generate trip date ranges and sets of hotel bookings, and verify the detector reports a gap for each night not covered by any booking's check-in to check-out range
     - **Validates: Requirements 22.1**
 
-  - [ ] 19.3 Write property test for scheduling conflict detection
+  - [x] 19.3 Write property test for scheduling conflict detection
     - **Property 14: Scheduling Conflict Detection**
     - Use fast-check to generate sets of events with start/end times on the same day, and verify a conflict is identified iff two events have overlapping time intervals (event1.start < event2.end AND event2.start < event1.end)
     - **Validates: Requirements 22.3**
 
-- [ ] 20. Social media sharing
-  - [ ] 20.1 Implement social sharing service
+- [x] 20. Social media sharing
+  - [x] 20.1 Implement social sharing service
     - Create `packages/api/src/routes/highlights.ts` with routes: `POST /api/trips/:tripId/highlights`, `POST /api/trips/:tripId/highlights/:highlightId/share`, `POST /api/trips/:tripId/highlights/:highlightId/draft`
     - Allow selecting photos from device gallery, Document_Store, or trip uploads
     - Support caption (max 500 chars), tag trip name, tag destinations, include stats
@@ -475,13 +475,13 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Record share event in activity feed
     - _Requirements: 23.1, 23.2, 23.3, 23.4, 23.5, 23.6, 23.7, 23.9, 23.10_
 
-  - [ ] 20.2 Write property test for social share data leakage prevention
+  - [x] 20.2 Write property test for social share data leakage prevention
     - **Property 17: Social Share Data Leakage Prevention**
     - Use fast-check to generate bookings with personal details (confirmation numbers, addresses, flight numbers) and user captions, and verify generated share content does not contain personal details unless they appear in the caption
     - **Validates: Requirements 23.8**
 
-- [ ] 21. Document storage
-  - [ ] 21.1 Implement document upload and management
+- [x] 21. Document storage
+  - [x] 21.1 Implement document upload and management
     - Create `packages/api/src/routes/documents.ts` with routes: `POST /api/documents/upload`, `GET /api/trips/:tripId/documents`, `DELETE /api/documents/:documentId`
     - Upload to S3 with CloudFront delivery
     - Support PDF, JPEG, PNG, HEIC; max 25MB per file
