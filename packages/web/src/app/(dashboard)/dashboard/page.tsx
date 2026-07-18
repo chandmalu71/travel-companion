@@ -17,8 +17,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get<{ data: Trip[] }>('/api/trips')
-      .then((res) => setTrips(res.data))
+    api.get<{ data?: Trip[]; trips?: Trip[] }>('/api/trips')
+      .then((res) => setTrips(res.data ?? res.trips ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);

@@ -93,6 +93,12 @@ export async function buildApp(
       region: app.config.COGNITO_REGION || undefined,
       jwksUrl: app.config.COGNITO_JWKS_URL || undefined,
     });
+  } else {
+    // In local dev mode, register a pass-through requireAuth decorator
+    app.decorate('requireAuth', async (request: any) => {
+      request.userId = request.userId ?? 'dev-user';
+      request.user = request.user ?? { userId: 'dev-user', email: 'dev@local' };
+    });
   }
 
   // Register routes
@@ -112,46 +118,46 @@ export async function buildApp(
     }
   }
 
-  // Register trip routes (requires DB and auth middleware)
-  if (options.db && !options.skipAuthMiddleware) {
+  // Register trip routes (requires DB)
+  if (options.db) {
     await registerTripRoutes(app, { db: options.db });
   }
 
-  // Register booking routes (requires DB and auth middleware)
-  if (options.db && !options.skipAuthMiddleware) {
+  // Register booking routes (requires DB)
+  if (options.db) {
     await registerBookingRoutes(app, { db: options.db });
   }
 
-  // Register favorites and collections routes (requires DB and auth middleware)
-  if (options.db && !options.skipAuthMiddleware) {
+  // Register favorites and collections routes (requires DB)
+  if (options.db) {
     await registerFavoriteRoutes(app, { db: options.db });
   }
 
-  // Register POI routes (requires DB and auth middleware)
-  if (options.db && !options.skipAuthMiddleware) {
+  // Register POI routes (requires DB)
+  if (options.db) {
     await registerPOIRoutes(app, {
       db: options.db,
       redis: options.redisClient ?? (app as unknown as { redis?: RedisClient }).redis,
     });
   }
 
-  // Register timeline event routes (requires DB and auth middleware)
-  if (options.db && !options.skipAuthMiddleware) {
+  // Register timeline event routes (requires DB)
+  if (options.db) {
     await registerTimelineRoutes(app, { db: options.db });
   }
 
-  // Register map routes (requires DB and auth middleware)
-  if (options.db && !options.skipAuthMiddleware) {
+  // Register map routes (requires DB)
+  if (options.db) {
     await registerMapRoutes(app, { db: options.db });
   }
 
-  // Register vote routes (requires DB and auth middleware)
-  if (options.db && !options.skipAuthMiddleware) {
+  // Register vote routes (requires DB)
+  if (options.db) {
     await registerVoteRoutes(app, { db: options.db });
   }
 
-  // Register email connection routes (requires DB, auth middleware, and email config)
-  if (options.db && !options.skipAuthMiddleware) {
+  // Register email connection routes (requires DB)
+  if (options.db) {
     await registerEmailRoutes(app, {
       db: options.db,
       config: {
@@ -172,26 +178,26 @@ export async function buildApp(
     });
   }
 
-  // Register AI search routes (requires DB and auth middleware)
-  if (options.db && !options.skipAuthMiddleware) {
+  // Register AI search routes (requires DB)
+  if (options.db) {
     await registerSearchRoutes(app, {
       db: options.db,
       redis: options.redisClient ?? (app as unknown as { redis?: RedisClient }).redis,
     });
   }
 
-  // Register sharing routes (requires DB and auth middleware)
-  if (options.db && !options.skipAuthMiddleware) {
+  // Register sharing routes (requires DB)
+  if (options.db) {
     await registerSharingRoutes(app, { db: options.db });
   }
 
-  // Register sync routes (requires DB and auth middleware)
-  if (options.db && !options.skipAuthMiddleware) {
+  // Register sync routes (requires DB)
+  if (options.db) {
     await registerSyncRoutes(app, { db: options.db });
   }
 
-  // Register activity feed routes (requires DB and auth middleware)
-  if (options.db && !options.skipAuthMiddleware) {
+  // Register activity feed routes (requires DB)
+  if (options.db) {
     await registerActivityFeedRoutes(app, { db: options.db });
   }
 
