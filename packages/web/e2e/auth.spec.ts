@@ -14,8 +14,8 @@ const TEST_USER = {
 test.describe('Authentication', () => {
   test('should show landing page with sign in link', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Travel Companion' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Sign In' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /log in/i }).first()).toBeVisible();
+    await expect(page.getByText(/plan your perfect trip/i)).toBeVisible();
   });
 
   test('should navigate to login page', async ({ page }) => {
