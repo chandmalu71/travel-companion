@@ -1,0 +1,23 @@
+{
+  "name": "@travel-companion/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared business logic, types, validation schemas, and utilities",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:ci": "vitest run --coverage",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "fast-check": "^4.9.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.7"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  }
+}

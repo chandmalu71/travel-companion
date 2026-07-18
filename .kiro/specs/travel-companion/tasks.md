@@ -1,0 +1,602 @@
+# Implementation Plan: Travel Companion
+
+## Overview
+
+This implementation plan builds the Travel Companion application incrementally, starting with project scaffolding and shared infrastructure, then layering in core features (auth, trips, bookings), followed by integrations (email, POI, AI search), views (timeline, map), and finally advanced features (expenses, sharing, offline sync). Each task builds on previous work and ends with wired, testable code.
+
+## Tasks
+
+- [x] 1. Project scaffolding and shared package setup
+  - [x] 1.1 Initialize pnpm monorepo with workspace configuration
+    - Create root `package.json` with pnpm workspaces pointing to `packages/*`
+    - Create `pnpm-workspace.yaml`
+    - Add root `tsconfig.json` with path aliases for `@travel-companion/shared`, `@travel-companion/api`, `@travel-companion/web`, `@travel-companion/mobile`
+    - Add ESLint and Prettier config at root
+    - _Requirements: 17.1, 17.2, 17.4_
+
+  - [x] 1.2 Create shared package with core TypeScript interfaces and Zod schemas
+    - Create `packages/shared/package.json` and `packages/shared/tsconfig.json`
+    - Define all core interfaces: `User`, `Trip`, `Booking`, `FlightDetails`, `HotelDetails`, `CarRentalDetails`, `Favorite`, `Expense`, `Document`, `TimelineEvent`
+    - Define Zod validation schemas for registration, login, trip creation, booking creation, expense creation
+    - Define shared constants: expense categories, booking types, access levels, notification types
+    - Define utility functions: date formatting, currency formatting
+    - _Requirements: 1.1, 1.8, 3.2, 4.1, 18.1, 18.2_
+
+  - [x] 1.3 Create API package with Fastify server skeleton
+    - Create `packages/api/package.json` and `packages/api/tsconfig.json`
+    - Set up Fastify server with CORS, helmet, rate limiting plugins
+    - Add health check route (`GET /api/health`)
+    - Set up environment variable configuration with `@fastify/env`
+    - Add request logging with pino
+    - Configure Vitest for API package testing
+    - _Requirements: 17.4_
+
+  - [x] 1.4 Set up database connection and migration framework
+    - Add PostgreSQL client (`pg`) and Kysely query builder to API package
+    - Create database connection pool configuration
+    - Set up Kysely migration runner with `packages/api/src/db/migrations/` directory
+    - Create initial migration with all core tables: `users`, `user_preferences`, `trips`, `trip_members`, `bookings`, `flight_details`, `hotel_details`, `car_rental_details`
+    - Add all indexes from the design document
+    - _Requirements: 1.1, 3.2, 4.1_
+
+  - [x] 1.5 Create second database migration for supporting tables
+    - Create migration for: `favorites`, `collections`, `favorite_collections`, `timeline_events`, `votes`, `expenses`, `expense_groups`, `group_members`, `expense_splits`, `settlements`
+    - Create migration for: `documents`, `scheduled_notifications`, `notification_preferences`, `gap_alerts`, `activity_feed`, `share_links`, `highlights`, `email_connections`
+    - Add all supporting indexes
+    - _Requirements: 7.1, 8.6, 10.1, 16.1, 18.1, 21.1, 22.1, 23.1_
+
+  - [x] 1.6 Set up Redis connection and session management
+    - Add ioredis client to API package
+    - Create Redis connection with config for ElastiCache
+    - Implement session store plugin for Fastify
+    - Implement rate limiting middleware using Redis counters
+    - _Requirements: 1.4, 14.5_
+
+- [x] 2. Authentication system
+  - [x] 2.1 Implement registration and login routes
+    - Create `packages/api/src/routes/auth.ts` with routes: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/oauth`, `POST /api/auth/password-reset`, `POST /api/auth/refresh`
+    - Integrate with AWS Cognito User Pool for user creation and authentication
+    - Implement password validation using shared Zod schema (8-128 chars, 1 upper, 1 lower, 1 digit)
+    - Return JWT access token (1h expiry) and refresh token (30-day sliding expiry)
+    - Send verification email on registration via Cognito
+    - _Requirements: 1.1, 1.2, 1.5, 1.6, 1.7, 1.8_
+
+  - [x] 2.2 Implement account lockout mechanism
+    - Track consecutive failed login attempts per email in Redis (counter with 15-min TTL)
+    - After 3 consecutive failures, set lock key with 15-min TTL
+    - Cognito Pre-Authentication Lambda checks lock key before allowing login
+    - Reset counter on successful login
+    - Return appropriate error message indicating lock duration
+    - _Requirements: 1.4_
+
+  - [x] 2.3 Write property test for password validation
+    - **Property 1: Registration Input Validation**
+    - Use fast-check to generate arbitrary strings and verify the password validator accepts iff length 8-128 AND contains uppercase, lowercase, and digit
+    - **Validates: Requirements 1.1, 1.8**
+
+  - [x] 2.4 Write property test for account lockout state machine
+    - **Property 2: Account Lockout State Machine**
+    - Use fast-check to generate sequences of login success/failure events and verify lockout triggers iff 3 consecutive failures without intervening success
+    - **Validates: Requirements 1.4**
+
+  - [x] 2.5 Implement auth middleware and session validation
+    - Create Fastify `preHandler` hook that validates JWT from Authorization header
+    - Decode user ID and attach to request context
+    - Implement refresh token rotation endpoint
+    - Handle expired tokens with 401 response
+    - _Requirements: 1.3, 1.9_
+
+- [ ] 3. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 4. Trip and booking management
+  - [x] 4.1 Implement trip CRUD routes
+    - Create `packages/api/src/routes/trips.ts` with routes: `POST /api/trips`, `GET /api/trips`, `GET /api/trips/:tripId`, `PUT /api/trips/:tripId`, `DELETE /api/trips/:tripId`
+    - Validate trip name (1-100 chars) and dates (end >= start) using shared Zod schemas
+    - On delete: unassign bookings/favorites (SET NULL) without deleting them
+    - Sort trips by start date ascending, undated trips last
+    - _Requirements: 4.1, 4.2, 4.5, 4.6, 4.7, 4.8_
+
+  - [x] 4.2 Write property test for trip date range validation
+    - **Property 5: Trip Date Range Validation**
+    - Use fast-check to generate date pairs and verify the validator accepts iff end >= start
+    - **Validates: Requirements 4.6, 8.8**
+
+  - [x] 4.3 Implement booking CRUD routes
+    - Create `packages/api/src/routes/bookings.ts` with routes: `POST /api/bookings`, `GET /api/bookings`, `GET /api/bookings/:bookingId`, `PUT /api/bookings/:bookingId`, `DELETE /api/bookings/:bookingId`
+    - Support query filter `?status=upcoming|in-progress|completed`
+    - Calculate booking status dynamically based on current time vs start/end datetimes
+    - Support creating flight, hotel, and car rental bookings with their type-specific detail tables
+    - _Requirements: 3.1, 3.2, 3.3, 3.5, 3.6_
+
+  - [x] 4.4 Write property test for booking status calculation
+    - **Property 4: Booking Status Calculation**
+    - Use fast-check to generate (current, start, end) datetime triples and verify status is "upcoming" if current < start, "in-progress" if start <= current <= end, "completed" if current > end
+    - **Validates: Requirements 3.3**
+
+  - [x] 4.5 Implement trip dashboard endpoint
+    - Create `GET /api/trips/:tripId/dashboard` returning: trip details, bookings sorted by earliest date, gap alerts, weather summary placeholder, expense summary placeholder
+    - Assign bookings to trips via `POST /api/trips/:tripId/bookings`
+    - Implement trip suggestion logic: match bookings to trips by overlapping dates or destination
+    - _Requirements: 3.1, 3.4, 4.2, 4.4_
+
+  - [x] 4.6 Implement favorites and collections routes
+    - Create `packages/api/src/routes/favorites.ts` with routes: `POST /api/favorites`, `GET /api/favorites`, `DELETE /api/favorites/:id`
+    - Create collection routes: `POST /api/collections`, `GET /api/collections`, `PUT /api/collections/:id`, `DELETE /api/collections/:id`
+    - Enforce 500 favorites per user limit, 50-char collection names, 1000-char notes
+    - Associate favorites with trips; require trip selection or explicit "unassigned" choice
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.6, 7.7_
+
+- [ ] 5. Email integration and booking extraction
+  - [x] 5.1 Implement email connection and OAuth flow
+    - Create `packages/api/src/routes/email.ts` with route: `POST /api/email/connect`
+    - Implement OAuth flow for Gmail API and Microsoft Graph API
+    - Store encrypted access/refresh tokens in `email_connections` table
+    - Implement token refresh logic
+    - _Requirements: 2.1_
+
+  - [x] 5.2 Implement email parsing service with AWS Comprehend
+    - Create `packages/api/src/services/email-parser.ts`
+    - Implement booking confirmation detection using AWS Comprehend custom classifier
+    - Extract flight fields: airline, flight number, departure/arrival time, airports
+    - Extract hotel fields: name, check-in/out dates, address
+    - Extract car rental fields: company, pickup/return dates and locations
+    - Implement regex fallback for common confirmation email formats
+    - Process within 120 seconds of email receipt
+    - _Requirements: 2.3, 2.4, 2.5, 2.9_
+
+  - [ ] 5.3 Implement email polling and webhook ingestion
+    - Create SQS consumer worker for async email processing
+    - Implement Gmail push notification webhook via Lambda
+    - Implement forwarded email webhook endpoint: `POST /api/email/forward`
+    - Implement 5-minute polling fallback for connected inboxes
+    - On connect: scan last 90 days for booking confirmation emails
+    - _Requirements: 2.1, 2.2, 2.7_
+
+  - [ ] 5.4 Implement booking deduplication logic
+    - Before creating a new booking from email, check for duplicates:
+      - Flights: same flight number AND date
+      - Hotels: same hotel name AND check-in AND check-out dates
+      - Car rentals: same company AND pickup AND return dates
+    - Discard duplicates; create partial bookings when fields are missing and flag for user completion
+    - Notify user of new bookings or extraction failures
+    - _Requirements: 2.6, 2.8, 2.9_
+
+  - [ ] 5.5 Write property test for booking deduplication
+    - **Property 3: Booking Deduplication**
+    - Use fast-check to generate pairs of bookings and verify the dedup function identifies duplicates iff they match on the type-specific key
+    - **Validates: Requirements 2.8**
+
+- [ ] 6. POI and AI search
+  - [x] 6.1 Implement POI engine with Google Places API
+    - Create `packages/api/src/services/poi.ts`
+    - Create route: `GET /api/trips/:tripId/pois`
+    - Accept query params: `latitude`, `longitude`, `radius` (1-50 km, default 5), `category`, `limit` (max 20)
+    - Return POI results with name, category, rating (1-5), distance, opening hours, price level (1-4), photo URL
+    - Cache results in Redis with 24h TTL keyed by `poi:{lat}:{lng}:{radius}:{category}`
+    - Handle Google Places API unavailability with error message and retry option
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
+
+  - [ ] 6.2 Write property test for POI distance filtering
+    - **Property 6: POI Distance Filtering**
+    - Use fast-check to generate sets of POIs with coordinates, a center point, and radius (1-50 km), and verify the filter returns exactly those POIs within haversine distance <= radius
+    - **Validates: Requirements 5.5**
+
+  - [ ] 6.3 Implement AI search service with AWS Bedrock
+    - Create `packages/api/src/services/ai-search.ts`
+    - Create route: `POST /api/search`
+    - Accept query (2-500 chars), tripId, and optional filters (category, priceRange, minRating, maxDistance)
+    - Implement personalization pipeline: embed query via Bedrock, retrieve user preferences, query Google Places, re-rank by interests/dietary, apply filters
+    - Return max 20 results with name, description (max 200 chars), category, rating, estimated cost, distance, matchScore
+    - Suggest broadening if < 3 results
+    - Return within 3 seconds
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9_
+
+  - [ ] 6.4 Write property test for multi-criteria search filtering
+    - **Property 7: Multi-Criteria Search Filtering**
+    - Use fast-check to generate result sets and filter combinations, and verify the filter returns only results satisfying ALL active criteria and the result set is a subset of the input
+    - **Validates: Requirements 6.5**
+
+- [ ] 7. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 8. Timeline and map views (API layer)
+  - [x] 8.1 Implement timeline event routes
+    - Create `packages/api/src/routes/timeline.ts` with routes: `GET /api/trips/:tripId/timeline`, `POST /api/trips/:tripId/events`, `PUT /api/trips/:tripId/events/:eventId`, `DELETE /api/trips/:tripId/events/:eventId`
+    - Return events grouped by day, sorted chronologically
+    - Support day-by-day view (with time slots) and high-level overview (count, titles, time range)
+    - Validate custom events: title required (max 100 chars), time required, notes max 500 chars
+    - Reject events outside trip date range
+    - Include bookings, favorites, and custom events on timeline
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8_
+
+  - [x] 8.2 Implement map data endpoint
+    - Create `GET /api/trips/:tripId/map` returning all geocoded locations for the trip
+    - Include booking locations (departure/arrival airports, hotel addresses, pickup/return locations)
+    - Include favorite/POI locations
+    - Categorize markers by type with distinct category identifiers
+    - Omit bookings without geocodable addresses and flag missing locations in response
+    - Support day filtering via query param `?day=YYYY-MM-DD`
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.6, 9.7_
+
+  - [ ] 8.3 Implement voting system for collaborative planning
+    - Create routes: `POST /api/trips/:tripId/votes`, `DELETE /api/trips/:tripId/votes/:voteId`
+    - Support upvote/downvote on favorites and timeline events
+    - Enforce one vote per user per item
+    - Return net vote count on favorites and events
+    - _Requirements: 12.5_
+
+- [ ] 9. Notification service
+  - [ ] 9.1 Implement notification scheduling engine
+    - Create `packages/api/src/services/notifications.ts`
+    - On booking create/update: calculate reminder time = event time - user offset
+    - Store in `scheduled_notifications` table with `fire_at` timestamp
+    - Default offsets: flights 24h, hotels 8:00 AM local, car rentals 2h
+    - If fire_at has passed: schedule within 5 minutes
+    - On booking time change: delete old notification, create new one
+    - _Requirements: 10.1, 10.2, 10.3, 10.5, 10.7_
+
+  - [ ] 9.2 Implement notification delivery worker
+    - Create background worker polling `scheduled_notifications` every minute for due notifications
+    - Deliver via FCM (Android + Web push), APNs (iOS), SES (email fallback)
+    - Support notification preferences per user (customizable offsets 15 min - 72h)
+    - Create route: `PUT /api/users/:userId/notification-preferences`
+    - _Requirements: 10.4, 10.6, 10.8_
+
+  - [ ] 9.3 Write property test for notification rescheduling
+    - **Property 15: Notification Rescheduling**
+    - Use fast-check to generate booking time changes and user offsets, and verify rescheduled fire time = new event time - offset; if in the past, scheduled within 5 minutes of now
+    - **Validates: Requirements 10.5, 10.7**
+
+- [ ] 10. Sharing and collaboration
+  - [ ] 10.1 Implement trip sharing routes
+    - Create `packages/api/src/routes/sharing.ts` with routes: `POST /api/trips/:tripId/share`, `GET /api/trips/:tripId/share/link`, `DELETE /api/trips/:tripId/share/:memberId`
+    - Share via email invitation (up to 20 recipients)
+    - Generate read-only shareable links expiring in 30 days
+    - Support view-only and edit access levels
+    - On revoke: immediately remove access
+    - Validate email addresses
+    - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.6, 11.7_
+
+  - [ ] 10.2 Implement real-time collaboration with Socket.io
+    - Create `packages/api/src/services/collaboration.ts`
+    - Set up Socket.io server with room-based architecture (room per trip)
+    - Broadcast events: item_added, item_updated, item_removed, vote_cast
+    - Implement conflict resolution: server-received timestamp wins (last write wins)
+    - Notify overwritten collaborator via in-app notification within 30 seconds
+    - _Requirements: 11.5, 12.1, 12.2, 12.3_
+
+  - [ ] 10.3 Implement activity feed
+    - Create route: `GET /api/trips/:tripId/activity-feed?limit=50`
+    - Record all collaborator actions (add, edit, remove items)
+    - Display up to 50 most recent entries ordered by timestamp descending
+    - Include user name, action, entity type, and timestamp
+    - Handle collaborator removal: retain items, reassign attribution to owner (explicit revoke) or keep original attribution (voluntary leave)
+    - _Requirements: 12.4, 12.6_
+
+  - [ ] 10.4 Write property test for conflict resolution
+    - **Property 16: Conflict Resolution (Last Write Wins)**
+    - Use fast-check to generate pairs of conflicting changes with different timestamps and verify the sync engine selects the later timestamp as winner
+    - **Validates: Requirements 17.7, 13.5**
+
+- [ ] 11. Offline sync engine
+  - [ ] 11.1 Implement server-side sync protocol
+    - Create `packages/api/src/routes/sync.ts` with route: `POST /api/sync`
+    - Accept `SyncPayload` with `lastSyncTimestamp` and `localChanges`
+    - Return `SyncResponse` with `serverChanges`, `conflicts`, and `newSyncTimestamp`
+    - Implement last-write-wins conflict resolution by server timestamp
+    - Support create/update/delete operations for all entity types
+    - Synchronize within 10 seconds of connectivity
+    - _Requirements: 13.4, 13.5, 17.3, 17.5, 17.6, 17.7_
+
+  - [ ] 11.2 Implement shared package sync utilities
+    - Create `packages/shared/src/sync/` with offline queue management
+    - Define `ChangeEntry` and `ConflictEntry` types
+    - Implement change tracking: queue local changes while offline
+    - Implement conflict notification logic for user alerts
+    - Track last sync timestamp and display to user
+    - Support selecting up to 10 trips for offline access (max 500MB)
+    - _Requirements: 13.1, 13.2, 13.3, 13.6, 13.7, 11.8_
+
+- [ ] 12. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 13. Currency and weather services
+  - [ ] 13.1 Implement currency service
+    - Create `packages/api/src/services/currency.ts`
+    - Create routes: `GET /api/currency/convert`, `GET /api/currency/rates`
+    - Integrate with Open Exchange Rates API
+    - Implement 6-hour cron job to fetch rates, store in Redis with 24h TTL
+    - Support 50+ currencies (all ISO 4217 major currencies)
+    - On fetch failure: serve cached rates, set `rateStale: true`
+    - Round converted amounts to 2 decimal places
+    - Push rate updates via WebSocket within 60 seconds of new rates
+    - _Requirements: 14.1, 14.2, 14.3, 14.5, 14.6, 14.7_
+
+  - [ ] 13.2 Write property test for currency conversion
+    - **Property 8: Currency Conversion Correctness**
+    - Use fast-check to generate positive amounts, currency pairs, and rates, and verify conversion = amount × rate rounded to 2 decimal places, always positive
+    - **Validates: Requirements 14.1**
+
+  - [ ] 13.3 Implement weather service
+    - Create `packages/api/src/services/weather.ts`
+    - Create route: `GET /api/trips/:tripId/weather`
+    - Integrate with OpenWeatherMap One Call 3.0 API
+    - Return daily forecasts (temp high/low C/F, precipitation %, conditions) for trips within 14 days
+    - Return historical averages for trips beyond 14 days
+    - Cache in Redis, display last-updated timestamp
+    - Alert logic: notify user if delta > 5°C or precip delta > 30pp for trips starting within 7 days
+    - Handle API unavailability gracefully
+    - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6_
+
+- [ ] 14. Expense tracking and receipt scanning
+  - [ ] 14.1 Implement expense CRUD routes
+    - Create `packages/api/src/routes/expenses.ts` with routes: `POST /api/expenses`, `GET /api/expenses`, `GET /api/trips/:tripId/expenses/summary`, `PUT /api/expenses/:expenseId`, `DELETE /api/expenses/:expenseId`
+    - Validate amount (0.01 - 999,999,999.99), currency, date, category (7 categories)
+    - Support optional fields: merchant name, notes (max 500 chars), associated booking/trip
+    - Convert to home currency using Currency_Service
+    - Display both original and converted amounts
+    - _Requirements: 18.1, 18.2, 18.6, 18.7, 18.9, 18.17_
+
+  - [ ] 14.2 Implement receipt scanning with AWS Textract
+    - Create route: `POST /api/expenses/scan`
+    - Accept JPEG, PNG, HEIC images up to 10MB
+    - Use AWS Textract to extract: merchant name, total amount, currency, date
+    - Suggest expense category based on merchant
+    - Return confidence score and flag missing fields
+    - Handle poor quality images with error message and retry option
+    - Process within 10 seconds
+    - _Requirements: 18.3, 18.4, 18.5, 18.15, 18.16_
+
+  - [ ] 14.3 Implement budget tracking and threshold alerts
+    - Create route: `PUT /api/trips/:tripId/budget` to set trip budget (positive value, 0.01 - 999,999,999.99)
+    - Track cumulative spending against budget
+    - Fire 80% threshold alert (single alert, reset if drops below and re-crosses)
+    - Fire 100% exceeded alert (single alert, reset if drops below and re-crosses)
+    - Recalculate on expense add/edit/delete
+    - _Requirements: 18.10, 18.11, 18.12, 18.14, 18.17_
+
+  - [ ] 14.4 Write property test for expense aggregation
+    - **Property 9: Expense Aggregation Invariant**
+    - Use fast-check to generate lists of expenses with categories and verify category subtotals sum to grand total
+    - **Validates: Requirements 18.7**
+
+  - [ ] 14.5 Write property test for budget threshold detection
+    - **Property 10: Budget Threshold Detection**
+    - Use fast-check to generate budget amounts and sequences of expense additions/deletions, and verify 80% and 100% alerts fire iff cumulative crosses threshold from below
+    - **Validates: Requirements 18.11, 18.12**
+
+  - [ ] 14.6 Implement expense export
+    - Create route: `POST /api/trips/:tripId/expenses/export?format=pdf|csv`
+    - Generate PDF report with date, merchant, category, original amount+currency, converted amount
+    - Generate CSV with same fields
+    - _Requirements: 18.13_
+
+  - [ ] 14.7 Implement daily expense breakdown for timeline
+    - Add daily expense totals to timeline response
+    - Aggregate expenses by day for the trip
+    - Display on timeline alongside events
+    - _Requirements: 18.8_
+
+- [ ] 15. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 16. Flight check-in service
+  - [ ] 16.1 Implement check-in status and URL construction
+    - Create `packages/api/src/services/checkin.ts`
+    - Create routes: `GET /api/bookings/:bookingId/checkin-status`, `POST /api/bookings/:bookingId/checkin/complete`
+    - Maintain airline IATA code → check-in URL template lookup table for supported airlines (Delta, United, AA, Southwest, BA, Lufthansa, Air France, Emirates)
+    - Construct check-in URLs with booking reference and last name for supported airlines
+    - For unsupported airlines: return generic check-in page URL
+    - Display check-in window open/close times and time remaining
+    - Disable check-in button after window closes; allow in-progress check-in to complete
+    - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.8, 19.9, 19.10, 19.12_
+
+  - [ ] 16.2 Implement check-in notifications and completion flow
+    - Schedule check-in reminder notification when check-in window opens (24h before departure)
+    - Include direct link to initiate check-in in notification payload
+    - On check-in complete: mark flight as "Checked In", update booking status badge
+    - Prompt user to upload boarding pass, store via Document_Store
+    - _Requirements: 19.5, 19.6, 19.7, 19.11_
+
+- [ ] 17. User preferences engine
+  - [ ] 17.1 Implement preferences CRUD
+    - Create `packages/api/src/routes/preferences.ts` with route: `PUT /api/users/:userId/preferences`
+    - Support interests (12 categories), dietary preferences (11 options), allergies (10 known + custom up to 50 chars each)
+    - Support language selection (20+ languages), display currencies (multiple, first = default)
+    - Store in `user_preferences` table, sync across platforms
+    - Apply updated preferences within 5 seconds without restart
+    - Handle defaults: no filters, English, device locale currency
+    - _Requirements: 20.1, 20.2, 20.3, 20.7, 20.9, 20.12, 20.13, 20.14_
+
+  - [ ] 17.2 Wire preferences into AI search and POI results
+    - In AI_Search: exclude results conflicting with dietary/allergy preferences; label accommodating results
+    - In POI_Engine: display dietary compatibility indicator on restaurants
+    - In AI_Search: boost results matching user interest categories
+    - Implement currency toggle for switching between configured display currencies
+    - Implement in-app currency converter accessible from expense/booking views
+    - _Requirements: 20.4, 20.5, 20.6, 20.10, 20.11_
+
+- [ ] 18. Group expense splitting
+  - [ ] 18.1 Implement group expense splitter routes
+    - Create `packages/api/src/routes/expense-groups.ts` with routes: `POST /api/trips/:tripId/groups`, `GET /api/trips/:tripId/groups/:groupId/balances`, `POST /api/expenses/:expenseId/split`, `PUT /api/settlements/:settlementId`
+    - Create groups with trip owner + collaborators or manually added members
+    - Support split types: equal, percentage (must sum to 100), per-item
+    - Calculate net balances: who owes whom in home currency
+    - Prompt user to mark expense as personal or shared when group is active
+    - Allow marking debts as "settled"
+    - Recalculate balances within 5 seconds of expense edit/delete
+    - _Requirements: 21.1, 21.2, 21.3, 21.4, 21.5, 21.6, 21.7, 21.8, 21.9, 21.10_
+
+  - [ ] 18.2 Write property test for equal expense split conservation
+    - **Property 11: Equal Expense Split Conservation**
+    - Use fast-check to generate positive amounts and group sizes (N >= 2), and verify equal split member amounts sum to original (within 1 cent); for percentage splits, verify percentages sum to 100
+    - **Validates: Requirements 21.2, 21.7**
+
+  - [ ] 18.3 Write property test for group balance zero-sum
+    - **Property 12: Group Balance Zero-Sum**
+    - Use fast-check to generate groups with sets of shared expenses and splits, and verify sum of all net balances across all members equals zero
+    - **Validates: Requirements 21.5**
+
+- [ ] 19. Gap detection
+  - [ ] 19.1 Implement gap detector service
+    - Create `packages/api/src/services/gap-detector.ts`
+    - Create route: `GET /api/trips/:tripId/gaps`
+    - Implement detection rules:
+      - Missing accommodation: nights within trip dates not covered by hotel booking
+      - Missing transportation: consecutive-day bookings at different locations (>50km apart) without connecting transport
+      - Scheduling conflicts: overlapping time ranges on same day
+      - Unplanned arrival: flight/car arrives with no subsequent activity that day
+    - Display gaps as advisory alerts categorized by type with suggested actions
+    - Re-analyze within 30 seconds of booking add/remove/modify via SQS message
+    - Allow dismissal; dismissed gaps don't reappear unless underlying data changes
+    - Skip analysis for trips without dates set
+    - _Requirements: 22.1, 22.2, 22.3, 22.4, 22.5, 22.6, 22.7, 22.8, 22.9, 22.10_
+
+  - [ ] 19.2 Write property test for accommodation gap detection
+    - **Property 13: Accommodation Gap Detection**
+    - Use fast-check to generate trip date ranges and sets of hotel bookings, and verify the detector reports a gap for each night not covered by any booking's check-in to check-out range
+    - **Validates: Requirements 22.1**
+
+  - [ ] 19.3 Write property test for scheduling conflict detection
+    - **Property 14: Scheduling Conflict Detection**
+    - Use fast-check to generate sets of events with start/end times on the same day, and verify a conflict is identified iff two events have overlapping time intervals (event1.start < event2.end AND event2.start < event1.end)
+    - **Validates: Requirements 22.3**
+
+- [ ] 20. Social media sharing
+  - [ ] 20.1 Implement social sharing service
+    - Create `packages/api/src/routes/highlights.ts` with routes: `POST /api/trips/:tripId/highlights`, `POST /api/trips/:tripId/highlights/:highlightId/share`, `POST /api/trips/:tripId/highlights/:highlightId/draft`
+    - Allow selecting photos from device gallery, Document_Store, or trip uploads
+    - Support caption (max 500 chars), tag trip name, tag destinations, include stats
+    - Support layouts: single, carousel (up to 10 images), collage (2-6 images)
+    - Generate preview before posting
+    - Share via platform native share sheet (mobile) and URL/API (web) to Instagram, Facebook, X, WhatsApp
+    - Save as draft for later posting
+    - Record share event in activity feed
+    - _Requirements: 23.1, 23.2, 23.3, 23.4, 23.5, 23.6, 23.7, 23.9, 23.10_
+
+  - [ ] 20.2 Write property test for social share data leakage prevention
+    - **Property 17: Social Share Data Leakage Prevention**
+    - Use fast-check to generate bookings with personal details (confirmation numbers, addresses, flight numbers) and user captions, and verify generated share content does not contain personal details unless they appear in the caption
+    - **Validates: Requirements 23.8**
+
+- [ ] 21. Document storage
+  - [ ] 21.1 Implement document upload and management
+    - Create `packages/api/src/routes/documents.ts` with routes: `POST /api/documents/upload`, `GET /api/trips/:tripId/documents`, `DELETE /api/documents/:documentId`
+    - Upload to S3 with CloudFront delivery
+    - Support PDF, JPEG, PNG, HEIC; max 25MB per file
+    - Categorize: boarding pass, confirmation, voucher, visa, insurance
+    - Auto-attach email source as confirmation document on booking extraction
+    - Enforce 100 documents per trip limit
+    - Make available offline via Sync_Engine
+    - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 16.7, 16.8, 16.9_
+
+- [ ] 22. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 23. Web application (Next.js)
+  - [ ] 23.1 Set up Next.js web application
+    - Create `packages/web/package.json` and configure with App Router
+    - Set up Tailwind CSS and component library (shadcn/ui)
+    - Configure API client to communicate with Fastify backend
+    - Implement auth pages: login, register, forgot password, email verification
+    - Implement protected route middleware checking JWT
+    - _Requirements: 17.1, 1.1, 1.2, 1.9_
+
+  - [ ] 23.2 Implement web dashboard and trip views
+    - Create dashboard page showing all trips sorted by date
+    - Create trip detail page with: bookings list, timeline, map, expenses, documents, gap alerts
+    - Implement booking cards with status badges and check-in buttons
+    - Implement favorites/collections management UI
+    - Implement sharing UI: invite by email, generate link, manage access
+    - _Requirements: 3.1, 3.2, 3.6, 4.7, 7.1, 7.2, 11.1, 11.2_
+
+  - [ ] 23.3 Implement web timeline and map views
+    - Build timeline component with day-by-day and overview modes
+    - Integrate Google Maps SDK for map view with custom markers
+    - Implement marker tap → summary card interaction
+    - Support zoom, pan, day filtering, and viewport auto-fit
+    - Display weather forecasts alongside timeline events
+    - _Requirements: 8.1, 8.2, 8.3, 8.5, 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 15.4_
+
+  - [ ] 23.4 Implement web expense and search features
+    - Build expense tracker UI: add/edit/scan receipt, budget setting, category views
+    - Build expense summary and export buttons (PDF/CSV download)
+    - Build AI search interface with filters (category, price, rating, distance)
+    - Build POI discovery panel with radius control
+    - Build preference settings page
+    - _Requirements: 18.1, 18.3, 18.7, 18.10, 18.13, 6.1, 6.5, 5.5, 20.1_
+
+- [ ] 24. Mobile application (React Native)
+  - [ ] 24.1 Set up React Native mobile application
+    - Create `packages/mobile/package.json` and configure React Native project
+    - Set up navigation (React Navigation) with tab and stack navigators
+    - Configure native modules: camera, push notifications, offline storage (SQLite)
+    - Implement auth screens: login, register, forgot password
+    - Configure IndexedDB/SQLite for offline caching
+    - _Requirements: 17.2, 13.1, 13.7_
+
+  - [ ] 24.2 Implement mobile dashboard and trip views
+    - Create dashboard screen with trip list and booking overview
+    - Create trip detail screen with tabs: timeline, map, expenses, documents
+    - Implement pull-to-refresh and offline indicator
+    - Implement push notification permission prompt and FCM/APNs registration
+    - Implement check-in flow with in-app browser
+    - _Requirements: 3.1, 10.4, 10.8, 13.2, 19.1, 19.2_
+
+  - [ ] 24.3 Implement mobile map, camera, and sharing features
+    - Integrate Google Maps SDK for React Native with custom markers
+    - Implement camera capture for receipt scanning
+    - Implement social sharing via native share sheet
+    - Implement offline trip selection (up to 10 trips)
+    - Build collaborative planning UI with real-time updates via Socket.io
+    - _Requirements: 9.1, 9.3, 18.3, 23.3, 23.7, 13.7, 12.1_
+
+- [ ] 25. Final checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+## Notes
+
+- Tasks marked with `*` are optional and can be skipped for faster MVP
+- Each task references specific requirements for traceability
+- Checkpoints ensure incremental validation
+- Property tests validate universal correctness properties from the design document using fast-check
+- Unit tests validate specific examples and edge cases
+- The API layer is built first to enable both web and mobile clients to develop against stable endpoints
+- TypeScript is used throughout the entire monorepo (shared, api, web, mobile packages)
+- All property tests should be placed in `packages/shared/src/__tests__/properties/`
+
+## Task Dependency Graph
+
+```json
+{
+  "waves": [
+    { "id": 0, "tasks": ["1.1"] },
+    { "id": 1, "tasks": ["1.2", "1.3"] },
+    { "id": 2, "tasks": ["1.4", "1.6"] },
+    { "id": 3, "tasks": ["1.5"] },
+    { "id": 4, "tasks": ["2.1", "2.2"] },
+    { "id": 5, "tasks": ["2.3", "2.4", "2.5"] },
+    { "id": 6, "tasks": ["4.1", "4.3"] },
+    { "id": 7, "tasks": ["4.2", "4.4", "4.5", "4.6"] },
+    { "id": 8, "tasks": ["5.1", "6.1", "8.1", "8.2"] },
+    { "id": 9, "tasks": ["5.2", "5.3", "6.2", "6.3", "8.3"] },
+    { "id": 10, "tasks": ["5.4", "6.4", "9.1"] },
+    { "id": 11, "tasks": ["5.5", "9.2", "9.3"] },
+    { "id": 12, "tasks": ["10.1", "10.2", "11.1"] },
+    { "id": 13, "tasks": ["10.3", "10.4", "11.2"] },
+    { "id": 14, "tasks": ["13.1", "13.3"] },
+    { "id": 15, "tasks": ["13.2", "14.1"] },
+    { "id": 16, "tasks": ["14.2", "14.3"] },
+    { "id": 17, "tasks": ["14.4", "14.5", "14.6", "14.7"] },
+    { "id": 18, "tasks": ["16.1", "17.1"] },
+    { "id": 19, "tasks": ["16.2", "17.2", "18.1"] },
+    { "id": 20, "tasks": ["18.2", "18.3", "19.1"] },
+    { "id": 21, "tasks": ["19.2", "19.3", "20.1"] },
+    { "id": 22, "tasks": ["20.2", "21.1"] },
+    { "id": 23, "tasks": ["23.1", "24.1"] },
+    { "id": 24, "tasks": ["23.2", "24.2"] },
+    { "id": 25, "tasks": ["23.3", "23.4", "24.3"] }
+  ]
+}
+```

@@ -1,0 +1,1467 @@
+# Technical Design Document: Travel Companion
+
+## Overview
+
+Travel Companion is a cross-platform travel planning application built with React Native (iOS/Android) and Next.js (web), sharing common business logic through a monorepo structure. The backend uses Node.js with Fastify deployed on AWS, backed by PostgreSQL for relational data and Redis for caching/sessions. The system integrates with multiple external services for email parsing, maps, AI search, receipt scanning, weather, and currency conversion.
+
+The architecture follows a layered approach: a shared core logic layer consumed by platform-specific UI layers, communicating with a RESTful API backed by WebSocket for real-time collaboration. Offline-first design ensures usability in low-connectivity travel scenarios.
+
+### Key Design Decisions
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Mobile framework | React Native | Code sharing with web via shared packages; native performance for maps/camera |
+| Web framework | Next.js | SSR for SEO, API routes, React ecosystem alignment |
+| Backend framework | Fastify | Higher throughput than Express, schema-based validation, plugin architecture |
+| Database | PostgreSQL + Redis | Strong relational model for trips/bookings/users; Redis for sessions, caching, rate limiting |
+| Auth provider | AWS Cognito | Native AWS integration, OAuth support, managed MFA, cost-effective at scale |
+| Real-time | Socket.io over WebSocket | Fallback transport, room-based collaboration, built-in reconnection |
+| File storage | AWS S3 + CloudFront | Scalable document/receipt storage with CDN delivery |
+| AI/ML | AWS Bedrock + Textract + Comprehend | Unified AWS ecosystem; Bedrock for search, Textract for receipts, Comprehend for email parsing |
+| Maps | Google Maps SDK | Best POI data, cross-platform SDKs, Places API integration |
+
+## Architecture
+
+### System Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        RN[React Native<br/>iOS & Android]
+        NX[Next.js Web App]
+        SL[Shared Logic Package<br/>TypeScript]
+    end
+
+    subgraph "API Layer"
+        GW[API Gateway<br/>AWS ALB]
+        WS[WebSocket Server<br/>Socket.io]
+        API[Fastify API Server<br/>Node.js]
+    end
+
+    subgraph "Service Layer"
+        AUTH[Auth Service<br/>Cognito]
+        EMAIL[Email Parser<br/>Comprehend]
+        AI[AI Search<br/>Bedrock]
+        RECEIPT[Receipt Scanner<br/>Textract]
+        NOTIF[Notification Service<br/>FCM + APNs + SES]
+        SYNC[Sync Engine]
+        CURRENCY[Currency Service]
+        WEATHER[Weather Service]
+        GAP[Gap Detector]
+        CHECKIN[Check-in Service]
+        SHARE[Sharing Service]
+        SOCIAL[Social Sharing]
+    end
+
+    subgraph "Data Layer"
+        PG[(PostgreSQL<br/>RDS)]
+        RD[(Redis<br/>ElastiCache)]
+        S3[(S3<br/>Documents & Receipts)]
+    end
+
+    subgraph "External APIs"
+        GMAIL[Gmail API]
+        OUTLOOK[Outlook API]
+        GMAP[Google Maps & Places]
+        OER[Open Exchange Rates]
+        OWM[OpenWeatherMap]
+        FCM[Firebase Cloud Messaging]
+        AIRLINES[Airline Check-in URLs]
+    end
+
+    RN --> SL
+    NX --> SL
+    SL --> GW
+    SL --> WS
+    GW --> API
+    API --> AUTH
+    API --> EMAIL
+    API --> AI
+    API --> RECEIPT
+    API --> NOTIF
+    API --> SYNC
+    API --> CURRENCY
+    API --> WEATHER
+    API --> GAP
+    API --> CHECKIN
+    API --> SHARE
+    API --> SOCIAL
+    API --> PG
+    API --> RD
+    API --> S3
+    EMAIL --> GMAIL
+    EMAIL --> OUTLOOK
+    AI --> GMAP
+    CURRENCY --> OER
+    WEATHER --> OWM
+    NOTIF --> FCM
+    CHECKIN --> AIRLINES
+```
+
+### Monorepo Structure
+
+```
+travel-companion/
+├── packages/
+│   ├── shared/              # Shared business logic, types, validation
+│   │   ├── src/
+│   │   │   ├── models/      # TypeScript interfaces & Zod schemas
+│   │   │   ├── validators/  # Input validation (reused client & server)
+│   │   │   ├── utils/       # Date, currency, formatting utilities
+│   │   │   └── constants/   # Shared constants (categories, limits)
+│   │   └── package.json
+│   ├── mobile/              # React Native app (iOS + Android)
+│   │   ├── src/
+│   │   │   ├── screens/
+│   │   │   ├── components/
+│   │   │   ├── navigation/
+│   │   │   ├── hooks/
+│   │   │   └── services/    # Native modules (camera, notifications)
+│   │   └── package.json
+│   ├── web/                 # Next.js web app
+│   │   ├── src/
+│   │   │   ├── app/         # App router pages
+│   │   │   ├── components/
+│   │   │   └── hooks/
+│   │   └── package.json
+│   └── api/                 # Fastify backend
+│       ├── src/
+│       │   ├── routes/
+│       │   ├── services/
+│       │   ├── plugins/
+│       │   ├── workers/     # Background job processors
+│       │   └── db/          # Migrations & query builders
+│       └── package.json
+├── infrastructure/          # CDK / Terraform
+└── package.json             # Workspace root (pnpm workspaces)
+```
+
+### Deployment Architecture
+
+```mermaid
+graph LR
+    subgraph "AWS Cloud"
+        ALB[Application Load Balancer]
+        ECS[ECS Fargate<br/>API Containers]
+        RDS[(RDS PostgreSQL<br/>Multi-AZ)]
+        EC[(ElastiCache Redis<br/>Cluster)]
+        S3B[(S3 Bucket)]
+        CF[CloudFront CDN]
+        COG[Cognito User Pool]
+        SQS[SQS Queues<br/>Email Processing]
+        LAMBDA[Lambda<br/>Email Webhooks]
+    end
+
+    ALB --> ECS
+    ECS --> RDS
+    ECS --> EC
+    ECS --> S3B
+    S3B --> CF
+    ECS --> COG
+    SQS --> ECS
+    LAMBDA --> SQS
+```
+
+- **Compute**: ECS Fargate for auto-scaling API containers (no EC2 management)
+- **Database**: RDS PostgreSQL Multi-AZ for high availability, read replicas for read-heavy queries
+- **Caching**: ElastiCache Redis cluster for sessions, rate limiting, exchange rates, weather cache
+- **Storage**: S3 with lifecycle policies (move old documents to Glacier after 1 year)
+- **CDN**: CloudFront for static assets and document delivery
+- **Background Jobs**: SQS queues for email processing, notification scheduling, gap analysis
+- **Serverless**: Lambda for email webhook receivers (Gmail push notifications, forwarded email ingestion)
+
+## Components and Interfaces
+
+### Auth Service
+
+**Responsibility**: User registration, login, session management, OAuth integration (Req 1)
+
+**Technology**: AWS Cognito User Pool with custom Lambda triggers
+
+**Interfaces**:
+```typescript
+// POST /api/auth/register
+interface RegisterRequest {
+  email: string;          // Valid email format
+  password: string;       // 8-128 chars, 1 upper, 1 lower, 1 digit
+}
+interface RegisterResponse {
+  userId: string;
+  verificationRequired: boolean;
+}
+
+// POST /api/auth/login
+interface LoginRequest {
+  email: string;
+  password: string;
+}
+interface LoginResponse {
+  accessToken: string;    // JWT, 1 hour expiry
+  refreshToken: string;   // 30-day sliding expiry
+  user: UserProfile;
+}
+
+// POST /api/auth/oauth
+interface OAuthRequest {
+  provider: 'google' | 'apple' | 'yahoo' | 'amazon';
+  idToken: string;
+}
+
+// POST /api/auth/password-reset
+interface PasswordResetRequest {
+  email: string;
+}
+```
+
+**Account Lockout Logic**: Redis counter tracks consecutive failed attempts per email. After 3 failures, set a 15-minute TTL lock key. Cognito Pre-Authentication Lambda checks this key.
+
+### Itinerary Extractor (Email Parser)
+
+**Responsibility**: Connect to email providers, detect booking confirmations, extract structured data (Req 2)
+
+**Technology**: Gmail API + Microsoft Graph API for inbox connection; AWS Comprehend for entity extraction; SQS for async processing
+
+**Interfaces**:
+```typescript
+// POST /api/email/connect
+interface ConnectEmailRequest {
+  provider: 'gmail' | 'outlook';
+  oauthToken: string;
+}
+
+// POST /api/email/forward (webhook endpoint)
+interface ForwardedEmailPayload {
+  from: string;
+  subject: string;
+  htmlBody: string;
+  textBody: string;
+  attachments: Attachment[];
+}
+
+// Internal service interface
+interface ExtractedBooking {
+  type: 'flight' | 'hotel' | 'car_rental';
+  confidence: number;     // 0-1 extraction confidence
+  fields: Partial<FlightFields | HotelFields | CarRentalFields>;
+  missingFields: string[];
+  sourceEmailId: string;
+}
+```
+
+**Processing Pipeline**:
+1. Email received via API polling (every 5 min) or webhook
+2. Classification: Is this a booking confirmation? (Comprehend custom classifier)
+3. Entity extraction: Pull structured fields (custom Comprehend model + regex fallback)
+4. Deduplication: Check flight number+date, hotel name+dates, rental company+dates
+5. Persistence: Create Booking record, flag missing fields, attach source email as document
+6. Notification: Inform user of new booking or extraction failure
+
+### Trip Manager
+
+**Responsibility**: CRUD operations for trips, booking assignment, trip organization (Req 3, 4)
+
+**Interfaces**:
+```typescript
+// POST /api/trips
+interface CreateTripRequest {
+  name: string;           // 1-100 characters
+  startDate?: string;     // ISO 8601
+  endDate?: string;       // ISO 8601, must be >= startDate
+}
+
+// GET /api/trips/:tripId/dashboard
+interface TripDashboard {
+  trip: Trip;
+  bookings: Booking[];    // sorted by earliest date ascending
+  gapAlerts: GapAlert[];
+  weatherSummary: WeatherSummary;
+  expenseSummary: ExpenseSummary;
+}
+
+// POST /api/trips/:tripId/bookings
+interface AssignBookingRequest {
+  bookingId: string;
+}
+
+// GET /api/bookings?status=upcoming|in-progress|completed
+interface BookingListResponse {
+  bookings: BookingWithStatus[];
+}
+```
+
+**Booking Status Calculation** (computed, not stored):
+- `upcoming`: now < start datetime
+- `in-progress`: start datetime <= now <= end datetime
+- `completed`: now > end datetime
+
+### POI Engine
+
+**Responsibility**: Discover and present points of interest near destinations (Req 5)
+
+**Technology**: Google Places API (Nearby Search, Place Details)
+
+**Interfaces**:
+```typescript
+// GET /api/trips/:tripId/pois?radius=5&category=restaurants
+interface POISearchParams {
+  latitude: number;
+  longitude: number;
+  radius: number;         // 1-50 km, default 5
+  category?: 'restaurants' | 'museums' | 'parks' | 'landmarks' | 'entertainment';
+  limit?: number;         // max 20
+}
+
+interface POIResult {
+  placeId: string;
+  name: string;
+  category: string;
+  rating: number;         // 1-5
+  distanceKm: number;
+  openingHours: OpeningHours | null;
+  priceLevel: number;     // 1-4
+  location: { lat: number; lng: number };
+  photoUrl?: string;
+}
+```
+
+**Caching Strategy**: Cache POI results in Redis with 24-hour TTL keyed by `poi:{lat}:{lng}:{radius}:{category}`. Invalidate on user radius change.
+
+### AI Search Service
+
+**Responsibility**: Natural language activity search with personalization (Req 6)
+
+**Technology**: AWS Bedrock (Claude) for query understanding + Google Places API for data
+
+**Interfaces**:
+```typescript
+// POST /api/search
+interface AISearchRequest {
+  query: string;          // 2-500 characters
+  tripId: string;
+  filters?: {
+    category?: string[];
+    priceRange?: [number, number];
+    minRating?: number;
+    maxDistance?: number;
+  };
+}
+
+interface AISearchResponse {
+  results: SearchResult[];  // max 20
+  personalizationApplied: boolean;
+  suggestBroaden: boolean;  // true if < 3 results
+}
+
+interface SearchResult {
+  name: string;
+  description: string;    // max 200 chars
+  category: string;
+  rating: number;
+  estimatedCost: MoneyAmount;
+  distanceKm?: number;    // null if no accommodation set
+  location: { lat: number; lng: number };
+  matchScore: number;     // relevance ranking
+}
+```
+
+**Personalization Pipeline**:
+1. Embed user query via Bedrock
+2. Retrieve user preference profile (interests, dietary, history)
+3. Query Google Places with extracted intent (location, category)
+4. Re-rank results: boost categories matching user interests, filter out dietary conflicts
+5. Apply explicit filters (price, rating, distance)
+6. Return top 20 sorted by combined relevance + personalization score
+
+### Notification Service
+
+**Responsibility**: Schedule and deliver reminders for bookings and alerts (Req 10, 15, 18, 19, 22)
+
+**Technology**: FCM (Android + Web), APNs (iOS), SES (email fallback), SQS (scheduling)
+
+**Interfaces**:
+```typescript
+// Internal scheduling interface
+interface ScheduleNotification {
+  userId: string;
+  type: 'flight_reminder' | 'hotel_checkin' | 'car_pickup' | 'checkin_window' |
+        'weather_alert' | 'budget_threshold' | 'budget_exceeded' | 'gap_detected';
+  scheduledAt: Date;      // UTC
+  payload: NotificationPayload;
+  bookingId?: string;
+}
+
+// User preference override
+// PUT /api/users/:userId/notification-preferences
+interface NotificationPreferences {
+  flightReminderOffset: number;   // minutes, 15-4320 (72h), default 1440 (24h)
+  hotelReminderTime: string;      // HH:MM in hotel local TZ, default "08:00"
+  carReminderOffset: number;      // minutes, 15-4320, default 120 (2h)
+  pushEnabled: boolean;
+  emailEnabled: boolean;
+}
+```
+
+**Scheduling Logic**:
+- On booking create/update: calculate reminder time = event time - user offset
+- Store in `scheduled_notifications` table with `fire_at` timestamp
+- Background worker polls every minute for due notifications
+- If `fire_at` has passed when booking is added: send immediately (within 5 min)
+- On booking time change: delete old notification, schedule new one
+
+### Sync Engine
+
+**Responsibility**: Offline caching, cross-platform sync, conflict resolution (Req 13, 17)
+
+**Technology**: SQLite (mobile local DB), IndexedDB (web), WebSocket for real-time sync
+
+**Interfaces**:
+```typescript
+// Sync protocol
+interface SyncPayload {
+  lastSyncTimestamp: string;  // ISO 8601
+  localChanges: ChangeEntry[];
+}
+
+interface ChangeEntry {
+  entityType: string;
+  entityId: string;
+  operation: 'create' | 'update' | 'delete';
+  data: Record<string, unknown>;
+  localTimestamp: string;
+}
+
+interface SyncResponse {
+  serverChanges: ChangeEntry[];
+  conflicts: ConflictEntry[];
+  newSyncTimestamp: string;
+}
+
+interface ConflictEntry {
+  entityType: string;
+  entityId: string;
+  localVersion: Record<string, unknown>;
+  serverVersion: Record<string, unknown>;
+  resolvedVersion: Record<string, unknown>;  // most recent wins
+}
+```
+
+**Offline Behavior**:
+- Mobile: SQLite stores full trip data for selected offline trips (max 10, max 500MB total)
+- Web: IndexedDB with same schema
+- Offline mode: read-only for most operations; notes and favorites can be added locally
+- On reconnect: push local changes, pull server changes, resolve conflicts (last-write-wins by server timestamp), notify user of conflicts
+
+### Sharing & Collaboration Service
+
+**Responsibility**: Trip sharing, access control, real-time collaborative editing (Req 11, 12)
+
+**Technology**: PostgreSQL (access control), Socket.io (real-time updates)
+
+**Interfaces**:
+```typescript
+// POST /api/trips/:tripId/share
+interface ShareTripRequest {
+  email: string;
+  accessLevel: 'view' | 'edit';
+}
+
+// GET /api/trips/:tripId/share/link
+interface ShareLinkResponse {
+  url: string;            // Read-only, expires in 30 days
+  expiresAt: string;
+}
+
+// WebSocket events (room: trip:{tripId})
+interface CollaborationEvent {
+  type: 'item_added' | 'item_updated' | 'item_removed' | 'vote_cast';
+  userId: string;
+  userName: string;
+  entityType: string;
+  entityId: string;
+  data: Record<string, unknown>;
+  timestamp: string;
+}
+
+// GET /api/trips/:tripId/activity-feed?limit=50
+interface ActivityFeedEntry {
+  id: string;
+  userId: string;
+  userName: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  timestamp: string;
+}
+```
+
+**Conflict Resolution for Collaborative Edits**:
+- Server-received timestamp wins (last write wins)
+- Overwritten collaborator receives in-app notification within 30 seconds
+- Activity feed records all changes for auditability
+
+### Currency Service
+
+**Responsibility**: Exchange rate management, currency conversion, multi-currency display (Req 14, 20)
+
+**Technology**: Open Exchange Rates API, Redis cache
+
+**Interfaces**:
+```typescript
+// GET /api/currency/convert?from=EUR&to=USD&amount=47.50
+interface ConversionResponse {
+  originalAmount: number;
+  originalCurrency: string;
+  convertedAmount: number;  // rounded to 2 decimal places
+  targetCurrency: string;
+  rateTimestamp: string;
+  rateStale: boolean;       // true if > 24h old
+}
+
+// GET /api/currency/rates?base=USD
+interface ExchangeRates {
+  base: string;
+  timestamp: string;
+  rates: Record<string, number>;  // 50+ currencies
+}
+```
+
+**Rate Update Strategy**:
+- Cron job fetches rates every 6 hours from Open Exchange Rates
+- Rates stored in Redis with 24-hour TTL
+- On fetch failure: continue serving cached rates, set `rateStale: true`
+- When rates update: recalculate displayed conversions within 60 seconds (push via WebSocket)
+
+### Weather Service
+
+**Responsibility**: Destination weather forecasts and historical averages (Req 15)
+
+**Technology**: OpenWeatherMap API (One Call 3.0), Redis cache
+
+**Interfaces**:
+```typescript
+// GET /api/trips/:tripId/weather
+interface TripWeatherResponse {
+  destinations: DestinationWeather[];
+}
+
+interface DestinationWeather {
+  location: string;
+  forecasts: DailyForecast[];  // daily if within 14 days
+  isHistorical: boolean;       // true if > 14 days out
+  lastUpdated: string;
+  unavailable: boolean;
+}
+
+interface DailyForecast {
+  date: string;
+  tempHighC: number;
+  tempLowC: number;
+  tempHighF: number;
+  tempLowF: number;
+  precipitationProbability: number;  // 0-100
+  conditions: 'sunny' | 'cloudy' | 'rainy' | 'snowy' | 'windy';
+}
+```
+
+**Alert Logic**: Compare today's forecast with yesterday's. If delta > 5°C or precip delta > 30pp for trips starting within 7 days, trigger notification.
+
+### Expense Tracker & Receipt Scanner
+
+**Responsibility**: Expense recording, receipt OCR, budget tracking, export (Req 18, 21)
+
+**Technology**: AWS Textract (receipt OCR), custom categorization model
+
+**Interfaces**:
+```typescript
+// POST /api/expenses
+interface CreateExpenseRequest {
+  tripId: string;
+  amount: number;           // 0.01 - 999,999,999.99
+  currency: string;
+  date: string;
+  category: ExpenseCategory;
+  merchantName?: string;
+  notes?: string;           // max 500 chars
+  bookingId?: string;
+  isShared?: boolean;
+  splitConfig?: SplitConfig;
+}
+
+// POST /api/expenses/scan
+interface ScanReceiptRequest {
+  image: Buffer;            // JPEG, PNG, HEIC; max 10MB
+  tripId: string;
+}
+
+interface ScanResult {
+  merchantName?: string;
+  totalAmount?: number;
+  currency?: string;
+  date?: string;
+  suggestedCategory?: ExpenseCategory;
+  confidence: number;
+  missingFields: string[];
+}
+
+// GET /api/trips/:tripId/expenses/summary
+interface ExpenseSummary {
+  totalSpent: MoneyAmount;
+  budget?: MoneyAmount;
+  budgetPercentage?: number;
+  byCategory: Record<ExpenseCategory, MoneyAmount>;
+  byDay: Record<string, MoneyAmount>;
+}
+
+// POST /api/trips/:tripId/expenses/export?format=pdf|csv
+type ExpenseCategory = 'accommodation' | 'transportation' | 'food_dining' |
+  'shopping' | 'tours_activities' | 'entertainment' | 'other';
+```
+
+### Group Expense Splitter
+
+**Responsibility**: Split expenses among group members, track balances (Req 21)
+
+**Interfaces**:
+```typescript
+// POST /api/trips/:tripId/groups
+interface CreateGroupRequest {
+  members: GroupMember[];   // Trip owner + collaborators or named members
+}
+
+interface SplitConfig {
+  type: 'equal' | 'percentage' | 'per_item';
+  members: SplitMember[];
+}
+
+interface SplitMember {
+  memberId: string;
+  percentage?: number;      // for percentage split, must sum to 100
+  items?: string[];         // for per_item split
+}
+
+// GET /api/trips/:tripId/groups/:groupId/balances
+interface GroupBalances {
+  totalGroupSpending: MoneyAmount;
+  memberBalances: MemberBalance[];
+  settlements: Settlement[];  // who owes whom
+}
+
+interface Settlement {
+  fromMemberId: string;
+  toMemberId: string;
+  amount: MoneyAmount;
+  settled: boolean;
+}
+```
+
+### Gap Detector
+
+**Responsibility**: Analyze itinerary for missing accommodations, transport gaps, scheduling conflicts (Req 22)
+
+**Technology**: Rule-based analysis engine running on booking changes
+
+**Interfaces**:
+```typescript
+// GET /api/trips/:tripId/gaps
+interface GapAnalysisResponse {
+  gaps: GapAlert[];
+  itineraryComplete: boolean;  // true if all gaps resolved/dismissed
+}
+
+interface GapAlert {
+  id: string;
+  type: 'missing_accommodation' | 'missing_transportation' | 'scheduling_conflict';
+  date: string;
+  description: string;
+  suggestedAction: string;
+  dismissed: boolean;
+}
+
+// POST /api/trips/:tripId/gaps/:gapId/dismiss
+// Dismissed gaps don't reappear unless underlying data changes
+```
+
+**Detection Rules**:
+1. **Missing Accommodation**: For each night within trip dates, check if a hotel booking covers that night. Exclude arrival/departure days if same-day travel.
+2. **Missing Transportation**: If consecutive-day bookings are at different locations (>50km apart), check for connecting flight, car rental, or manually added transport event.
+3. **Scheduling Conflict**: If two events have overlapping time ranges on the same day.
+4. **Unplanned Arrival**: If a flight/car arrives at a destination with no subsequent activity or accommodation that day.
+
+**Trigger**: Re-analysis within 30 seconds of any booking add/remove/modify via SQS message.
+
+### Check-in Service
+
+**Responsibility**: Facilitate airline web check-in from within the app (Req 19)
+
+**Interfaces**:
+```typescript
+// GET /api/bookings/:bookingId/checkin-status
+interface CheckinStatus {
+  available: boolean;
+  windowOpens: string;      // ISO datetime
+  windowCloses: string;     // ISO datetime
+  timeUntilOpen?: string;   // "3h 45m" if before window
+  checkinUrl: string;       // Airline check-in URL
+  prefillSupported: boolean;
+  checkedIn: boolean;
+}
+
+// POST /api/bookings/:bookingId/checkin/complete
+interface MarkCheckedInRequest {
+  boardingPassDocumentId?: string;
+}
+```
+
+**URL Construction**: Maintain a lookup table of airline IATA codes → check-in URL templates. For supported airlines (Delta, United, AA, Southwest, BA, Lufthansa, Air France, Emirates), construct URLs with booking reference and last name. For unsupported airlines, open generic check-in page.
+
+### Document Store
+
+**Responsibility**: File upload, categorization, offline availability (Req 16)
+
+**Technology**: AWS S3 for storage, CloudFront for delivery
+
+**Interfaces**:
+```typescript
+// POST /api/documents/upload
+interface UploadDocumentRequest {
+  file: Buffer;             // PDF, JPEG, PNG, HEIC; max 25MB
+  tripId: string;
+  bookingId?: string;
+  category: 'boarding_pass' | 'confirmation' | 'voucher' | 'visa' | 'insurance';
+}
+
+// GET /api/trips/:tripId/documents
+interface DocumentListResponse {
+  documents: Document[];    // max 100 per trip
+  count: number;
+}
+```
+
+### Social Sharing Service
+
+**Responsibility**: Create and share trip highlights to social platforms (Req 23)
+
+**Interfaces**:
+```typescript
+// POST /api/trips/:tripId/highlights
+interface CreateHighlightRequest {
+  photoIds: string[];       // from device gallery or Document_Store
+  caption: string;          // max 500 chars
+  tagTripName: boolean;
+  tagDestinations: boolean;
+  includeStats: boolean;
+  layout: 'single' | 'carousel' | 'collage';
+}
+
+// POST /api/trips/:tripId/highlights/:highlightId/share
+interface ShareHighlightRequest {
+  platform: 'instagram' | 'facebook' | 'twitter' | 'whatsapp';
+}
+
+// POST /api/trips/:tripId/highlights/:highlightId/draft
+// Save as draft for later posting
+```
+
+### Preference Engine
+
+**Responsibility**: Store and apply user preferences across the application (Req 20)
+
+**Interfaces**:
+```typescript
+// PUT /api/users/:userId/preferences
+interface UserPreferences {
+  interests: InterestCategory[];
+  dietaryPreferences: DietaryPreference[];
+  allergies: (KnownAllergy | string)[];  // string for custom, max 50 chars each
+  language: string;         // ISO 639-1 code
+  displayCurrencies: string[];  // ISO 4217 codes, first = default
+}
+
+type InterestCategory = 'history' | 'culture' | 'art' | 'architecture' |
+  'nature' | 'adventure' | 'nightlife' | 'shopping' | 'sports' |
+  'wellness' | 'music' | 'photography';
+
+type DietaryPreference = 'vegan' | 'vegetarian' | 'lacto_vegetarian' | 'jain' |
+  'pescatarian' | 'halal' | 'kosher' | 'gluten_free' | 'dairy_free' |
+  'nut_free' | 'no_preference';
+
+type KnownAllergy = 'gluten' | 'peanuts' | 'tree_nuts' | 'dairy' | 'eggs' |
+  'shellfish' | 'soy' | 'wheat' | 'fish' | 'sesame';
+```
+
+## Data Models
+
+### Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    USER ||--o{ TRIP : creates
+    USER ||--o{ USER_PREFERENCE : has
+    USER ||--o{ FAVORITE : saves
+    USER ||--o{ EXPENSE : records
+    USER ||--o{ DOCUMENT : uploads
+    USER ||--o{ NOTIFICATION_PREFERENCE : configures
+
+    TRIP ||--o{ BOOKING : contains
+    TRIP ||--o{ TRIP_MEMBER : "shared with"
+    TRIP ||--o{ FAVORITE : "associated with"
+    TRIP ||--o{ TIMELINE_EVENT : contains
+    TRIP ||--o{ EXPENSE : "incurred during"
+    TRIP ||--o{ DOCUMENT : stores
+    TRIP ||--o{ GAP_ALERT : "detected in"
+    TRIP ||--o{ EXPENSE_GROUP : "has group"
+    TRIP ||--o{ ACTIVITY_FEED : "logs activity"
+    TRIP ||--o{ HIGHLIGHT : "has highlights"
+
+    BOOKING ||--o{ DOCUMENT : "has attachments"
+    BOOKING ||--o{ SCHEDULED_NOTIFICATION : triggers
+    BOOKING ||--o{ EXPENSE : "linked to"
+
+    EXPENSE_GROUP ||--o{ GROUP_MEMBER : contains
+    EXPENSE ||--o{ EXPENSE_SPLIT : "split among"
+
+    FAVORITE ||--o{ COLLECTION : "organized in"
+    FAVORITE ||--o{ VOTE : "voted on"
+
+    TIMELINE_EVENT ||--o{ VOTE : "voted on"
+```
+
+### Core Tables (PostgreSQL Schema)
+
+```sql
+-- Users & Authentication
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    cognito_sub VARCHAR(255) UNIQUE NOT NULL,
+    display_name VARCHAR(100) NOT NULL,
+    avatar_url TEXT,
+    email_verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE user_preferences (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    interests TEXT[] DEFAULT '{}',
+    dietary_preferences TEXT[] DEFAULT '{}',
+    allergies TEXT[] DEFAULT '{}',
+    language VARCHAR(10) DEFAULT 'en',
+    display_currencies TEXT[] DEFAULT '{USD}',
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Trips
+CREATE TABLE trips (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    start_date DATE,
+    end_date DATE,
+    budget DECIMAL(12, 2),
+    budget_currency VARCHAR(3),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT valid_date_range CHECK (end_date IS NULL OR start_date IS NULL OR end_date >= start_date)
+);
+
+CREATE TABLE trip_members (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    email VARCHAR(255),
+    access_level VARCHAR(10) NOT NULL CHECK (access_level IN ('view', 'edit')),
+    invited_at TIMESTAMPTZ DEFAULT NOW(),
+    accepted_at TIMESTAMPTZ,
+    UNIQUE (trip_id, user_id),
+    UNIQUE (trip_id, email)
+);
+
+-- Bookings
+CREATE TABLE bookings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    trip_id UUID REFERENCES trips(id) ON DELETE SET NULL,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('flight', 'hotel', 'car_rental')),
+    source VARCHAR(20) NOT NULL DEFAULT 'manual' CHECK (source IN ('email', 'manual')),
+    source_email_id TEXT,
+    checked_in BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE flight_details (
+    booking_id UUID PRIMARY KEY REFERENCES bookings(id) ON DELETE CASCADE,
+    airline VARCHAR(100),
+    flight_number VARCHAR(20),
+    departure_airport VARCHAR(10),
+    arrival_airport VARCHAR(10),
+    departure_time TIMESTAMPTZ,
+    arrival_time TIMESTAMPTZ,
+    departure_lat DECIMAL(9, 6),
+    departure_lng DECIMAL(9, 6),
+    arrival_lat DECIMAL(9, 6),
+    arrival_lng DECIMAL(9, 6),
+    checkin_window_opens TIMESTAMPTZ,
+    checkin_window_closes TIMESTAMPTZ
+);
+
+CREATE TABLE hotel_details (
+    booking_id UUID PRIMARY KEY REFERENCES bookings(id) ON DELETE CASCADE,
+    hotel_name VARCHAR(200),
+    address TEXT,
+    checkin_date DATE,
+    checkout_date DATE,
+    latitude DECIMAL(9, 6),
+    longitude DECIMAL(9, 6),
+    confirmation_number VARCHAR(100)
+);
+
+CREATE TABLE car_rental_details (
+    booking_id UUID PRIMARY KEY REFERENCES bookings(id) ON DELETE CASCADE,
+    company VARCHAR(100),
+    vehicle_type VARCHAR(100),
+    pickup_location TEXT,
+    return_location TEXT,
+    pickup_time TIMESTAMPTZ,
+    return_time TIMESTAMPTZ,
+    pickup_lat DECIMAL(9, 6),
+    pickup_lng DECIMAL(9, 6),
+    return_lat DECIMAL(9, 6),
+    return_lng DECIMAL(9, 6),
+    confirmation_number VARCHAR(100)
+);
+```
+
+```sql
+-- Favorites & Collections
+CREATE TABLE favorites (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    trip_id UUID REFERENCES trips(id) ON DELETE SET NULL,
+    name VARCHAR(200) NOT NULL,
+    category VARCHAR(50),
+    place_id VARCHAR(255),         -- Google Places ID
+    location_lat DECIMAL(9, 6),
+    location_lng DECIMAL(9, 6),
+    rating DECIMAL(2, 1),
+    notes TEXT CHECK (char_length(notes) <= 1000),
+    added_by UUID REFERENCES users(id),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE collections (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(50) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE favorite_collections (
+    favorite_id UUID REFERENCES favorites(id) ON DELETE CASCADE,
+    collection_id UUID REFERENCES collections(id) ON DELETE CASCADE,
+    PRIMARY KEY (favorite_id, collection_id)
+);
+
+-- Timeline Events
+CREATE TABLE timeline_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+    title VARCHAR(100) NOT NULL,
+    event_time TIMESTAMPTZ,
+    all_day BOOLEAN DEFAULT FALSE,
+    location TEXT,
+    notes TEXT CHECK (char_length(notes) <= 500),
+    event_type VARCHAR(20) DEFAULT 'custom',
+    added_by UUID REFERENCES users(id),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Voting (for collaborative planning)
+CREATE TABLE votes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    entity_type VARCHAR(20) NOT NULL CHECK (entity_type IN ('favorite', 'timeline_event')),
+    entity_id UUID NOT NULL,
+    vote_value SMALLINT NOT NULL CHECK (vote_value IN (-1, 1)),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (user_id, entity_type, entity_id)
+);
+
+-- Expenses
+CREATE TABLE expenses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    trip_id UUID REFERENCES trips(id) ON DELETE SET NULL,
+    booking_id UUID REFERENCES bookings(id) ON DELETE SET NULL,
+    amount DECIMAL(12, 2) NOT NULL CHECK (amount >= 0.01 AND amount <= 999999999.99),
+    currency VARCHAR(3) NOT NULL,
+    converted_amount DECIMAL(12, 2),
+    converted_currency VARCHAR(3),
+    date DATE NOT NULL,
+    category VARCHAR(30) NOT NULL,
+    merchant_name VARCHAR(200),
+    notes TEXT CHECK (char_length(notes) <= 500),
+    receipt_document_id UUID,
+    is_shared BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Group Expense Splitting
+CREATE TABLE expense_groups (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE group_members (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    group_id UUID NOT NULL REFERENCES expense_groups(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    name VARCHAR(100) NOT NULL,
+    home_currency VARCHAR(3) DEFAULT 'USD',
+    UNIQUE (group_id, user_id)
+);
+
+CREATE TABLE expense_splits (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    expense_id UUID NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
+    member_id UUID NOT NULL REFERENCES group_members(id) ON DELETE CASCADE,
+    split_type VARCHAR(20) NOT NULL CHECK (split_type IN ('equal', 'percentage', 'per_item')),
+    percentage DECIMAL(5, 2),
+    amount DECIMAL(12, 2),
+    items TEXT[],
+    UNIQUE (expense_id, member_id)
+);
+
+CREATE TABLE settlements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    group_id UUID NOT NULL REFERENCES expense_groups(id) ON DELETE CASCADE,
+    from_member_id UUID NOT NULL REFERENCES group_members(id),
+    to_member_id UUID NOT NULL REFERENCES group_members(id),
+    amount DECIMAL(12, 2) NOT NULL,
+    currency VARCHAR(3) NOT NULL,
+    settled BOOLEAN DEFAULT FALSE,
+    settled_at TIMESTAMPTZ
+);
+```
+
+```sql
+-- Documents
+CREATE TABLE documents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    trip_id UUID REFERENCES trips(id) ON DELETE SET NULL,
+    booking_id UUID REFERENCES bookings(id) ON DELETE SET NULL,
+    category VARCHAR(20) NOT NULL CHECK (category IN ('boarding_pass', 'confirmation', 'voucher', 'visa', 'insurance')),
+    file_name VARCHAR(255) NOT NULL,
+    file_size INTEGER NOT NULL CHECK (file_size <= 26214400),  -- 25MB
+    mime_type VARCHAR(50) NOT NULL,
+    s3_key TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Notifications
+CREATE TABLE scheduled_notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    booking_id UUID REFERENCES bookings(id) ON DELETE CASCADE,
+    type VARCHAR(30) NOT NULL,
+    fire_at TIMESTAMPTZ NOT NULL,
+    fired BOOLEAN DEFAULT FALSE,
+    payload JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE notification_preferences (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    flight_reminder_offset INTEGER DEFAULT 1440,  -- minutes
+    hotel_reminder_time VARCHAR(5) DEFAULT '08:00',
+    car_reminder_offset INTEGER DEFAULT 120,
+    push_enabled BOOLEAN DEFAULT TRUE,
+    email_enabled BOOLEAN DEFAULT FALSE
+);
+
+-- Gap Alerts
+CREATE TABLE gap_alerts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+    type VARCHAR(30) NOT NULL,
+    date DATE NOT NULL,
+    description TEXT NOT NULL,
+    suggested_action TEXT NOT NULL,
+    dismissed BOOLEAN DEFAULT FALSE,
+    data_hash VARCHAR(64),  -- hash of underlying data, used to detect if gap should reappear
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Activity Feed
+CREATE TABLE activity_feed (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id),
+    action VARCHAR(50) NOT NULL,
+    entity_type VARCHAR(30) NOT NULL,
+    entity_id UUID,
+    metadata JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Share Links
+CREATE TABLE share_links (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+    token VARCHAR(64) UNIQUE NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Social Highlights
+CREATE TABLE highlights (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    caption TEXT CHECK (char_length(caption) <= 500),
+    layout VARCHAR(20) NOT NULL CHECK (layout IN ('single', 'carousel', 'collage')),
+    photo_ids TEXT[] NOT NULL,
+    include_stats BOOLEAN DEFAULT FALSE,
+    tag_trip_name BOOLEAN DEFAULT FALSE,
+    tag_destinations BOOLEAN DEFAULT FALSE,
+    is_draft BOOLEAN DEFAULT TRUE,
+    shared_at TIMESTAMPTZ,
+    platform VARCHAR(20),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Email Integration
+CREATE TABLE email_connections (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    provider VARCHAR(10) NOT NULL CHECK (provider IN ('gmail', 'outlook')),
+    access_token_encrypted TEXT NOT NULL,
+    refresh_token_encrypted TEXT NOT NULL,
+    last_sync_at TIMESTAMPTZ,
+    connected_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (user_id, provider)
+);
+```
+
+### Indexing Strategy
+
+```sql
+-- Performance-critical indexes
+CREATE INDEX idx_bookings_user_trip ON bookings(user_id, trip_id);
+CREATE INDEX idx_bookings_type_dates ON bookings(type, created_at);
+CREATE INDEX idx_trips_owner_dates ON trips(owner_id, start_date);
+CREATE INDEX idx_expenses_trip_date ON expenses(trip_id, date);
+CREATE INDEX idx_expenses_user_category ON expenses(user_id, category);
+CREATE INDEX idx_favorites_user_trip ON favorites(user_id, trip_id);
+CREATE INDEX idx_timeline_events_trip ON timeline_events(trip_id, event_time);
+CREATE INDEX idx_scheduled_notifications_fire ON scheduled_notifications(fire_at) WHERE fired = FALSE;
+CREATE INDEX idx_activity_feed_trip ON activity_feed(trip_id, created_at DESC);
+CREATE INDEX idx_gap_alerts_trip ON gap_alerts(trip_id) WHERE dismissed = FALSE;
+CREATE INDEX idx_documents_trip ON documents(trip_id);
+CREATE INDEX idx_trip_members_user ON trip_members(user_id);
+```
+
+## Correctness Properties
+
+*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+
+### Property 1: Registration Input Validation
+
+*For any* string, the password validation function SHALL accept it if and only if it has length between 8 and 128 characters AND contains at least one uppercase letter, one lowercase letter, and one digit. All other strings SHALL be rejected.
+
+**Validates: Requirements 1.1, 1.8**
+
+### Property 2: Account Lockout State Machine
+
+*For any* sequence of login attempts (success or failure) for a given account, the account SHALL be locked if and only if the most recent 3 consecutive attempts were all failures without an intervening success. A successful login at any point resets the failure counter.
+
+**Validates: Requirements 1.4**
+
+### Property 3: Booking Deduplication
+
+*For any* two bookings, the deduplication function SHALL identify them as duplicates if and only if they match on the type-specific key: (flight number AND date) for flights, (hotel name AND check-in date AND check-out date) for hotels, or (rental company AND pickup date AND return date) for car rentals.
+
+**Validates: Requirements 2.8**
+
+### Property 4: Booking Status Calculation
+
+*For any* booking with a start datetime and end datetime, and any current datetime, the status function SHALL return "upcoming" if current < start, "in-progress" if start <= current <= end, and "completed" if current > end.
+
+**Validates: Requirements 3.3**
+
+### Property 5: Trip Date Range Validation
+
+*For any* pair of dates (start, end), the trip date validator SHALL accept the pair if and only if end >= start. Additionally, for any event time and trip date range, the event time validator SHALL accept the event if and only if the event time falls within [start, end] inclusive.
+
+**Validates: Requirements 4.6, 8.8**
+
+### Property 6: POI Distance Filtering
+
+*For any* set of points of interest with known coordinates, a center point, and a radius between 1 and 50 km, the distance filter SHALL return exactly those POIs whose haversine distance from the center is less than or equal to the specified radius.
+
+**Validates: Requirements 5.5**
+
+### Property 7: Multi-Criteria Search Filtering
+
+*For any* set of search results and any combination of active filters (category, price range, minimum rating, maximum distance), the filter function SHALL return only results that satisfy ALL active filter criteria simultaneously. The result set SHALL be a subset of the input set.
+
+**Validates: Requirements 6.5**
+
+### Property 8: Currency Conversion Correctness
+
+*For any* positive amount, source currency, target currency, and exchange rate, the conversion function SHALL produce a result equal to amount × rate rounded to exactly 2 decimal places. The result SHALL always be a positive number when the input is positive.
+
+**Validates: Requirements 14.1**
+
+### Property 9: Expense Aggregation Invariant
+
+*For any* list of expenses with categories, the expense summary function SHALL produce category subtotals that sum to the grand total. That is: sum(subtotal for each category) = grand total, and each category subtotal = sum(amounts of expenses in that category).
+
+**Validates: Requirements 18.7**
+
+### Property 10: Budget Threshold Detection
+
+*For any* budget amount and sequence of expense additions/deletions, the budget threshold function SHALL fire the 80% alert if and only if the cumulative total crosses 80% of the budget from below, and the 100% alert if and only if it crosses 100% from below. Re-crossing after dropping below SHALL trigger a new alert.
+
+**Validates: Requirements 18.11, 18.12**
+
+### Property 11: Equal Expense Split Conservation
+
+*For any* positive expense amount and group of N members (N >= 2), an equal split SHALL assign each member an amount such that the sum of all member amounts equals the original expense amount (within 1 cent tolerance for rounding). For percentage-based splits, the percentages SHALL sum to exactly 100.
+
+**Validates: Requirements 21.2, 21.7**
+
+### Property 12: Group Balance Zero-Sum
+
+*For any* group with a set of shared expenses and their splits, the sum of all net balances across all group members SHALL equal zero. That is, total amount owed equals total amount to be received.
+
+**Validates: Requirements 21.5**
+
+### Property 13: Accommodation Gap Detection
+
+*For any* trip with a defined date range and a set of hotel bookings, the gap detector SHALL report a missing accommodation gap for each night within the trip dates that is not covered by any hotel booking's check-in to check-out range.
+
+**Validates: Requirements 22.1**
+
+### Property 14: Scheduling Conflict Detection
+
+*For any* set of events on the same day with defined start and end times, the conflict detector SHALL identify a conflict if and only if two or more events have overlapping time intervals (where overlap means event1.start < event2.end AND event2.start < event1.end).
+
+**Validates: Requirements 22.3**
+
+### Property 15: Notification Rescheduling
+
+*For any* booking time change and user notification offset, the rescheduled notification fire time SHALL equal the new event time minus the user's configured offset. If the computed fire time is in the past, the notification SHALL be scheduled within 5 minutes of the current time.
+
+**Validates: Requirements 10.5, 10.7**
+
+### Property 16: Conflict Resolution (Last Write Wins)
+
+*For any* two conflicting changes to the same entity with different timestamps, the sync engine SHALL select the change with the later timestamp as the winning version. The losing change SHALL be preserved for user notification but not applied.
+
+**Validates: Requirements 17.7, 13.5**
+
+### Property 17: Social Share Data Leakage Prevention
+
+*For any* booking with personal details (confirmation numbers, addresses, flight numbers) and any user-provided caption, the generated share content SHALL not contain any of those personal details unless the exact detail string appears within the user's caption text.
+
+**Validates: Requirements 23.8**
+
+## Error Handling
+
+### Error Response Format
+
+All API errors follow a consistent JSON structure:
+
+```typescript
+interface APIError {
+  statusCode: number;
+  error: string;           // Machine-readable error code
+  message: string;         // Human-readable message
+  details?: Record<string, string[]>;  // Field-level validation errors
+  requestId: string;       // For support/debugging
+}
+```
+
+### Error Categories and Strategies
+
+| Category | HTTP Code | Strategy | Example |
+|----------|-----------|----------|---------|
+| Validation | 400 | Return all field errors at once | Invalid password format |
+| Authentication | 401 | Clear token, redirect to login | Expired JWT |
+| Authorization | 403 | Display access denied message | Non-owner editing shared trip |
+| Not Found | 404 | Show helpful "not found" state | Deleted trip accessed via link |
+| Rate Limited | 429 | Exponential backoff with jitter | Too many API calls |
+| External Service | 502/503 | Retry with backoff, show cached data | Google Places API down |
+| Server Error | 500 | Log, alert, show generic error | Unexpected exception |
+
+### External Service Failure Handling
+
+| Service | Failure Mode | Fallback |
+|---------|-------------|----------|
+| Google Places API | Timeout/5xx | Show cached POIs, display "data may be outdated" |
+| Open Exchange Rates | Timeout/5xx | Use last cached rates, mark as stale |
+| OpenWeatherMap | Timeout/5xx | Show "forecast unavailable" message |
+| AWS Textract | Timeout/5xx | Prompt user to retry or enter manually |
+| AWS Comprehend | Timeout/5xx | Queue email for retry, notify user of delay |
+| FCM/APNs | Delivery failure | Retry 3x with backoff, fall back to in-app notification |
+| Airline check-in URLs | Page unavailable | Show generic check-in page with booking reference |
+
+### Client-Side Error Handling
+
+- **Network errors**: Show offline indicator, queue operations for retry
+- **Timeout (>10s)**: Show loading state, offer cancel/retry
+- **Optimistic updates**: Apply change immediately to UI, revert on server error with toast notification
+- **Form validation**: Validate on blur and on submit, show inline error messages per field
+- **File upload failures**: Retry up to 3 times with exponential backoff, then show error with retry button
+
+### Retry Strategy
+
+```typescript
+interface RetryConfig {
+  maxRetries: 3;
+  initialDelay: 1000;     // ms
+  maxDelay: 30000;        // ms
+  backoffMultiplier: 2;
+  jitter: true;           // Add random jitter to prevent thundering herd
+  retryableStatuses: [408, 429, 500, 502, 503, 504];
+}
+```
+
+## Testing Strategy
+
+### Overview
+
+The testing strategy uses a dual approach combining example-based unit tests with property-based tests (PBT) for comprehensive coverage. The application's pure logic layers (validation, computation, filtering, aggregation) are well-suited to PBT, while integration points and UI behavior use example-based and end-to-end testing.
+
+### Testing Pyramid
+
+```
+         ┌─────────────┐
+         │   E2E Tests  │  Cypress (web), Detox (mobile)
+         │   ~50 tests  │  Critical user flows
+         ├─────────────┤
+         │ Integration  │  Supertest + test DB
+         │  ~200 tests  │  API endpoints, service interactions
+         ├─────────────┤
+         │Property-Based│  fast-check (TypeScript)
+         │  ~17 props   │  100+ iterations each
+         ├─────────────┤
+         │  Unit Tests  │  Vitest
+         │  ~500 tests  │  Components, utils, edge cases
+         └─────────────┘
+```
+
+### Property-Based Testing Configuration
+
+**Library**: [fast-check](https://github.com/dubzzz/fast-check) (TypeScript PBT library)
+
+**Configuration**:
+- Minimum 100 iterations per property test
+- Seed-based reproducibility for CI
+- Shrinking enabled for minimal failing examples
+
+**Each property test must reference its design document property:**
+```typescript
+// Feature: travel-companion, Property 4: Booking Status Calculation
+test.prop('booking status is deterministic for any timestamps', [
+  fc.date(), fc.date(), fc.date()
+], (current, start, end) => {
+  // ... property assertion
+});
+```
+
+**Tag format**: `Feature: travel-companion, Property {number}: {property_text}`
+
+### Unit Testing
+
+**Framework**: Vitest (fast, ESM-native, compatible with the monorepo)
+
+**Focus areas for unit tests**:
+- Component rendering (React Testing Library)
+- Edge cases in validation (boundary values: exactly 8 chars, exactly 128 chars)
+- Error state rendering
+- Utility function correctness with specific examples
+- Mocked service responses
+
+### Integration Testing
+
+**Framework**: Supertest (API testing) + PostgreSQL test container
+
+**Focus areas**:
+- Full API request/response cycles
+- Database transaction correctness
+- Authentication flow (register → verify → login → access)
+- WebSocket collaboration events
+- Email processing pipeline (mock email → extracted booking)
+- File upload/download cycle
+- Cross-service interactions (expense → currency conversion → budget alert)
+
+### End-to-End Testing
+
+**Framework**: Cypress (web), Detox (React Native)
+
+**Critical flows to cover**:
+1. Registration → email verification → login → create trip
+2. Connect email → booking extraction → dashboard display
+3. AI search → save favorite → add to timeline → view on map
+4. Scan receipt → expense created → budget alert triggered
+5. Share trip → collaborator joins → adds event → activity feed updates
+6. Offline mode → add notes → reconnect → sync
+7. Flight check-in flow (mock airline page)
+
+### Test Organization
+
+```
+packages/
+├── shared/
+│   └── src/
+│       └── __tests__/
+│           ├── properties/       # Property-based tests (fast-check)
+│           │   ├── validation.property.test.ts
+│           │   ├── booking-status.property.test.ts
+│           │   ├── currency.property.test.ts
+│           │   ├── expense-split.property.test.ts
+│           │   ├── gap-detection.property.test.ts
+│           │   └── filtering.property.test.ts
+│           └── unit/             # Unit tests (vitest)
+│               ├── validators.test.ts
+│               └── utils.test.ts
+├── api/
+│   └── src/
+│       └── __tests__/
+│           ├── integration/      # API integration tests
+│           └── services/         # Service unit tests
+├── mobile/
+│   └── __tests__/
+│       └── e2e/                  # Detox E2E tests
+└── web/
+    └── __tests__/
+        ├── components/           # Component unit tests
+        └── e2e/                  # Cypress E2E tests
+```
+
+### CI Pipeline
+
+```yaml
+# Runs on every PR
+test:
+  - lint (ESLint + Prettier)
+  - type-check (TypeScript)
+  - unit tests (Vitest, all packages)
+  - property tests (fast-check, 100 iterations)
+  - integration tests (API + test DB)
+  - build verification
+
+# Runs on merge to main
+deploy-staging:
+  - all of the above
+  - E2E tests (Cypress against staging)
+  - Performance benchmarks
+  - Security scan (Snyk)
+```

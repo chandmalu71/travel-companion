@@ -1,0 +1,21 @@
+{
+  "name": "@travel-companion/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "React Native mobile application (iOS + Android)",
+  "scripts": {
+    "start": "react-native start",
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "test:ci": "jest --coverage",
+    "clean": "rm -rf build"
+  },
+  "dependencies": {
+    "@travel-companion/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

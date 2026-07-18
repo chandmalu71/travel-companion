@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "jsx": "preserve",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "plugins": [{ "name": "next" }]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "next-env.d.ts"],
+  "exclude": ["node_modules", ".next", "out", "**/*.test.ts", "**/*.test.tsx"],
+  "references": [{ "path": "../shared" }]
+}

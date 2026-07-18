@@ -1,0 +1,817 @@
+{
+  "pbtResults": {
+    "2.4 Write property test for account lockout state machine": {
+      "status": "passed",
+      "lastRunTimestamp": 1784342148040
+    },
+    "4.4 Write property test for booking status calculation": {
+      "status": "passed",
+      "lastRunTimestamp": 1784343653904
+    },
+    "4.2 Write property test for trip date range validation": {
+      "status": "passed",
+      "lastRunTimestamp": 1784343787471
+    },
+    "6.2 Write property test for POI distance filtering": {
+      "status": "passed",
+      "lastRunTimestamp": 1784348376156
+    },
+    "6.4 Write property test for multi-criteria search filtering": {
+      "status": "passed",
+      "lastRunTimestamp": 1784348808724
+    },
+    "9.3 Write property test for notification rescheduling": {
+      "status": "passed",
+      "lastRunTimestamp": 1784349469474
+    },
+    "5.5 Write property test for booking deduplication": {
+      "status": "passed",
+      "lastRunTimestamp": 1784349493620
+    },
+    "10.4 Write property test for conflict resolution": {
+      "status": "passed",
+      "lastRunTimestamp": 1784350801051
+    }
+  },
+  "executionHistory": {
+    "1.1 Initialize pnpm monorepo with workspace configuration": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326361664
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326374717
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784338929473
+      }
+    ],
+    "1.2 Create shared package with core TypeScript interfaces and Zod schemas": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326361890
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784338934037
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784339708749
+      }
+    ],
+    "1.3 Create API package with Fastify server skeleton": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326361926
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784338934733
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784339709710
+      }
+    ],
+    "1.4 Set up database connection and migration framework": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326361968
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784339714895
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784340374316
+      }
+    ],
+    "1.5 Create second database migration for supporting tables": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326362011
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784340379601
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784340636110
+      }
+    ],
+    "1.6 Set up Redis connection and session management": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326362070
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784339715497
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784340374868
+      }
+    ],
+    "2.1 Implement registration and login routes": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326362132
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784340645059
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784341711832
+      }
+    ],
+    "2.2 Implement account lockout mechanism": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326362164
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784340645676
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784341712573
+      }
+    ],
+    "2.3 Write property test for password validation": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326362420
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784341717699
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784342310831
+      }
+    ],
+    "2.4 Write property test for account lockout state machine": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326362482
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784341718417
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784342311587
+      }
+    ],
+    "2.5 Implement auth middleware and session validation": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326362541
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784341719024
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784342310251
+      }
+    ],
+    "3. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326362596
+      }
+    ],
+    "4.1 Implement trip CRUD routes": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326362673
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784342321709
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784343526097
+      }
+    ],
+    "4.2 Write property test for trip date range validation": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326362704
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784343532297
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784344524943
+      }
+    ],
+    "4.3 Implement booking CRUD routes": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326362873
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784342322441
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784343526623
+      }
+    ],
+    "4.4 Write property test for booking status calculation": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326362914
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784343532986
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784344525343
+      }
+    ],
+    "4.5 Implement trip dashboard endpoint": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326362960
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784343533736
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784344526226
+      }
+    ],
+    "4.6 Implement favorites and collections routes": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363001
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784343534437
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784344526827
+      }
+    ],
+    "5.1 Implement email connection and OAuth flow": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363030
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784344543988
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784346014435
+      }
+    ],
+    "5.2 Implement email parsing service with AWS Comprehend": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363064
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784346026555
+      },
+      {
+        "executionId": "5cf89f2c-e664-4e2b-98cb-aac8cb34b2b9",
+        "chatSessionId": "sess_74b56f6e-142d-402e-a47d-0d6dcd3b4271",
+        "timestamp": 1784347737427
+      },
+      {
+        "executionId": "5cf89f2c-e664-4e2b-98cb-aac8cb34b2b9",
+        "chatSessionId": "sess_74b56f6e-142d-402e-a47d-0d6dcd3b4271",
+        "timestamp": 1784347857212
+      }
+    ],
+    "5.3 Implement email polling and webhook ingestion": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363092
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784346029495
+      }
+    ],
+    "5.4 Implement booking deduplication logic": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363132
+      }
+    ],
+    "5.5 Write property test for booking deduplication": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363175
+      }
+    ],
+    "6.1 Implement POI engine with Google Places API": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363214
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784344544688
+      }
+    ],
+    "6.2 Write property test for POI distance filtering": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363248
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784346027323
+      }
+    ],
+    "6.3 Implement AI search service with AWS Bedrock": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363281
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784346028133
+      }
+    ],
+    "6.4 Write property test for multi-criteria search filtering": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363326
+      }
+    ],
+    "7. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363360
+      }
+    ],
+    "8.1 Implement timeline event routes": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363393
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784344545414
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784346014402
+      }
+    ],
+    "8.2 Implement map data endpoint": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363438
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784344546041
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784346014330
+      }
+    ],
+    "8.3 Implement voting system for collaborative planning": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363466
+      },
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784346028745
+      }
+    ],
+    "9.1 Implement notification scheduling engine": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363500
+      }
+    ],
+    "9.2 Implement notification delivery worker": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363533
+      }
+    ],
+    "9.3 Write property test for notification rescheduling": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363565
+      }
+    ],
+    "10.1 Implement trip sharing routes": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363606
+      }
+    ],
+    "10.2 Implement real-time collaboration with Socket.io": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363655
+      }
+    ],
+    "10.3 Implement activity feed": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363737
+      }
+    ],
+    "10.4 Write property test for conflict resolution": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363775
+      }
+    ],
+    "11.1 Implement server-side sync protocol": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363809
+      }
+    ],
+    "11.2 Implement shared package sync utilities": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363850
+      }
+    ],
+    "12. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363890
+      }
+    ],
+    "13.1 Implement currency service": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363917
+      }
+    ],
+    "13.2 Write property test for currency conversion": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326363959
+      }
+    ],
+    "13.3 Implement weather service": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364106
+      }
+    ],
+    "14.1 Implement expense CRUD routes": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364146
+      }
+    ],
+    "14.2 Implement receipt scanning with AWS Textract": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364176
+      }
+    ],
+    "14.3 Implement budget tracking and threshold alerts": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364208
+      }
+    ],
+    "14.4 Write property test for expense aggregation": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364251
+      }
+    ],
+    "14.5 Write property test for budget threshold detection": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364283
+      }
+    ],
+    "14.6 Implement expense export": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364334
+      }
+    ],
+    "14.7 Implement daily expense breakdown for timeline": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364365
+      }
+    ],
+    "15. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364398
+      }
+    ],
+    "16.1 Implement check-in status and URL construction": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364428
+      }
+    ],
+    "16.2 Implement check-in notifications and completion flow": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364460
+      }
+    ],
+    "17.1 Implement preferences CRUD": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364497
+      }
+    ],
+    "17.2 Wire preferences into AI search and POI results": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364530
+      }
+    ],
+    "18.1 Implement group expense splitter routes": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364567
+      }
+    ],
+    "18.2 Write property test for equal expense split conservation": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364608
+      }
+    ],
+    "18.3 Write property test for group balance zero-sum": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364645
+      }
+    ],
+    "19.1 Implement gap detector service": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364774
+      }
+    ],
+    "19.2 Write property test for accommodation gap detection": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364801
+      }
+    ],
+    "19.3 Write property test for scheduling conflict detection": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364844
+      }
+    ],
+    "20.1 Implement social sharing service": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364884
+      }
+    ],
+    "20.2 Write property test for social share data leakage prevention": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364952
+      }
+    ],
+    "21.1 Implement document upload and management": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326364989
+      }
+    ],
+    "22. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326365039
+      }
+    ],
+    "23.1 Set up Next.js web application": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326365068
+      }
+    ],
+    "23.2 Implement web dashboard and trip views": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326365102
+      }
+    ],
+    "23.3 Implement web timeline and map views": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326365144
+      }
+    ],
+    "23.4 Implement web expense and search features": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326365182
+      }
+    ],
+    "24.1 Set up React Native mobile application": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326365231
+      }
+    ],
+    "24.2 Implement mobile dashboard and trip views": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326365273
+      }
+    ],
+    "24.3 Implement mobile map, camera, and sharing features": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326365300
+      }
+    ],
+    "25. Final checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784326365333
+      }
+    ],
+    "1. Project scaffolding and shared package setup": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784340636190
+      }
+    ],
+    "2. Authentication system": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784342311633
+      }
+    ],
+    "4. Trip and booking management": [
+      {
+        "executionId": "e84e9b55-ec99-40fe-8a81-0fa0ef2c4214",
+        "chatSessionId": "sess_6a1634cd-e649-467f-b51d-29a86fcada43",
+        "timestamp": 1784344527004
+      }
+    ]
+  }
+}

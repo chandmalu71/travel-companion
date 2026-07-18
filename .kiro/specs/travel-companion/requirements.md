@@ -1,0 +1,399 @@
+# Requirements Document
+
+## Introduction
+
+Travel Companion is a cross-platform application (web and mobile iOS/Android) that aggregates travel booking information into a unified view, provides AI-powered activity discovery, and enables collaborative trip planning. The application connects to user email inboxes or accepts forwarded confirmation emails to automatically extract itinerary details, organizes trips with timeline and map views, and supports offline access, multi-currency display, weather forecasts, document storage, and sharing capabilities.
+
+## Glossary
+
+- **Application**: The Travel Companion system across all platforms (web, iOS, Android)
+- **Trip**: A named collection of bookings, favorites, and points of interest grouped together by the user
+- **Booking**: A confirmed reservation for a flight, hotel, or car rental
+- **Itinerary_Extractor**: The subsystem responsible for parsing emails and extracting booking details
+- **POI_Engine**: The subsystem that discovers and presents points of interest near destinations
+- **AI_Search**: The AI-powered search subsystem that finds activities, restaurants, museums, outdoor activities, and events with personalization
+- **Timeline_View**: The interface component displaying trip events in chronological order
+- **Map_View**: The interface component displaying bookings and points of interest on a geographic map
+- **Notification_Service**: The subsystem responsible for sending reminders and alerts to users
+- **Document_Store**: The subsystem managing attached files such as boarding passes, confirmations, and vouchers
+- **Sync_Engine**: The subsystem responsible for caching data locally and synchronizing with the server
+- **Currency_Service**: The subsystem that converts and displays monetary amounts in multiple currencies
+- **Weather_Service**: The subsystem that retrieves weather forecast data for destinations
+- **Sharing_Service**: The subsystem enabling trip sharing and collaborative planning among multiple users
+- **Expense_Tracker**: The subsystem responsible for recording, categorizing, and summarizing travel expenses
+- **Receipt_Scanner**: The AI-powered subsystem that extracts expense details from photographed or uploaded receipts
+- **Auth_Service**: The subsystem managing user registration, login, and session management
+- **Checkin_Service**: The subsystem responsible for initiating and tracking airline check-in for flight bookings
+- **User**: A registered person who uses the Application
+- **Collaborator**: A User who has been granted access to contribute to another User's Trip
+- **Home_Currency**: One or more preferred currencies the User selects for cost display; the first currency in the list is used as the default
+- **Preference_Engine**: The subsystem responsible for storing and applying user preferences (interests, dietary restrictions, allergies, locale, and currency settings) across the Application
+- **Local_Currency**: The currency used at the travel destination
+- **Expense_Splitter**: The subsystem responsible for splitting expenses among group members, supporting percentage-based and per-item allocation
+- **Gap_Detector**: The subsystem responsible for analyzing trip itineraries to identify missing elements such as unbooked accommodations, transportation gaps, and scheduling conflicts
+- **Social_Sharing**: The subsystem enabling users to share trip highlights to social media platforms with curated photos and captions
+
+## Requirements
+
+### Requirement 1: User Authentication
+
+**User Story:** As a user, I want to create an account and log in securely, so that my travel data is private and accessible across devices.
+
+#### Acceptance Criteria
+
+1. THE Auth_Service SHALL allow users to register with a valid email address and a password between 8 and 128 characters containing at least one uppercase letter, one lowercase letter, and one digit
+2. THE Auth_Service SHALL support authentication via OAuth providers (Google, Apple, Yahoo, Amazon)
+3. WHEN a User logs in successfully, THE Auth_Service SHALL establish an authenticated session that remains valid for 30 days of inactivity and is accessible across web and mobile platforms
+4. IF a login attempt fails three consecutive times without an intervening successful login, THEN THE Auth_Service SHALL temporarily lock the account for 15 minutes and display a message indicating the lock duration and reason
+5. WHEN a User requests a password reset, THE Auth_Service SHALL send a reset link to the registered email within 60 seconds, and the link SHALL expire after 24 hours
+6. IF a User attempts to register with an email address already associated with an existing account, THEN THE Auth_Service SHALL reject the registration and indicate that the email is already in use
+7. WHEN a User completes registration, THE Auth_Service SHALL send a verification email, and THE Auth_Service SHALL require email verification before granting full account access
+8. IF a User submits a registration form with an invalid email format or a password that does not meet the stated requirements, THEN THE Auth_Service SHALL reject the submission and indicate which fields failed validation
+9. IF a User is already authenticated, THEN THE Application SHALL prevent the User from accessing the registration form
+
+### Requirement 2: Email Integration for Booking Extraction
+
+**User Story:** As a user, I want the app to automatically extract booking details from my emails, so that I don't have to manually enter travel information.
+
+#### Acceptance Criteria
+
+1. THE Itinerary_Extractor SHALL support direct inbox connection via Gmail API and Microsoft Outlook API
+2. THE Itinerary_Extractor SHALL support extraction from emails forwarded to a dedicated application email address
+3. WHEN a booking confirmation email is detected, THE Itinerary_Extractor SHALL extract flight details including airline, flight number, departure time, arrival time, departure airport, and arrival airport within 120 seconds of email receipt
+4. WHEN a hotel confirmation email is detected, THE Itinerary_Extractor SHALL extract hotel name, check-in date, check-out date, and address within 120 seconds of email receipt
+5. WHEN a car rental confirmation email is detected, THE Itinerary_Extractor SHALL extract rental company, pickup date, return date, pickup location, and return location within 120 seconds of email receipt
+6. IF the Itinerary_Extractor cannot parse a confirmation email, THEN THE Itinerary_Extractor SHALL notify the User with an in-app indicator identifying the unparsed email and providing an option to manually enter booking details
+7. WHEN a User connects a Gmail or Outlook inbox, THE Application SHALL scan emails received within the most recent 90 days, processing only booking confirmation emails without storing non-travel email content
+8. IF the Itinerary_Extractor extracts a booking that matches an existing Booking by flight number and date, hotel name and dates, or rental company and dates, THEN THE Itinerary_Extractor SHALL discard the duplicate and not create a new entry
+9. IF the Itinerary_Extractor extracts only a subset of required fields from a confirmation email, THEN THE Itinerary_Extractor SHALL create a partial Booking with available fields and flag the missing fields for the User to complete manually
+
+### Requirement 3: Unified Booking Dashboard
+
+**User Story:** As a user, I want to see all my bookings (flights, hotels, car rentals) in one view, so that I can quickly understand my travel plans.
+
+#### Acceptance Criteria
+
+1. THE Application SHALL display all bookings with a status of upcoming or in-progress in a single unified dashboard view, sorted by the earliest upcoming event date in ascending order
+2. THE Application SHALL categorize bookings by type: flights, hotels, and car rentals
+3. THE Application SHALL display booking status for each entry, determined as follows: a booking is "upcoming" if the current date-time is before the start date-time (departure, check-in, or pickup), "in-progress" if the current date-time is between the start and end date-time (arrival, check-out, or return), and "completed" if the current date-time is after the end date-time
+4. WHEN a booking is updated via email, THE Application SHALL reflect the updated details within 5 minutes
+5. THE Application SHALL allow Users to manually add bookings that were not extracted from email, requiring at minimum: booking type, and the type-specific fields defined for extracted bookings (airline, flight number, departure time, arrival time, departure airport, and arrival airport for flights; hotel name, check-in date, check-out date, and address for hotels; rental company, pickup date, return date, pickup location, and return location for car rentals)
+6. THE Application SHALL allow Users to view completed bookings through a filter or separate section within the dashboard
+
+### Requirement 4: Trip Organization
+
+**User Story:** As a user, I want to group my bookings and saved places into named trips, so that I can organize my travel plans logically.
+
+#### Acceptance Criteria
+
+1. THE Application SHALL allow Users to create named Trips with a name between 1 and 100 characters
+2. THE Application SHALL allow Users to assign Bookings to a Trip and to remove or reassign Bookings from one Trip to another
+3. THE Application SHALL allow Users to assign saved favorites and points of interest to a Trip and to remove them from a Trip
+4. WHEN a Booking is extracted from email, THE Application SHALL suggest existing Trips with matching destination or overlapping dates, or prompt the User to create a new Trip if no match is found
+5. THE Application SHALL allow Users to set start and end dates for each Trip
+6. IF a User sets an end date earlier than the start date, THEN THE Application SHALL reject the input and display an error message indicating the end date must be on or after the start date
+7. THE Application SHALL display Trips in chronological order by start date on the main dashboard, with Trips that have no dates set displayed after dated Trips
+8. WHEN a User deletes a Trip, THE Application SHALL unassign all associated Bookings, favorites, and points of interest from that Trip without deleting those items
+
+### Requirement 5: Points of Interest Discovery
+
+**User Story:** As a user, I want to discover interesting places near my travel destinations, so that I can plan activities during my trip.
+
+#### Acceptance Criteria
+
+1. WHEN a User views a destination within a Trip, THE POI_Engine SHALL display up to 20 points of interest within a default radius of 5 km from the Trip accommodation
+2. THE POI_Engine SHALL categorize points of interest by type (restaurants, museums, parks, landmarks, entertainment)
+3. THE POI_Engine SHALL display rating on a 1-to-5 scale, distance from accommodation in kilometers, opening hours, and price level on a 1-to-4 scale for each point of interest
+4. THE POI_Engine SHALL retrieve point of interest data from Google Places API
+5. WHEN a User specifies a radius preference between 1 km and 50 km, THE POI_Engine SHALL filter results to within that radius; IF the User enters a value outside the 1 km to 50 km range, THEN THE POI_Engine SHALL reject the input and display an error message indicating the valid range
+6. IF the Google Places API is unavailable or returns an error, THEN THE POI_Engine SHALL display a message indicating that points of interest cannot be loaded and offer a retry option
+7. IF no points of interest are found within the specified radius, THEN THE POI_Engine SHALL inform the User that no results were found and suggest increasing the search radius
+
+### Requirement 6: AI-Powered Activity Search
+
+**User Story:** As a user, I want to search for activities using natural language and receive personalized recommendations, so that I can find things to do that match my interests.
+
+#### Acceptance Criteria
+
+1. THE AI_Search SHALL accept natural language queries between 2 and 500 characters for finding activities, restaurants, museums, outdoor activities, and events
+2. THE AI_Search SHALL return a maximum of 20 results per query, ranked by relevance to the query and User preferences
+3. IF a User has prior search and favorite history, THEN THE AI_Search SHALL personalize result ranking by weighting categories and attributes matching that history higher
+4. THE AI_Search SHALL display each result with name, description (maximum 200 characters), category, rating (on a 1 to 5 scale), estimated cost in the User's Home_Currency, and distance from the User's accommodation in the User's locale units
+5. WHEN a User applies filters (category, price range, rating, distance), THE AI_Search SHALL display only results that match all applied filter criteria
+6. THE AI_Search SHALL provide results within 3 seconds of query submission
+7. IF a query returns fewer than 3 results, THEN THE AI_Search SHALL display a suggestion to the User to broaden the query or adjust filters
+8. IF a User submits an empty query or a query shorter than 2 characters, THEN THE AI_Search SHALL display a message indicating the minimum query length requirement without executing a search
+9. IF the User has no accommodation set for the active Trip, THEN THE AI_Search SHALL omit the distance field from results, disable the distance filter, and provide an option for the User to manually specify a reference location for distance calculations
+
+### Requirement 7: Favorites and Wishlist
+
+**User Story:** As a user, I want to save places and activities I'm interested in, so that I can revisit them later during trip planning.
+
+#### Acceptance Criteria
+
+1. THE Application SHALL allow Users to save any point of interest or search result to a favorites list, up to a maximum of 500 favorites per User
+2. THE Application SHALL allow Users to organize favorites into custom-named collections with collection names up to 50 characters in length
+3. THE Application SHALL allow Users to add personal notes of up to 1000 characters to each favorite item
+4. WHEN a User saves a favorite while viewing a Trip, THE Application SHALL associate the favorite with that Trip
+5. WHILE a User is viewing a Trip in Map_View, THE Application SHALL display all favorites associated with that Trip as markers on the map
+6. IF a User saves a favorite without an active Trip context, THEN THE Application SHALL require the User to select a Trip or explicitly choose the general unassigned favorites list before completing the save
+7. WHEN a User removes a favorite from a collection, THE Application SHALL remove the association but retain the favorite in the User's overall favorites list unless explicitly deleted
+
+### Requirement 8: Timeline View
+
+**User Story:** As a user, I want to see a chronological timeline of my trip, so that I can understand what happens when during my travels.
+
+#### Acceptance Criteria
+
+1. THE Timeline_View SHALL display all Trip events in chronological order, grouped by day, where events include Bookings, saved favorites, and manually added events
+2. THE Timeline_View SHALL support a day-by-day view with time slots showing specific event times, and SHALL display events without a specific time as all-day entries at the top of the respective day
+3. THE Timeline_View SHALL support a high-level day overview showing a count of events, their titles, and the earliest-to-latest time range for each day
+4. THE Timeline_View SHALL display Bookings, saved favorites, and manually added events on the timeline using visually distinct indicators for each event type
+5. WHEN a User switches between day-by-day and high-level views, THE Timeline_View SHALL preserve the current day position
+6. THE Application SHALL allow Users to manually add custom events to the Timeline_View with a title (maximum 100 characters), time, location, and notes (maximum 500 characters), where title and time are required fields
+7. IF a Trip contains no events, THEN THE Timeline_View SHALL display an empty state indicating no events are scheduled and providing an option to add a custom event
+8. IF a User attempts to add a custom event with a time outside the Trip's start and end dates, THEN THE Application SHALL reject the entry and display an error message indicating the event time must fall within the Trip date range; IF the Trip start date and end date are the same day, THE Application SHALL allow events on that day
+
+### Requirement 9: Map View
+
+**User Story:** As a user, I want to see all my bookings and points of interest plotted on a map, so that I can understand the geographic layout of my trip.
+
+#### Acceptance Criteria
+
+1. THE Map_View SHALL display all Bookings within a Trip as markers on an interactive map, placing markers at each distinct location (departure airport and arrival airport for flights, property address for hotels, pickup and return locations for car rentals), and SHALL auto-fit the map viewport to encompass all visible markers when the map is first opened
+2. THE Map_View SHALL display saved favorites and points of interest as distinct markers that are visually distinguishable from Booking markers
+3. THE Map_View SHALL use visually distinct marker styles for different categories (flights, hotels, car rentals, restaurants, attractions), with each category having a unique icon or color
+4. WHEN a User taps a marker on the Map_View, THE Application SHALL display a summary card showing: for flights — airline, flight number, departure and arrival airports, and departure time; for hotels — hotel name, check-in and check-out dates; for car rentals — rental company, pickup date, and pickup location; for favorites and points of interest — name, category, and rating
+5. THE Map_View SHALL support zoom and pan interactions
+6. WHEN a User selects a specific day on the Timeline_View, THE Map_View SHALL filter to show only that day's locations and auto-fit the viewport to the filtered markers
+7. IF a Booking does not have a geocodable address, THEN THE Map_View SHALL omit that Booking from the map and SHALL indicate to the User that one or more bookings could not be plotted due to missing location data
+
+### Requirement 10: Notifications and Reminders
+
+**User Story:** As a user, I want to receive timely reminders about upcoming travel events, so that I never miss a check-in, flight, or pickup.
+
+#### Acceptance Criteria
+
+1. THE Notification_Service SHALL send a reminder 24 hours before each flight departure, based on the departure time in the event's local timezone
+2. THE Notification_Service SHALL send a reminder at 8:00 AM in the hotel's local timezone on the day of hotel check-in
+3. THE Notification_Service SHALL send a reminder 2 hours before a car rental pickup time, based on the pickup location's local timezone
+4. THE Notification_Service SHALL support push notifications on mobile and in-app notifications on web
+5. WHEN a Booking time changes due to an email update, THE Notification_Service SHALL recalculate the reminder schedule using the same timing offsets applied to the new Booking time
+6. THE Application SHALL allow Users to customize notification timing offsets per event type within a range of 15 minutes to 72 hours before the event
+7. IF a Booking is added or updated and the scheduled reminder time has already passed, THEN THE Notification_Service SHALL send the reminder within 5 minutes of the Booking being added or updated
+8. IF a User has not granted push notification permission on mobile, THEN THE Application SHALL display an in-app prompt informing the User that reminders require notification permission and provide a path to enable it
+
+### Requirement 11: Trip Sharing
+
+**User Story:** As a user, I want to share my trip plans with travel companions, so that everyone on the trip can see the itinerary.
+
+#### Acceptance Criteria
+
+1. THE Sharing_Service SHALL allow a User to share a Trip with up to 20 other Users via email invitation
+2. WHEN a User requests a shareable link, THE Sharing_Service SHALL generate a read-only link for non-registered recipients that expires after 30 days
+3. WHEN a Trip is shared, THE Sharing_Service SHALL display the Trip owner and all recipients with their access level
+4. THE Sharing_Service SHALL support two access levels: view-only and edit (Collaborator)
+5. WHEN a Collaborator modifies a shared Trip, THE Application SHALL display the change with attribution to that Collaborator in the Trip activity feed within 10 seconds for online Users
+6. WHEN a Trip owner revokes a recipient's access, THE Sharing_Service SHALL immediately remove that recipient's ability to view or edit the Trip
+7. IF a User attempts to share a Trip with an invalid email address, THEN THE Sharing_Service SHALL reject the invitation and display an error message indicating the email address is invalid
+8. WHEN an offline User reconnects to the network, THE Application SHALL display all Trip modifications made by Collaborators during the offline period immediately upon synchronization
+
+### Requirement 12: Collaborative Planning
+
+**User Story:** As a user, I want to plan trips together with my travel companions, so that everyone can contribute ideas and preferences.
+
+#### Acceptance Criteria
+
+1. WHEN a User is granted Collaborator access to a Trip, THE Application SHALL allow that Collaborator to add favorites, events, and notes to the Trip, and to edit or remove only items that they themselves added
+2. THE Application SHALL display the name of the Collaborator who added each item (favorites, events, and notes) in a shared Trip
+3. WHEN multiple Collaborators edit the same Trip simultaneously, THE Application SHALL resolve conflicts by preserving the most recent change based on server-received timestamp and notifying the Collaborator whose change was overwritten via in-app notification within 30 seconds
+4. THE Application SHALL provide a Trip activity feed displaying up to the 50 most recent additions and changes by all Collaborators, ordered by timestamp from newest to oldest
+5. THE Application SHALL allow Collaborators to cast an upvote or downvote on any favorite or event added to a shared Trip, with each Collaborator limited to one vote per item, and THE Application SHALL display the net vote count for each item
+6. IF a Collaborator's access to a Trip is explicitly revoked by the Trip owner, THEN THE Application SHALL retain items added by that Collaborator in the Trip, keep them visible, and reassign attribution to the Trip owner; IF a Collaborator voluntarily leaves a shared Trip, THE Application SHALL retain their items with original attribution intact
+
+### Requirement 13: Offline Access
+
+**User Story:** As a user, I want to access my itinerary data without an internet connection, so that I can view my plans while traveling in areas with poor connectivity.
+
+#### Acceptance Criteria
+
+1. THE Sync_Engine SHALL cache all Trip data (bookings, timeline, favorites, map data) locally on the device, up to a maximum of 500 MB of offline storage per device
+2. WHEN the device loses network connectivity, THE Application SHALL display a visible offline indicator and continue to display all cached Trip data in read-only mode
+3. WHILE the device is offline, THE Application SHALL allow Users to add notes and favorites locally, and SHALL prevent actions that require server communication (such as sharing, inviting Collaborators, or connecting email accounts)
+4. WHEN network connectivity is restored, THE Sync_Engine SHALL synchronize all locally made changes with the server within 60 seconds of detecting connectivity
+5. IF a conflict occurs during synchronization between local changes and server changes to the same item, THEN THE Sync_Engine SHALL preserve both versions, apply the most recent change as the active version, and notify the User of the conflict
+6. THE Sync_Engine SHALL indicate the last synchronization timestamp to the User
+7. THE Application SHALL allow Users to select which Trips to make available offline on mobile devices, up to a maximum of 10 Trips simultaneously
+
+### Requirement 14: Multi-Currency Support
+
+**User Story:** As a user, I want to see costs displayed in both local and home currencies, so that I can understand expenses regardless of destination.
+
+#### Acceptance Criteria
+
+1. THE Currency_Service SHALL display Booking costs in the original booking currency and the User's Home_Currency, with converted amounts rounded to 2 decimal places
+2. THE Currency_Service SHALL display point of interest price estimates in the Local_Currency and the User's Home_Currency, with converted amounts rounded to 2 decimal places
+3. THE Application SHALL allow Users to set their Home_Currency in account settings from a list of at least 50 supported currencies including all ISO 4217 major currencies
+4. IF a User has not set a Home_Currency, THEN THE Application SHALL prompt the User to select a Home_Currency before displaying any converted amounts
+5. THE Currency_Service SHALL update exchange rates at least once every 24 hours
+6. WHEN exchange rates are updated, THE Currency_Service SHALL recalculate all displayed converted amounts within 60 seconds
+7. IF the exchange rate source is unavailable, THEN THE Currency_Service SHALL continue displaying the most recently cached exchange rates and indicate to the User that rates may be outdated
+
+### Requirement 15: Weather Forecasts
+
+**User Story:** As a user, I want to see weather forecasts for my destinations during my travel dates, so that I can pack appropriately and plan activities.
+
+#### Acceptance Criteria
+
+1. WHEN a User views a Trip, THE Weather_Service SHALL display weather forecasts for each destination during the Trip dates
+2. THE Weather_Service SHALL display temperature high and low in both Celsius and Fahrenheit, precipitation probability as a percentage (0–100%), and general conditions (sunny, cloudy, rainy, snowy, windy)
+3. IF the Trip start date is within 14 days, THEN THE Weather_Service SHALL provide daily forecasts for each destination; IF the Trip start date is beyond 14 days, THEN THE Weather_Service SHALL display historical weather averages for the corresponding calendar dates
+4. THE Weather_Service SHALL display forecasts on the Timeline_View alongside scheduled events
+5. WHEN the forecasted temperature changes by more than 5°C or precipitation probability changes by more than 30 percentage points for a Trip starting within 7 days, THE Notification_Service SHALL alert the User
+6. THE Weather_Service SHALL display the date and time of the last successful data retrieval alongside forecast data; IF weather forecast data is unavailable for a destination, THEN THE Weather_Service SHALL additionally display a message indicating that forecast data is currently unavailable
+
+### Requirement 16: Document Storage
+
+**User Story:** As a user, I want to attach and store travel documents (boarding passes, confirmations, vouchers) within the app, so that I can access them quickly during my trip.
+
+#### Acceptance Criteria
+
+1. THE Document_Store SHALL allow Users to upload files in PDF, JPEG, PNG, and HEIC formats and associate them with a specific Booking or Trip
+2. THE Document_Store SHALL support a maximum file size of 25 MB per document
+3. THE Document_Store SHALL allow Users to categorize documents by type (boarding pass, confirmation, voucher, visa, insurance)
+4. WHEN a booking confirmation is extracted from email, THE Document_Store SHALL automatically attach the original email as a document categorized as "confirmation" under the associated Booking
+5. THE Document_Store SHALL allow Users to view or preview stored documents within the Application and make them available offline through the Sync_Engine
+6. THE Document_Store SHALL support a maximum of 100 documents per Trip
+7. IF a User attempts to upload a file that exceeds 25 MB or is in an unsupported format, THEN THE Document_Store SHALL reject the upload and display an error message indicating the reason for rejection
+8. IF a User attempts to upload a document when the Trip has reached the 100-document limit, THEN THE Document_Store SHALL reject the upload and display an error message indicating the limit has been reached
+9. THE Document_Store SHALL allow Users to delete stored documents from a Booking or Trip
+
+### Requirement 17: Cross-Platform Availability
+
+**User Story:** As a user, I want to access the application on web, iOS, and Android with consistent functionality, so that I can use whichever device is convenient.
+
+#### Acceptance Criteria
+
+1. THE Application SHALL provide a responsive web application accessible via the latest 2 major versions of Chrome, Firefox, Safari, and Edge, supporting viewport widths from 320px to 2560px
+2. THE Application SHALL provide native mobile applications for iOS (version 16+) and Android (version 12+)
+3. WHILE connected to the network, THE Sync_Engine SHALL synchronize all User data across platforms within 10 seconds of a change occurring
+4. THE Application SHALL provide the same set of features and navigation structure across all platforms, with each feature producing identical outcomes regardless of platform used
+5. WHEN a User performs an action on one platform, THE Sync_Engine SHALL reflect that action on all other platforms within 10 seconds of those platforms having network connectivity
+6. IF the Sync_Engine fails to synchronize data after 3 retry attempts, THEN THE Application SHALL display a notification indicating the sync failure and retain the unsynchronized changes locally until sync succeeds
+7. IF a User modifies the same data on multiple platforms before synchronization completes, THEN THE Sync_Engine SHALL resolve the conflict by applying the most recent change based on timestamp and notifying the User of the conflicting modification
+
+### Requirement 18: Expense Management with AI Receipt Scanning
+
+**User Story:** As a user, I want to track my travel expenses by scanning receipts and having them automatically categorized, so that I can manage my budget and review spending after the trip.
+
+#### Acceptance Criteria
+
+1. THE Expense_Tracker SHALL allow Users to manually add an expense with the following required fields: amount (a positive value between 0.01 and 999,999,999.99), currency, date, and category; and the following optional fields: merchant name, notes (maximum 500 characters), and associated Booking or Trip
+2. THE Expense_Tracker SHALL support the following expense categories: accommodation, transportation, food and dining, shopping, tours and activities, entertainment, and other
+3. WHEN a User photographs or uploads a receipt image in JPEG, PNG, or HEIC format, THE Receipt_Scanner SHALL extract merchant name, total cost, currency, date, and expense category within 10 seconds
+4. IF the Receipt_Scanner cannot extract one or more fields from a receipt image, THEN THE Receipt_Scanner SHALL populate the fields it can determine and flag the remaining fields for the User to complete manually
+5. IF the Receipt_Scanner cannot process the image due to poor quality or unsupported format in direct response to a User uploading a receipt, THEN THE Receipt_Scanner SHALL notify the User that the receipt could not be read and offer the option to retake the photo or manually enter the expense
+6. WHEN an expense is recorded, THE Expense_Tracker SHALL allow the User to associate it with an existing Booking or Trip
+7. THE Expense_Tracker SHALL display a Trip expense summary showing total spending and subtotals per expense category, with all amounts converted to the User's Home_Currency using the Currency_Service
+8. THE Timeline_View SHALL display a daily expense breakdown showing the total amount spent on each day of the Trip
+9. WHEN an expense is recorded in a currency other than the User's Home_Currency, THE Currency_Service SHALL convert the amount to the Home_Currency using the most recent available exchange rate and display both the original and converted amounts
+10. THE Expense_Tracker SHALL allow Users to set a total budget for a Trip, specified in the User's Home_Currency, with a value between 0.01 and 999,999,999.99
+11. WHEN Trip spending reaches 80 percent of the set budget, THE Notification_Service SHALL send a single alert to the User indicating the budget threshold has been reached, and SHALL not send the same threshold alert again unless total spending drops below 80 percent and subsequently reaches it again
+12. WHEN Trip spending exceeds 100 percent of the set budget, THE Notification_Service SHALL send a single alert to the User indicating the budget has been exceeded and display the overage amount, and SHALL not send the same exceedance alert again unless total spending drops below 100 percent and subsequently exceeds it again
+13. THE Expense_Tracker SHALL allow Users to export a Trip expense report in PDF format and CSV format, including all expenses with date, merchant, category, original amount with currency, and converted amount in Home_Currency
+14. IF a User attempts to set a budget of zero or a negative value, THEN THE Expense_Tracker SHALL reject the input and display an error message indicating the budget must be a positive value
+15. THE Expense_Tracker SHALL support receipt images up to 10 MB in file size
+16. IF a User uploads a receipt image exceeding 10 MB, THEN THE Expense_Tracker SHALL reject the upload and display an error message indicating the maximum file size
+17. THE Expense_Tracker SHALL allow Users to edit the fields of an existing expense and to delete an expense, and WHEN an expense is edited or deleted, THE Expense_Tracker SHALL recalculate the Trip expense summary and re-evaluate budget thresholds
+
+### Requirement 19: Flight Check-in
+
+**User Story:** As a user, I want to check in for my flights directly from the app, so that I can complete check-in without navigating to separate airline websites or apps.
+
+#### Acceptance Criteria
+
+1. WHEN a flight booking's departure is within 24 hours, THE Checkin_Service SHALL display a "Check In" button on the flight booking card in the dashboard and booking detail view
+2. WHEN a User taps the "Check In" button, THE Checkin_Service SHALL open the airline's check-in page in an in-app browser, pre-filling the booking reference and passenger last name where supported by the airline's web check-in URL scheme
+3. THE Checkin_Service SHALL support direct check-in links for major airlines including but not limited to Delta, United, American Airlines, Southwest, British Airways, Lufthansa, Air France, and Emirates
+4. IF the airline does not support a direct check-in URL scheme, THEN THE Checkin_Service SHALL open the airline's general check-in page and display the booking reference for the User to enter manually
+5. THE Notification_Service SHALL send a check-in reminder notification when the check-in window opens (typically 24 hours before departure), including a direct link to initiate check-in within the Application
+6. WHEN check-in is completed, THE Application SHALL allow the User to mark the flight as "Checked In" and update the booking status badge accordingly
+7. WHEN a flight is marked as "Checked In", THE Application SHALL display a green "Checked In" badge on the booking card replacing the previous status badge
+8. THE Checkin_Service SHALL display the check-in window open and close times for each flight (e.g., "Check-in opens: Jul 11, 8:30 PM • Closes: Jul 12, 7:30 PM")
+9. IF the current time is before the check-in window opens, THEN THE Checkin_Service SHALL display the time remaining until check-in opens (e.g., "Check-in opens in 3h 45m")
+10. IF the check-in window has closed, THEN THE Checkin_Service SHALL disable the "Check In" button and display a message indicating that online check-in is no longer available
+11. WHEN check-in is completed successfully, THE Application SHALL prompt the User to upload or photograph their boarding pass, and THE Document_Store SHALL store it associated with the flight Booking
+12. IF a check-in process is already in progress when the check-in window closes, THE Checkin_Service SHALL allow the in-progress check-in to complete
+
+### Requirement 20: User Preferences and Personalization
+
+**User Story:** As a user, I want to set my personal preferences for interests, dietary restrictions, allergies, and locale settings, so that the app provides relevant and safe recommendations tailored to me.
+
+#### Acceptance Criteria
+
+1. THE Preference_Engine SHALL allow Users to select one or more interest categories from the following list: history, culture, art, architecture, nature, adventure, nightlife, shopping, sports, wellness, music, and photography
+2. THE Preference_Engine SHALL allow Users to select one or more dietary preferences from the following list: vegan, vegetarian, lacto-vegetarian, Jain, pescatarian, halal, kosher, gluten-free, dairy-free, nut-free, and no preference
+3. THE Preference_Engine SHALL allow Users to specify one or more allergies from the following list: gluten, peanuts, tree nuts, dairy, eggs, shellfish, soy, wheat, fish, and sesame; and SHALL allow Users to add custom allergy entries up to 50 characters each
+4. WHEN a User has dietary preferences or allergies set, THE AI_Search SHALL exclude results that conflict with those restrictions and SHALL prominently label results that explicitly accommodate those preferences (e.g., "Vegan-friendly", "Gluten-free options available")
+5. WHEN a User has dietary preferences or allergies set, THE POI_Engine SHALL display a compatibility indicator on restaurant and food-related points of interest showing whether they accommodate the User's dietary needs
+6. WHEN a User has interest categories selected, THE AI_Search SHALL boost results matching those interest categories in the relevance ranking
+7. THE Preference_Engine SHALL allow Users to set a preferred language from a list of at least 20 languages including English, Spanish, French, German, Italian, Portuguese, Japanese, Korean, Mandarin Chinese, Arabic, Hindi, Russian, Dutch, Swedish, Norwegian, Danish, Finnish, Polish, Turkish, and Thai
+8. WHEN a User sets a preferred language, THE Application SHALL display all interface text, notifications, and AI_Search results in that language where translations are available
+9. THE Preference_Engine SHALL allow Users to select one or more display currencies (replacing the single Home_Currency), with the first selected currency used as the default display currency
+10. WHEN a User has multiple display currencies configured, THE Currency_Service SHALL allow the User to switch between configured currencies via a toggle in any view displaying monetary amounts, without navigating to account settings
+11. THE Currency_Service SHALL provide an in-app currency converter accessible from any expenses or booking view, allowing the User to convert between any two supported currencies using the most recent exchange rate
+12. WHEN a User modifies their preferences, THE Application SHALL apply the updated preferences to all subsequent searches, recommendations, and displays within 5 seconds without requiring an app restart
+13. IF a User has not configured any preferences, THEN THE Application SHALL use default settings: no interest filter, no dietary restrictions, English language, and the User's device locale currency as the default display currency; IF default settings fail to apply, THE Application SHALL continue operating and allow individual features to handle missing preferences gracefully; IF a User has configured some preferences but left others blank, THE Application SHALL apply configured preferences and leave unconfigured preferences without defaults
+14. THE Preference_Engine SHALL store preferences per User account and synchronize them across all platforms via the Sync_Engine
+
+
+### Requirement 21: Group Expense Splitting
+
+**User Story:** As a user traveling with a group, I want to split expenses among travel companions, so that everyone pays their fair share without manual calculations.
+
+#### Acceptance Criteria
+
+1. THE Expense_Splitter SHALL allow Users to create a group for a Trip, consisting of the Trip owner and one or more Collaborators or manually added members identified by name
+2. THE Expense_Splitter SHALL allow Users to split an individual expense equally among all group members, or assign a custom percentage to each member where the total percentages must equal 100 percent
+3. THE Expense_Splitter SHALL allow Users to assign a per-item split on expenses that contain multiple line items, allocating each item to one or more specific group members
+4. THE Expense_Splitter SHALL display a group expense overview screen showing: total group spending, each member's share (amount owed or amount to be reimbursed), and a breakdown by expense category per member
+5. THE Expense_Splitter SHALL calculate net balances between group members, indicating who owes whom and the net amount, displayed in the User's Home_Currency
+6. WHEN a new expense is added to a Trip with an active group, THE Expense_Splitter SHALL prompt the User to select whether the expense is personal or shared with the group
+7. IF a User assigns percentages that do not total 100 percent, THEN THE Expense_Splitter SHALL reject the split and display an error message indicating the percentages must sum to 100
+8. THE Expense_Splitter SHALL allow Users to mark a debt between two members as "settled" without recording an in-app payment
+9. THE Expense_Splitter SHALL support splitting expenses recorded in any currency, converting each member's share to their own Home_Currency using the Currency_Service
+10. WHEN a shared expense is edited or deleted, THE Expense_Splitter SHALL recalculate all affected member balances within 5 seconds
+
+### Requirement 22: Itinerary Gap Detection
+
+**User Story:** As a user, I want the app to identify gaps in my travel plans such as unbooked hotels or missing transportation between locations, so that I can address them before my trip.
+
+#### Acceptance Criteria
+
+1. THE Gap_Detector SHALL analyze a Trip's itinerary and identify days within the Trip date range that have no hotel booking or accommodation assigned
+2. THE Gap_Detector SHALL identify transportation gaps where a User has bookings at two different locations on consecutive days without a connecting flight, car rental, or manually added transport event between them
+3. THE Gap_Detector SHALL identify scheduling conflicts where two or more events overlap in time on the same day
+4. THE Gap_Detector SHALL display detected gaps as advisory notifications in the Trip dashboard, categorized by type: missing accommodation, missing transportation, and scheduling conflict
+5. WHEN a gap is detected, THE Gap_Detector SHALL suggest relevant actions: "Book a hotel" for accommodation gaps, "Add transport" for transportation gaps, and "Reschedule" for conflicts
+6. THE Gap_Detector SHALL re-analyze the itinerary automatically within 30 seconds whenever a Booking is added, removed, or modified within the Trip
+7. THE Gap_Detector SHALL allow Users to dismiss individual gap notifications, and dismissed gaps SHALL not reappear unless the underlying itinerary data changes
+8. IF all gaps in a Trip have been resolved or dismissed, THEN THE Gap_Detector SHALL display a confirmation indicating the itinerary is complete
+9. THE Gap_Detector SHALL detect gaps for trips with start and end dates set; IF a Trip has no dates set, THEN THE Gap_Detector SHALL not perform gap analysis and SHALL display a message suggesting the User set Trip dates
+10. THE Gap_Detector SHALL identify when a User arrives at a destination (via flight or car arrival) without a planned activity or accommodation for the remainder of that day
+
+### Requirement 23: Social Media Sharing
+
+**User Story:** As a user, I want to share highlights from my trips on social media with curated photos and captions, so that I can share my experiences with friends and followers.
+
+#### Acceptance Criteria
+
+1. THE Social_Sharing SHALL allow Users to create a shareable trip highlight by selecting one or more photos from the device photo gallery, the Document_Store, or photos previously uploaded to the Trip
+2. THE Social_Sharing SHALL allow Users to add a caption of up to 500 characters and tag the Trip name and destination(s) in the shareable highlight
+3. THE Social_Sharing SHALL support sharing to Instagram, Facebook, X (Twitter), and WhatsApp via the platform's native share sheet on mobile, and via direct URL/API integration on web where supported
+4. THE Social_Sharing SHALL allow Users to select a layout template for multi-photo shares: single image, carousel (up to 10 images), or collage (2 to 6 images in a grid)
+5. THE Social_Sharing SHALL generate a preview of the shareable highlight before posting, showing how it will appear on the selected platform
+6. THE Social_Sharing SHALL allow Users to include trip statistics in the share: destinations visited, total days, total distance traveled, and number of activities completed
+7. IF a User has not granted photo gallery access permission, THEN THE Application SHALL display a prompt requesting permission before allowing photo selection
+8. THE Social_Sharing SHALL not share any personal booking details (confirmation numbers, addresses, flight numbers) unless the User explicitly includes them in the caption
+9. THE Social_Sharing SHALL allow Users to save a created highlight as a draft within the Trip for later posting
+10. WHEN a User shares a highlight, THE Social_Sharing SHALL record the share event in the Trip activity feed visible to Collaborators
