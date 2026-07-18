@@ -86,7 +86,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Handle expired tokens with 401 response
     - _Requirements: 1.3, 1.9_
 
-- [ ] 3. Checkpoint - Ensure all tests pass
+- [x] 3. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 4. Trip and booking management
@@ -197,7 +197,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Use fast-check to generate result sets and filter combinations, and verify the filter returns only results satisfying ALL active criteria and the result set is a subset of the input
     - **Validates: Requirements 6.5**
 
-- [ ] 7. Checkpoint - Ensure all tests pass
+- [x] 7. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 8. Timeline and map views (API layer)
@@ -298,7 +298,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Support selecting up to 10 trips for offline access (max 500MB)
     - _Requirements: 13.1, 13.2, 13.3, 13.6, 13.7, 11.8_
 
-- [ ] 12. Checkpoint - Ensure all tests pass
+- [x] 12. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 13. Currency and weather services
@@ -338,7 +338,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Display both original and converted amounts
     - _Requirements: 18.1, 18.2, 18.6, 18.7, 18.9, 18.17_
 
-  - [ ] 14.2 Implement receipt scanning with AWS Textract
+  - [x] 14.2 Implement receipt scanning with AWS Textract
     - Create route: `POST /api/expenses/scan`
     - Accept JPEG, PNG, HEIC images up to 10MB
     - Use AWS Textract to extract: merchant name, total amount, currency, date
@@ -348,7 +348,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Process within 10 seconds
     - _Requirements: 18.3, 18.4, 18.5, 18.15, 18.16_
 
-  - [ ] 14.3 Implement budget tracking and threshold alerts
+  - [x] 14.3 Implement budget tracking and threshold alerts
     - Create route: `PUT /api/trips/:tripId/budget` to set trip budget (positive value, 0.01 - 999,999,999.99)
     - Track cumulative spending against budget
     - Fire 80% threshold alert (single alert, reset if drops below and re-crosses)
@@ -378,7 +378,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Display on timeline alongside events
     - _Requirements: 18.8_
 
-- [ ] 15. Checkpoint - Ensure all tests pass
+- [x] 15. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 16. Flight check-in service
@@ -392,7 +392,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Disable check-in button after window closes; allow in-progress check-in to complete
     - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.8, 19.9, 19.10, 19.12_
 
-  - [ ] 16.2 Implement check-in notifications and completion flow
+  - [x] 16.2 Implement check-in notifications and completion flow
     - Schedule check-in reminder notification when check-in window opens (24h before departure)
     - Include direct link to initiate check-in in notification payload
     - On check-in complete: mark flight as "Checked In", update booking status badge
@@ -409,7 +409,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Handle defaults: no filters, English, device locale currency
     - _Requirements: 20.1, 20.2, 20.3, 20.7, 20.9, 20.12, 20.13, 20.14_
 
-  - [ ] 17.2 Wire preferences into AI search and POI results
+  - [x] 17.2 Wire preferences into AI search and POI results
     - In AI_Search: exclude results conflicting with dietary/allergy preferences; label accommodating results
     - In POI_Engine: display dietary compatibility indicator on restaurants
     - In AI_Search: boost results matching user interest categories
@@ -491,11 +491,11 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Make available offline via Sync_Engine
     - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 16.7, 16.8, 16.9_
 
-- [ ] 22. Checkpoint - Ensure all tests pass
+- [x] 22. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 23. Web application (Next.js)
-  - [ ] 23.1 Set up Next.js web application
+- [x] 23. Web application (Next.js)
+  - [x] 23.1 Set up Next.js web application
     - Create `packages/web/package.json` and configure with App Router
     - Set up Tailwind CSS and component library (shadcn/ui)
     - Configure API client to communicate with Fastify backend
@@ -503,7 +503,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Implement protected route middleware checking JWT
     - _Requirements: 17.1, 1.1, 1.2, 1.9_
 
-  - [ ] 23.2 Implement web dashboard and trip views
+  - [x] 23.2 Implement web dashboard and trip views
     - Create dashboard page showing all trips sorted by date
     - Create trip detail page with: bookings list, timeline, map, expenses, documents, gap alerts
     - Implement booking cards with status badges and check-in buttons
@@ -511,7 +511,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Implement sharing UI: invite by email, generate link, manage access
     - _Requirements: 3.1, 3.2, 3.6, 4.7, 7.1, 7.2, 11.1, 11.2_
 
-  - [ ] 23.3 Implement web timeline and map views
+  - [x] 23.3 Implement web timeline and map views
     - Build timeline component with day-by-day and overview modes
     - Integrate Google Maps SDK for map view with custom markers
     - Implement marker tap → summary card interaction
@@ -519,7 +519,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Display weather forecasts alongside timeline events
     - _Requirements: 8.1, 8.2, 8.3, 8.5, 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 15.4_
 
-  - [ ] 23.4 Implement web expense and search features
+  - [x] 23.4 Implement web expense and search features
     - Build expense tracker UI: add/edit/scan receipt, budget setting, category views
     - Build expense summary and export buttons (PDF/CSV download)
     - Build AI search interface with filters (category, price, rating, distance)
@@ -527,8 +527,8 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Build preference settings page
     - _Requirements: 18.1, 18.3, 18.7, 18.10, 18.13, 6.1, 6.5, 5.5, 20.1_
 
-- [ ] 24. Mobile application (React Native)
-  - [ ] 24.1 Set up React Native mobile application
+- [x] 24. Mobile application (React Native)
+  - [x] 24.1 Set up React Native mobile application
     - Create `packages/mobile/package.json` and configure React Native project
     - Set up navigation (React Navigation) with tab and stack navigators
     - Configure native modules: camera, push notifications, offline storage (SQLite)
@@ -536,7 +536,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Configure IndexedDB/SQLite for offline caching
     - _Requirements: 17.2, 13.1, 13.7_
 
-  - [ ] 24.2 Implement mobile dashboard and trip views
+  - [x] 24.2 Implement mobile dashboard and trip views
     - Create dashboard screen with trip list and booking overview
     - Create trip detail screen with tabs: timeline, map, expenses, documents
     - Implement pull-to-refresh and offline indicator
@@ -544,7 +544,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Implement check-in flow with in-app browser
     - _Requirements: 3.1, 10.4, 10.8, 13.2, 19.1, 19.2_
 
-  - [ ] 24.3 Implement mobile map, camera, and sharing features
+  - [x] 24.3 Implement mobile map, camera, and sharing features
     - Integrate Google Maps SDK for React Native with custom markers
     - Implement camera capture for receipt scanning
     - Implement social sharing via native share sheet
@@ -552,7 +552,7 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Build collaborative planning UI with real-time updates via Socket.io
     - _Requirements: 9.1, 9.3, 18.3, 23.3, 23.7, 13.7, 12.1_
 
-- [ ] 25. Final checkpoint - Ensure all tests pass
+- [x] 25. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 26. Public landing page
