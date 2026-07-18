@@ -27,7 +27,7 @@ test.describe('User Preferences', () => {
     await page.goto('/settings');
     await expect(page.getByRole('heading', { name: /interests/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /adventure/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /food drink/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /food/i })).toBeVisible();
   });
 
   test('should toggle interest selection', async ({ page }) => {
@@ -47,10 +47,12 @@ test.describe('User Preferences', () => {
 
   test('should add an allergy', async ({ page }) => {
     await page.goto('/settings');
-    const allergyInput = page.getByPlaceholder(/add an allergy/i);
-    await allergyInput.fill('shellfish');
-    await page.getByRole('button', { name: /^add$/i }).click();
-    await expect(page.getByText('shellfish')).toBeVisible();
+    // Known allergies should be visible as selectable chips
+    await expect(page.getByRole('button', { name: /peanuts/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /shellfish/i })).toBeVisible();
+    // Click a known allergy to select it
+    await page.getByRole('button', { name: /peanuts/i }).click();
+    await expect(page.getByRole('button', { name: /peanuts/i })).toHaveClass(/red/);
   });
 
   test('should show save button', async ({ page }) => {

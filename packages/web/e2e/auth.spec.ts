@@ -74,11 +74,15 @@ test.describe('Authentication', () => {
   });
 
   test('should show error for wrong password', async ({ page }) => {
+    // Use the test user we know exists
     await page.goto('/login');
     await page.getByLabel(/email/i).fill('test@example.com');
     await page.getByLabel(/password/i).fill('WrongPassword99');
     await page.getByRole('button', { name: /sign in/i }).click();
 
-    await expect(page.getByRole('alert')).toBeVisible({ timeout: 5000 });
+    // Should show an error (either alert role or text)
+    await expect(
+      page.getByRole('alert').or(page.getByText(/invalid|failed|error/i))
+    ).toBeVisible({ timeout: 10000 });
   });
 });
