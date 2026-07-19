@@ -91,12 +91,36 @@ ns-1422.awsdns-49.org
 
 ## Pending Actions
 
-- [ ] Wait for RDS to become `available` (~5-10 min)
-- [ ] Wait for Redis to become `available` (~5-10 min)
-- [ ] Wait for ACM certificate to become `ISSUED` (after Squarespace NS propagation)
-- [ ] Create ALB + Target Group + Listener
-- [ ] Create ECS Task Definition + Service
-- [ ] Create CloudFront distribution
-- [ ] Add DNS records (api-qa.nayya.ai, qa.nayya.ai)
-- [ ] Store secrets in Secrets Manager
-- [ ] Configure GitHub secrets
+- [ ] Wait for DNS propagation (Squarespace → Route 53 NS)
+- [ ] Wait for ACM certificate to become `ISSUED`
+- [ ] Add HTTPS listener to ALB once cert is issued
+- [ ] Set up CloudFront distribution for web app
+- [ ] Push Docker image to ECR (via GitHub Actions on `develop` branch)
+- [x] Create ALB + Target Group + HTTP Listener
+- [x] Create ECS Task Definition + Service
+- [x] Add DNS record (api-qa.nayya.ai → ALB)
+- [x] Create IAM deploy user + GitHub secrets
+- [x] Create `develop` branch for QA deploys
+
+### ALB Details
+
+| Resource | Value |
+|----------|-------|
+| ALB ARN | `arn:aws:elasticloadbalancing:eu-west-1:824050487639:loadbalancer/app/nayya-api-qa/41a6482757186d7f` |
+| ALB DNS | `nayya-api-qa-356525978.eu-west-1.elb.amazonaws.com` |
+| Target Group ARN | `arn:aws:elasticloadbalancing:eu-west-1:824050487639:targetgroup/nayya-api-qa-tg/1837469d0569f106` |
+
+### GitHub Secrets Configured
+
+| Secret | Status |
+|--------|--------|
+| `AWS_ACCESS_KEY_ID` | ✅ Set |
+| `AWS_SECRET_ACCESS_KEY` | ✅ Set |
+| `AWS_ACCOUNT_ID` | ✅ Set |
+
+### GitHub Variables Configured
+
+| Variable | Value |
+|----------|-------|
+| `AWS_REGION` | eu-west-1 |
+| `ECR_REPOSITORY` | nayya-api |
