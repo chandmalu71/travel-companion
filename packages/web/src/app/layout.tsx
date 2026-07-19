@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Travel Companion',
-  description: 'AI-powered travel planning and trip management',
+  title: 'Nayya — Your AI Travel Guide',
+  description: 'AI-powered travel planning that adapts to your style. Plan trips, track expenses, discover places, and collaborate with fellow travelers.',
 };
 
 export default function RootLayout({

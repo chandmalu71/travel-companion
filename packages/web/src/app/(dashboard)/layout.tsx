@@ -24,8 +24,12 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <aside className="hidden w-64 flex-shrink-0 border-r border-gray-200 bg-white lg:block">
         <div className="flex h-16 items-center px-6 border-b border-gray-200">
-          <Link href="/dashboard" className="text-xl font-bold text-primary-600">
-            Travel Companion
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <span className="text-xl">🧭</span>
+            <div className="flex flex-col">
+              <span className="text-lg font-bold text-primary-600 leading-tight">Nayya</span>
+              <span className="text-[9px] text-gray-400 leading-tight">Your AI Travel Guide</span>
+            </div>
           </Link>
         </div>
         <nav className="mt-4 px-3 space-y-1">
@@ -54,7 +58,7 @@ export default function DashboardLayout({
         {/* Top bar */}
         <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
           <div className="lg:hidden">
-            <span className="text-lg font-bold text-primary-600">TC</span>
+            <span className="text-lg font-bold text-primary-600">🧭</span>
           </div>
           <div className="flex items-center gap-4">
             <button className="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200" aria-label="Notifications">
