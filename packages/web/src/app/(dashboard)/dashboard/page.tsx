@@ -13,15 +13,28 @@ interface Trip {
   destination: string | null;
 }
 
+interface EmailConnection {
+  id: string;
+  provider: string;
+  email: string;
+  isActive: boolean;
+  lastScanStatus: string;
+}
+
 export default function DashboardPage() {
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [connections, setConnections] = useState<EmailConnection[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get<{ data?: Trip[]; trips?: Trip[] }>('/api/trips')
-      .then((res) => setTrips(res.data ?? res.trips ?? []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      api.get<{ data?: Trip[]; trips?: Trip[] }>('/api/trips')
+        .then((res) => setTrips(res.data ?? res.trips ?? []))
+        .catch(() => {}),
+      api.get<{ data?: { connections: EmailConnection[] } }>('/api/email/connections')
+        .then((res) => setConnections(res.data?.connections ?? []))
+        .catch(() => {}),
+    ]).finally(() => setLoading(false));
   }, []);
 
   if (loading) {
@@ -50,6 +63,9 @@ export default function DashboardPage() {
         <StatCard title="Total Trips" value={trips.length.toString()} icon="🌍" />
         <StatCard title="This Month" value="0" icon="📊" />
       </div>
+
+      {/* Connected accounts indicator */}
+      <ConnectedAccountsBar connections={connections} />
 
       {/* Trip list */}
       <section>
@@ -108,6 +124,57 @@ function TripCard({ trip }: { trip: Trip }) {
         </p>
       </div>
     </Link>
+  );
+}
+
+function ConnectedAccountsBar({ connections }: { connections: EmailConnection[] }) {
+  const PROVIDER_INFO: Record<string, { icon: string; name: string }> = {
+    gmail: { icon: '📧', name: 'Gmail' },
+    outlook: { icon: '📬', name: 'Outlook' },
+    yahoo: { icon: '💜', name: 'Yahoo' },
+    imap: { icon: '⚙️', name: 'IMAP' },
+    icloud: { icon: '☁️', name: 'iCloud' },
+  };
+
+  if (connections.length === 0) return null;
+
+  return (
+    <div className="rounded-lg bg-white border border-gray-200 p-4 shadow-sm">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-gray-700">Connected Emails:</span>
+          <div className="flex items-center gap-2">
+            {connections.map((conn) => {
+              const info = PROVIDER_INFO[conn.provider] ?? { icon: '📧', name: conn.provider };
+              return (
+                <span
+                  key={conn.id}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+                    conn.isActive
+                      ? 'bg-green-50 text-green-700 border border-green-200'
+                      : 'bg-gray-100 text-gray-500 border border-gray-200'
+                  }`}
+                  title={`${conn.email} — ${conn.isActive ? 'Active' : 'Disconnected'}${conn.lastScanStatus === 'error' ? ' (scan error)' : ''}`}
+                >
+                  <span className={`inline-block w-2 h-2 rounded-full ${
+                    conn.isActive
+                      ? conn.lastScanStatus === 'error' ? 'bg-amber-400' : 'bg-green-400'
+                      : 'bg-gray-300'
+                  }`} />
+                  {info.icon} {info.name}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+        <Link
+          href="/settings/email-connections"
+          className="text-xs text-primary-600 hover:text-primary-700 font-medium"
+        >
+          Manage
+        </Link>
+      </div>
+    </div>
   );
 }
 
