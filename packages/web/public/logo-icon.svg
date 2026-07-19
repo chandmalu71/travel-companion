@@ -1,34 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <linearGradient id="iGreen" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#32CD32"/>
-      <stop offset="100%" stop-color="#609550"/>
-    </linearGradient>
-    <linearGradient id="iOrange" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FF8C00"/>
-      <stop offset="100%" stop-color="#FCC980"/>
-    </linearGradient>
-    <radialGradient id="iBg" cx="50%" cy="50%">
-      <stop offset="0%" stop-color="#3DD63D"/>
-      <stop offset="100%" stop-color="#32CD32"/>
-    </radialGradient>
-  </defs>
-
   <!-- Green circle background -->
-  <circle cx="32" cy="32" r="30" fill="url(#iBg)"/>
-
-  <!-- Subtle compass ring -->
-  <circle cx="32" cy="32" r="25" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
-
-  <!-- Orange accent arrows at cardinal points -->
-  <path d="M32 5 L34 9 L30 9 Z" fill="#FF8C00" opacity="0.8"/>
-  <path d="M32 59 L30 55 L34 55 Z" fill="#FF8C00" opacity="0.8"/>
-  <path d="M5 32 L9 30 L9 34 Z" fill="#FF8C00" opacity="0.8"/>
-  <path d="M59 32 L55 34 L55 30 Z" fill="#FF8C00" opacity="0.8"/>
-
+  <circle cx="32" cy="32" r="30" fill="#32CD32"/>
+  <circle cx="32" cy="32" r="26" fill="#2AB82A"/>
   <!-- N letter -->
-  <text x="32" y="42" font-family="Arial, sans-serif" font-weight="800" font-size="32" fill="white" text-anchor="middle">N</text>
-
-  <!-- Highlight -->
-  <circle cx="22" cy="18" r="8" fill="white" opacity="0.1"/>
+  <text x="32" y="44" font-family="Arial, sans-serif" font-weight="bold" font-size="36" fill="white" text-anchor="middle">N</text>
+  <!-- Subtle glow/highlight -->
+  <circle cx="24" cy="20" r="8" fill="white" opacity="0.15"/>
 </svg>

@@ -1,45 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 44" fill="none">
-  <defs>
-    <linearGradient id="wGreen" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#32CD32"/>
-      <stop offset="100%" stop-color="#4ade5c"/>
-    </linearGradient>
-    <linearGradient id="wOrange" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FCC980"/>
-      <stop offset="100%" stop-color="#FF8C00"/>
-    </linearGradient>
-  </defs>
-
-  <!-- Compact compass mark (lighter for dark bg) -->
-  <path d="M10 10 C16 4 28 4 34 10" stroke="url(#wGreen)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  <path d="M34 34 C28 40 16 40 10 34" stroke="url(#wGreen)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  <path d="M10 10 C4 16 4 28 10 34" stroke="#4ade5c" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <path d="M34 10 C40 16 40 28 34 34" stroke="#4ade5c" stroke-width="2" fill="none" stroke-linecap="round"/>
-
-  <!-- Orange arrow tips -->
-  <path d="M32 9 L37 7 L34 12Z" fill="#FCC980"/>
-  <path d="M12 35 L7 37 L10 32Z" fill="#FCC980"/>
-
-  <!-- Inner circle -->
-  <circle cx="22" cy="22" r="10" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>
-
-  <!-- AI text -->
-  <text x="22" y="20" font-family="Arial, sans-serif" font-weight="bold" font-size="7" fill="#4ade5c" text-anchor="middle">AI</text>
-
-  <!-- Mini cityscape -->
-  <rect x="17" y="23" width="2" height="5" fill="rgba(255,255,255,0.5)" rx="0.3"/>
-  <rect x="20" y="22" width="2" height="6" fill="rgba(255,255,255,0.7)" rx="0.3"/>
-  <rect x="23" y="24" width="2" height="4" fill="rgba(255,255,255,0.5)" rx="0.3"/>
-
-  <!-- Leaf -->
-  <path d="M7 16 C9 13 12 13 13 15 C11 16 8 16 7 16Z" fill="#4ade5c"/>
-
-  <!-- Sparkle -->
-  <path d="M37 8 L38 10 L39.5 9 L38 10.5 L39 12 L37.5 11 L36 12 L37 10Z" fill="#FCC980"/>
-
-  <!-- NAYYA text (white) -->
-  <text x="50" y="26" font-family="Arial, sans-serif" font-weight="800" font-size="22" fill="white" letter-spacing="1.5">NAYYA</text>
-
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" fill="none">
+  <!-- App icon - white variant for dark backgrounds -->
+  <circle cx="20" cy="20" r="17" fill="#32CD32"/>
+  <circle cx="20" cy="20" r="14.5" fill="#2AB82A"/>
+  <text x="20" y="27" font-family="Arial, sans-serif" font-weight="bold" font-size="20" fill="white" text-anchor="middle">N</text>
+  <!-- Compass accent lines -->
+  <path d="M5 20 L3 20 M37 20 L35 20 M20 3 L20 5 M20 35 L20 37" stroke="#FCC980" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- NAYYA text (white for dark bg) -->
+  <text x="44" y="24" font-family="Arial, sans-serif" font-weight="bold" font-size="20" fill="white" letter-spacing="1.5">NAYYA</text>
   <!-- Tagline -->
-  <text x="50" y="38" font-family="Arial, sans-serif" font-weight="400" font-size="7.5" fill="#FCC980" letter-spacing="0.3">Your Complete Travel Companion</text>
+  <text x="44" y="36" font-family="Arial, sans-serif" font-size="7" fill="#FCC980" letter-spacing="0.3">Your Complete Travel Companion</text>
 </svg>
