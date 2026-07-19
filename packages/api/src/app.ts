@@ -22,6 +22,8 @@ import { registerEmailWebhookRoutes } from './routes/email-webhooks.js';
 import { registerSearchRoutes } from './routes/search.js';
 import { registerBookingForwardRoutes } from './routes/booking-forward.js';
 import { registerEmailConnectionRoutes } from './routes/email-connections.js';
+import { registerAdminRoutes } from './routes/admin.js';
+import { registerAdminAuth } from './plugins/admin-auth.js';
 import { registerSharingRoutes } from './routes/sharing.js';
 import { registerSyncRoutes } from './routes/sync.js';
 import { registerActivityFeedRoutes } from './routes/activity-feed.js';
@@ -158,18 +160,9 @@ export async function buildApp(
     await registerVoteRoutes(app, { db: options.db });
   }
 
-  // Register email connection routes (requires DB)
+  // Register email connection routes (requires DB) — new enhanced version
   if (options.db) {
-    await registerEmailRoutes(app, {
-      db: options.db,
-      config: {
-        gmailClientId: app.config.GMAIL_CLIENT_ID,
-        gmailClientSecret: app.config.GMAIL_CLIENT_SECRET,
-        outlookClientId: app.config.OUTLOOK_CLIENT_ID,
-        outlookClientSecret: app.config.OUTLOOK_CLIENT_SECRET,
-        encryptionKey: app.config.EMAIL_ENCRYPTION_KEY,
-      },
-    });
+    await registerEmailConnectionRoutes(app, { db: options.db });
   }
 
   // Register email webhook routes (public — no auth required, rate-limited)
@@ -194,9 +187,7 @@ export async function buildApp(
   }
 
   // Register email connection management routes (authenticated)
-  if (options.db) {
-    await registerEmailConnectionRoutes(app, { db: options.db });
-  }
+  // (already registered above)
 
   // Register sharing routes (requires DB)
   if (options.db) {
@@ -211,6 +202,12 @@ export async function buildApp(
   // Register activity feed routes (requires DB)
   if (options.db) {
     await registerActivityFeedRoutes(app, { db: options.db });
+  }
+
+  // Register admin routes (requires DB + admin auth)
+  if (options.db) {
+    await app.register(registerAdminAuth, { db: options.db });
+    await registerAdminRoutes(app, { db: options.db });
   }
 
   return app;
