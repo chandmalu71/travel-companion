@@ -174,6 +174,24 @@ export default function SettingsPage() {
     <div className="max-w-2xl space-y-8">
       <h1 className="text-2xl font-bold text-gray-900">Preferences</h1>
 
+      {/* ─── Email Connection Quick Link ────────────────────────────── */}
+      <section className="rounded-lg border border-primary-200 bg-primary-50 p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-medium text-gray-900">📧 Email Connections</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Connect your inbox to auto-import booking confirmations into your trips.
+            </p>
+          </div>
+          <a
+            href="/settings/email-connections"
+            className="rounded-md bg-primary-500 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-600 whitespace-nowrap"
+          >
+            Manage →
+          </a>
+        </div>
+      </section>
+
       {/* ─── Interests ──────────────────────────────────────────────── */}
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-2">Interests</h2>
