@@ -538,3 +538,22 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 22. DEPARTED members' shared expenses SHALL remain in the group balance for final settlement
 23. THE Application SHALL prompt remaining members to settle outstanding balances when a member departs
 24. A departed member SHALL retain read-only access to the trip for 30 days to view final settlements, after which access is revoked
+
+### Requirement 29: Post-Login Email Connection Prompt
+
+**User Story:** As a new user who signed up via a social/email provider, I want to be prompted once to connect my inbox for automatic booking import, so I can get started quickly without navigating through settings.
+
+#### Acceptance Criteria
+
+1. WHEN a user completes their first login (new account or first session), THE Application SHALL display a one-time prompt asking if they want to connect their email for booking scanning
+2. THE prompt SHALL explain what it does: "We can scan your inbox for booking confirmations and add them to your trips automatically"
+3. THE prompt SHALL clearly state: "We only read travel-related emails. You can disconnect anytime."
+4. THE prompt SHALL offer two options: "Connect [Provider]" (primary action) and "Not now" (dismiss)
+5. IF the user logged in via Google OAuth, THE prompt SHALL offer "Connect Gmail" as the primary action
+6. IF the user logged in via Microsoft OAuth, THE prompt SHALL offer "Connect Outlook" as the primary action
+7. IF the user logged in via email/password, THE prompt SHALL offer a general "Connect Email" option leading to the provider selection page
+8. IF the user clicks "Connect [Provider]", THE Application SHALL redirect to the OAuth consent screen requesting inbox read permissions (e.g., `gmail.readonly` scope)
+9. IF the user clicks "Not now", THE Application SHALL dismiss the prompt and NOT show it again (stored as user preference `email_connect_prompt_dismissed`)
+10. THE prompt SHALL only appear ONCE per user account lifetime — never repeat after dismissal or successful connection
+11. THE Application SHALL NOT auto-connect or read the user's email without explicit action on this prompt
+12. THE prompt SHALL appear as a dismissable modal/card on the dashboard, NOT blocking the user from using the app

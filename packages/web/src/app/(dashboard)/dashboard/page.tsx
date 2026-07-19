@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { EmailConnectPrompt } from './email-connect-prompt';
 
 interface Trip {
   id: string;
@@ -29,6 +30,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Post-login email connection prompt (shows once) */}
+      <EmailConnectPrompt loginProvider={null} />
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <Link
