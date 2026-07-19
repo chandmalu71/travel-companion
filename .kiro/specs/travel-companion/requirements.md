@@ -455,3 +455,34 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 10. THE unclaimed booking data SHALL be automatically deleted after 60 days with no further emails sent to the user
 11. THE Application SHALL support extracting booking details from common confirmation email formats: airline bookings, hotel reservations, car rental confirmations, and general travel itineraries
 12. WHEN a new trip is auto-created from a booking, THE Application SHALL use the destination as the trip name and set start/end dates from the booking dates
+
+### Requirement 27: Connected Email Scanning
+
+**User Story:** As a traveler, I want to connect my email account so that booking confirmations are automatically detected and added to my trips without manual forwarding.
+
+#### Acceptance Criteria
+
+1. THE Application SHALL support connecting email accounts from the following providers:
+   a. Gmail (via OAuth + Gmail API)
+   b. Microsoft Outlook/Hotmail (via OAuth + Microsoft Graph API)
+   c. Yahoo Mail (via OAuth)
+   d. Any SMTP/IMAP provider (via IMAP credentials with app-specific passwords)
+2. WHEN an email account is first connected, THE Application SHALL scan the last 90 days of messages for booking confirmation emails
+3. THE Application SHALL detect booking-relevant emails using:
+   a. Subject line keywords: "booking", "confirmation", "reservation", "itinerary", "e-ticket", "check-in", "receipt"
+   b. Known sender domains: airlines (e.g., delta.com, united.com, ba.com), hotels (e.g., marriott.com, hilton.com, booking.com, airbnb.com), car rentals (e.g., hertz.com, enterprise.com), travel aggregators (e.g., expedia.com, kayak.com, tripadvisor.com)
+   c. Email content patterns: confirmation numbers, flight numbers, dates in structured format
+4. THE scan frequency SHALL be configurable per user in their profile settings with the following options:
+   a. Real-time (push notifications where supported — Gmail, Outlook)
+   b. Every 5 minutes (default)
+   c. Every 15 minutes
+   d. Every hour
+   e. Manual only
+5. THE Application SHALL provide a "Scan Now" button in the user's profile/email settings to manually trigger an immediate scan of connected accounts
+6. WHEN a connected email scan detects a booking, THE Application SHALL follow the same trip-matching logic as email forwarding (date overlap → destination → create new trip) and auto-add without additional user confirmation
+7. IF both email forwarding AND connected scanning detect the same booking, the connected scan SHALL take priority and the forwarded duplicate SHALL be discarded
+8. THE Application SHALL NOT store the full email content — only extracted booking fields (airline, dates, confirmation numbers, etc.)
+9. THE Application SHALL display the last scan timestamp and status (success/error) in the user's email connection settings
+10. IF a connected account's OAuth token expires or becomes invalid, THE Application SHALL notify the user and pause scanning until re-authorized
+11. FOR IMAP providers, THE Application SHALL support TLS/SSL connections and validate server certificates
+12. THE Application SHALL allow users to disconnect an email account at any time, which stops all scanning but retains previously extracted bookings

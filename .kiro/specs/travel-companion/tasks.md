@@ -614,6 +614,25 @@ This implementation plan builds the Travel Companion application incrementally, 
     - POST /api/bookings/claim-all — auto-claim all matching bookings
     - _Requirements: 26.3, 26.7_
 
+- [x] 30. Connected email scanning (enhanced)
+  - [x] 30.1 Implement multi-provider email scanner service
+    - Support Gmail (OAuth), Outlook (OAuth), Yahoo (OAuth), IMAP (credentials+TLS)
+    - Configurable scan frequency (realtime, 5min, 15min, 1hour, manual)
+    - Manual "Scan Now" trigger
+    - Connected-scan priority over forwarding (dedup at booking level)
+    - Last scan timestamp + status tracking
+    - Known sender domain list (airlines, hotels, car rentals, aggregators)
+    - Subject keyword detection for booking relevance
+    - _Requirements: 27.1-27.12_
+
+  - [x] 30.2 Implement email connection management routes
+    - GET /api/email/connections — list with status + supported providers
+    - POST /api/email/connections — connect new account (OAuth or IMAP)
+    - DELETE /api/email/connections/:id — disconnect (retains bookings)
+    - PUT /api/email/connections/:id/frequency — update scan interval
+    - POST /api/email/connections/:id/scan — manual "Scan Now"
+    - _Requirements: 27.4, 27.5, 27.9, 27.12_
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP
