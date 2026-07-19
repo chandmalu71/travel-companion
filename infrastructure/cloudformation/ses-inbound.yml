@@ -1,0 +1,205 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Nayya.ai - SES Inbound Email for trips@nayya.ai'
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues: [qa, staging, production]
+    Default: qa
+  DomainName:
+    Type: String
+    Default: nayya.ai
+  ApiEndpoint:
+    Type: String
+    Description: API endpoint URL (e.g., https://api-qa.nayya.ai)
+    Default: https://api-qa.nayya.ai
+
+Resources:
+  # ─── S3 Bucket for raw email storage ────────────────────────────────────
+  EmailStorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'nayya-inbound-email-${Environment}'
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldEmails
+            Status: Enabled
+            ExpirationInDays: 7  # Keep raw emails for 7 days only
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  # ─── S3 Bucket Policy (allow SES to write) ──────────────────────────────
+  EmailStorageBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref EmailStorageBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowSESPut
+            Effect: Allow
+            Principal:
+              Service: ses.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub '${EmailStorageBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                'AWS:SourceAccount': !Ref 'AWS::AccountId'
+
+  # ─── Lambda Execution Role ──────────────────────────────────────────────
+  EmailProcessorLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'nayya-email-processor-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3ReadAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub '${EmailStorageBucket.Arn}/*'
+
+  # ─── Lambda Function (processes inbound emails) ─────────────────────────
+  EmailProcessorLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'nayya-email-processor-${Environment}'
+      Runtime: nodejs20.x
+      Handler: index.handler
+      Role: !GetAtt EmailProcessorLambdaRole.Arn
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          API_ENDPOINT: !Ref ApiEndpoint
+          S3_BUCKET: !Ref EmailStorageBucket
+      Code:
+        ZipFile: |
+          const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+          const s3 = new S3Client();
+
+          exports.handler = async (event) => {
+            console.log('SES inbound email event:', JSON.stringify(event));
+
+            for (const record of event.Records) {
+              const sesEvent = record.ses;
+              const mail = sesEvent.mail;
+              const receipt = sesEvent.receipt;
+
+              // Extract email metadata
+              const from = mail.commonHeaders.from?.[0] || '';
+              const subject = mail.commonHeaders.subject || '';
+              const messageId = mail.messageId;
+
+              console.log(`Processing email from: ${from}, subject: ${subject}`);
+
+              // Get the raw email from S3
+              const s3Key = `incoming/${messageId}`;
+              let textBody = '';
+              let htmlBody = '';
+
+              try {
+                const s3Response = await s3.send(new GetObjectCommand({
+                  Bucket: process.env.S3_BUCKET,
+                  Key: s3Key,
+                }));
+                const rawEmail = await s3Response.Body.transformToString('utf-8');
+
+                // Simple body extraction
+                const htmlMatch = rawEmail.match(/Content-Type: text\/html[\s\S]*?\r\n\r\n([\s\S]*?)(?=--)/i);
+                const textMatch = rawEmail.match(/Content-Type: text\/plain[\s\S]*?\r\n\r\n([\s\S]*?)(?=--)/i);
+                htmlBody = htmlMatch ? htmlMatch[1].trim() : '';
+                textBody = textMatch ? textMatch[1].trim() : rawEmail.slice(rawEmail.indexOf('\r\n\r\n') + 4);
+              } catch (err) {
+                console.log('S3 fetch skipped (email may not be stored):', err.message);
+                textBody = `Subject: ${subject}`;
+              }
+
+              // Forward to API
+              try {
+                const response = await fetch(`${process.env.API_ENDPOINT}/api/bookings/forward`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    from: from.replace(/.*<(.+)>.*/, '$1').trim(),
+                    subject,
+                    htmlBody,
+                    textBody,
+                  }),
+                });
+
+                const result = await response.json();
+                console.log(`API response (${response.status}):`, result);
+              } catch (err) {
+                console.error('Failed to forward to API:', err.message);
+              }
+            }
+
+            return { disposition: 'STOP_RULE_SET' };
+          };
+
+  # ─── Lambda Permission (allow SES to invoke) ────────────────────────────
+  EmailProcessorLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref EmailProcessorLambda
+      Action: lambda:InvokeFunction
+      Principal: ses.amazonaws.com
+      SourceAccount: !Ref 'AWS::AccountId'
+
+  # ─── SES Receipt Rule Set ───────────────────────────────────────────────
+  EmailReceiptRuleSet:
+    Type: AWS::SES::ReceiptRuleSet
+    Properties:
+      RuleSetName: !Sub 'nayya-inbound-${Environment}'
+
+  # ─── SES Receipt Rule (trips@nayya.ai) ──────────────────────────────────
+  EmailReceiptRule:
+    Type: AWS::SES::ReceiptRule
+    DependsOn: EmailProcessorLambdaPermission
+    Properties:
+      RuleSetName: !Ref EmailReceiptRuleSet
+      Rule:
+        Name: !Sub 'nayya-trips-forward-${Environment}'
+        Enabled: true
+        ScanEnabled: true
+        TlsPolicy: Require
+        Recipients:
+          - !Sub 'trips@${DomainName}'
+        Actions:
+          - S3Action:
+              BucketName: !Ref EmailStorageBucket
+              ObjectKeyPrefix: 'incoming/'
+          - LambdaAction:
+              FunctionArn: !GetAtt EmailProcessorLambda.Arn
+              InvocationType: Event
+
+Outputs:
+  EmailStorageBucketName:
+    Value: !Ref EmailStorageBucket
+    Description: S3 bucket for raw inbound emails
+
+  LambdaFunctionArn:
+    Value: !GetAtt EmailProcessorLambda.Arn
+    Description: Lambda function processing inbound emails
+
+  ReceiptRuleSetName:
+    Value: !Ref EmailReceiptRuleSet
+    Description: SES receipt rule set name
+
+  MXRecord:
+    Value: !Sub '10 inbound-smtp.eu-west-1.amazonaws.com'
+    Description: MX record to add to Route 53 for nayya.ai

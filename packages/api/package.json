@@ -27,6 +27,7 @@
     "@travel-companion/shared": "workspace:*",
     "fastify": "^5.2.1",
     "fastify-plugin": "^5.0.1",
+    "imapflow": "^1.4.7",
     "ioredis": "^5.4.2",
     "jose": "^6.2.3",
     "kysely": "^0.27.5",
