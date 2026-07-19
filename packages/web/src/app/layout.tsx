@@ -13,6 +13,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/logo-icon.svg" />
+      </head>
       <body className="min-h-screen bg-gray-50 font-sans antialiased">
         <div className="flex min-h-screen flex-col">
           {children}

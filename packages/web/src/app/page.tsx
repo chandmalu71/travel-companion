@@ -94,11 +94,8 @@ export default function LandingPage() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <span className="text-2xl">🧭</span>
-              <div className="flex flex-col">
-                <span className="text-xl font-bold text-gray-900 leading-tight">Nayya</span>
-                <span className="text-[10px] text-gray-500 leading-tight tracking-wide">Your Complete Travel Companion</span>
-              </div>
+              <img src="/logo-header.svg" alt="Nayya" className="h-10 hidden sm:block" />
+              <img src="/logo-icon.svg" alt="Nayya" className="h-9 sm:hidden" />
             </div>
 
             {/* Desktop Nav */}
@@ -118,13 +115,13 @@ export default function LandingPage() {
             <div className="flex items-center gap-3">
               <Link
                 href="/login"
-                className="hidden sm:inline-flex rounded-md bg-primary-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 transition-colors"
+                className="hidden sm:inline-flex rounded-md bg-primary-500 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-600 transition-colors"
               >
                 Log In
               </Link>
               <Link
                 href="/register"
-                className="hidden sm:inline-flex rounded-md border border-primary-600 px-5 py-2 text-sm font-semibold text-primary-600 hover:bg-primary-50 transition-colors"
+                className="hidden sm:inline-flex rounded-md border border-primary-500 px-5 py-2 text-sm font-semibold text-primary-600 hover:bg-primary-50 transition-colors"
               >
                 Sign Up
               </Link>
@@ -201,7 +198,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-4">
             <Link
               href="/register"
-              className="rounded-lg bg-primary-600 px-8 py-3 text-lg font-semibold text-white shadow-lg hover:bg-primary-500 transition-all hover:scale-105"
+              className="rounded-lg bg-primary-500 px-8 py-3 text-lg font-semibold text-white shadow-lg hover:bg-primary-600 transition-all hover:scale-105"
             >
               Get Started Free
             </Link>
@@ -276,7 +273,7 @@ export default function LandingPage() {
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-100 flex items-center justify-center text-3xl">
                   {item.icon}
                 </div>
-                <div className="inline-block bg-primary-600 text-white text-xs font-bold px-2 py-1 rounded-full mb-3">
+                <div className="inline-block bg-primary-500 text-white text-xs font-bold px-2 py-1 rounded-full mb-3">
                   Step {item.step}
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>
@@ -320,7 +317,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Testimonials / Social Proof ────────────────────────────── */}
-      <section className="py-20 px-4 bg-primary-600">
+      <section className="py-20 px-4 bg-gradient-to-br from-primary-500 to-forest-500">
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-white mb-12">Loved by Travelers Worldwide</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -382,7 +379,7 @@ export default function LandingPage() {
           </p>
           <Link
             href="/register"
-            className="inline-block rounded-lg bg-primary-600 px-10 py-4 text-lg font-semibold text-white shadow-lg hover:bg-primary-500 transition-all hover:scale-105"
+            className="inline-block rounded-lg bg-primary-500 px-10 py-4 text-lg font-semibold text-white shadow-lg hover:bg-primary-600 transition-all hover:scale-105"
           >
             Create Your Free Account
           </Link>
@@ -395,12 +392,8 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
             {/* Brand */}
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-2xl">🧭</span>
-                <div>
-                  <span className="text-lg font-bold text-white">Nayya</span>
-                  <p className="text-xs text-gray-400">Your Complete Travel Companion</p>
-                </div>
+              <div className="mb-4">
+                <img src="/logo-white.svg" alt="Nayya" className="h-10" />
               </div>
               <p className="text-sm text-gray-400 leading-relaxed">
                 AI-powered travel planning that adapts to your style. Plan, book, and explore with confidence.

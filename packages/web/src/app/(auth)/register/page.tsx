@@ -74,7 +74,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <span className="text-3xl">🧭</span>
+            <img src="/logo-icon.svg" alt="Nayya" className="h-12" />
             <span className="text-2xl font-bold text-gray-900">Nayya</span>
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">
@@ -161,7 +161,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 disabled:opacity-50"
+            className="w-full rounded-md bg-primary-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-600 disabled:opacity-50"
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
