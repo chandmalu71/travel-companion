@@ -1,16 +1,62 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none">
-  <!-- Green circle with N -->
-  <circle cx="30" cy="30" r="26" fill="#32CD32"/>
-  <circle cx="30" cy="30" r="23" fill="#2AB82A"/>
-  <text x="30" y="40" font-family="Arial, sans-serif" font-weight="bold" font-size="32" fill="white" text-anchor="middle">N</text>
-  <!-- Decorative compass elements -->
-  <path d="M10 30 L6 30 M54 30 L50 30 M30 6 L30 10 M30 50 L30 54" stroke="#FF8C00" stroke-width="2" stroke-linecap="round"/>
-  <path d="M14 14 L17 17 M43 43 L46 46 M14 46 L17 43 M43 17 L46 14" stroke="#FCC980" stroke-width="1.5" stroke-linecap="round"/>
-  <!-- Small leaf accents -->
-  <path d="M50 40 C52 38 55 38 56 40 C55 42 52 42 50 40Z" fill="#609550"/>
-  <path d="M52 36 C53 34 56 34 57 36 C56 38 53 38 52 36Z" fill="#32CD32"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80" fill="none">
+  <!-- Compass circle with gradient -->
+  <defs>
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#32CD32"/>
+      <stop offset="100%" stop-color="#609550"/>
+    </linearGradient>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF8C00"/>
+      <stop offset="100%" stop-color="#FCC980"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer compass arrows (orange) -->
+  <path d="M40 8 L40 4 L43 8 Z" fill="url(#orangeGrad)"/>
+  <path d="M40 72 L40 76 L37 72 Z" fill="url(#orangeGrad)"/>
+  <path d="M8 40 L4 40 L8 37 Z" fill="url(#orangeGrad)"/>
+  <path d="M72 40 L76 40 L72 43 Z" fill="url(#orangeGrad)"/>
+
+  <!-- Curved compass arms (green) -->
+  <path d="M20 20 C30 10 50 10 60 20" stroke="url(#greenGrad)" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M60 60 C50 70 30 70 20 60" stroke="url(#greenGrad)" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M20 20 C10 30 10 50 20 60" stroke="#32CD32" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M60 20 C70 30 70 50 60 60" stroke="#32CD32" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Arrow tips on compass arms -->
+  <path d="M58 18 L64 16 L60 22Z" fill="#FF8C00"/>
+  <path d="M22 62 L16 64 L20 58Z" fill="#FF8C00"/>
+
+  <!-- Inner circle (light) -->
+  <circle cx="40" cy="40" r="18" fill="#f0fdf0" stroke="#32CD32" stroke-width="1"/>
+
+  <!-- AI text in center -->
+  <text x="40" y="38" font-family="Arial, sans-serif" font-weight="bold" font-size="11" fill="#609550" text-anchor="middle">AI</text>
+
+  <!-- Cityscape silhouette -->
+  <rect x="32" y="42" width="3" height="8" fill="#609550" rx="0.5"/>
+  <rect x="36" y="40" width="3" height="10" fill="#32CD32" rx="0.5"/>
+  <rect x="40" y="43" width="3" height="7" fill="#609550" rx="0.5"/>
+  <rect x="44" y="41" width="3" height="9" fill="#32CD32" rx="0.5"/>
+
+  <!-- Leaves -->
+  <path d="M14 28 C16 24 20 24 22 26 C20 28 16 28 14 28Z" fill="#32CD32"/>
+  <path d="M16 32 C17 29 20 28 22 30 C20 32 17 33 16 32Z" fill="#609550"/>
+
+  <!-- Location pin -->
+  <circle cx="28" cy="52" r="2.5" fill="#FF8C00"/>
+  <path d="M28 49 C30 49 31 50.5 31 52 C31 54 28 57 28 57 C28 57 25 54 25 52 C25 50.5 26 49 28 49Z" fill="none" stroke="#FF8C00" stroke-width="1"/>
+
+  <!-- Sparkle stars -->
+  <path d="M64 14 L65 16 L67 15 L65 16.5 L66 18.5 L64.5 17 L63 18 L64 16 Z" fill="#FCC980"/>
+  <path d="M68 28 L69 30 L70.5 29 L69 30.5 L70 32 L68.5 31 L67 32 L68 30 Z" fill="#FCC980"/>
+
   <!-- NAYYA text -->
-  <text x="70" y="35" font-family="Arial, sans-serif" font-weight="bold" font-size="28" fill="#2D2D2D" letter-spacing="2">NAYYA</text>
+  <text x="92" y="38" font-family="Arial, sans-serif" font-weight="800" font-size="30" fill="#2D2D2D" letter-spacing="2">NAYYA</text>
+
   <!-- Tagline -->
-  <text x="70" y="52" font-family="Arial, sans-serif" font-size="10" fill="#609550" letter-spacing="0.5">Your Complete Travel Companion</text>
+  <text x="92" y="56" font-family="Arial, sans-serif" font-weight="400" font-size="10" fill="#609550" letter-spacing="0.5">Your Complete Travel Companion</text>
+
+  <!-- Small decorative underline -->
+  <rect x="92" y="60" width="40" height="2" rx="1" fill="url(#orangeGrad)"/>
 </svg>
