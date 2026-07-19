@@ -1,0 +1,32 @@
+{
+  "name": "@travel-companion/admin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Nayya Admin Panel — Operations, User Management, Analytics",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev --port 3002",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "next lint",
+    "clean": "rm -rf .next out"
+  },
+  "dependencies": {
+    "@travel-companion/shared": "workspace:*",
+    "next": "^14.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0",
+    "clsx": "^2.1.0",
+    "date-fns": "^3.3.0",
+    "recharts": "^2.12.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.8.3"
+  }
+}

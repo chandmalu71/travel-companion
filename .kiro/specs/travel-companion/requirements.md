@@ -557,3 +557,62 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 10. THE prompt SHALL only appear ONCE per user account lifetime — never repeat after dismissal or successful connection
 11. THE Application SHALL NOT auto-connect or read the user's email without explicit action on this prompt
 12. THE prompt SHALL appear as a dismissable modal/card on the dashboard, NOT blocking the user from using the app
+
+### Requirement 30: Admin Panel
+
+**User Story:** As a platform administrator, I want a comprehensive admin panel to manage users, monitor system health, configure AI services, track costs, and moderate content, so I can operate the platform effectively.
+
+#### Access & Authentication
+
+1. THE admin panel SHALL be accessible at `admin.nayya.ai` as a separate frontend application
+2. THE admin panel SHALL require authentication with an admin-level account
+3. THE Application SHALL support admin roles: **super-admin** (full access) and **support** (read + user management only)
+4. Admin accounts SHALL also function as regular user accounts (admins can use the main app with their own trips)
+5. THE admin panel SHALL log all admin actions in an audit trail (who, what, when, IP address)
+
+#### User Management
+
+6. THE admin panel SHALL display a searchable, sortable user list with: email, display name, registration date, last login, status (active/suspended/deleted), connected emails count, trips count
+7. THE admin panel SHALL allow admins to: view user profile, suspend user, reactivate user, delete user and all data, impersonate user (view-only)
+8. WHEN a user is suspended, THEY SHALL see a message on login: "Your account has been suspended. Contact support@nayya.ai for assistance."
+9. THE Application SHALL support a warning system before suspension: email warning → 7-day notice → suspend
+10. THE Application SHALL auto-detect misuse patterns (configurable thresholds): >100 email scans/day, >50 AI searches/hour, spam forwarding to trips@nayya.ai
+11. Auto-detection SHALL be toggleable per-rule from the admin config panel
+12. WHEN a user is deleted, ALL their data (trips, bookings, expenses, documents, preferences) SHALL be permanently removed (GDPR right to erasure)
+
+#### Statistics & Analytics Dashboard
+
+13. THE admin dashboard SHALL display real-time metrics: DAU (daily active users), MAU (monthly active users), total registered users, online users now
+14. THE admin dashboard SHALL display activity metrics: trips created (today/week/month), bookings imported (by source: email forward vs. connected scan vs. manual), AI searches performed, expenses tracked, emails processed/failed
+15. THE admin dashboard SHALL include a world map showing trip destination locations
+16. THE admin panel SHALL provide per-user drill-down: click a user to see their trips, last login, connected emails, activity timeline, and cost attribution
+17. ALL metrics SHALL update in real-time (WebSocket or polling every 30s)
+
+#### Configuration Management
+
+18. THE admin panel SHALL provide AI model configuration: change Tier 1/Tier 2 models per feature, toggle auto-escalation, set confidence thresholds
+19. THE admin panel SHALL provide feature flags: toggle any feature on/off globally (email scanning, social sharing, AI search, expense splitting, etc.)
+20. THE admin panel SHALL provide rate limit configuration: per-endpoint and per-user overrides
+21. THE admin panel SHALL provide a global email scanning pause/resume toggle
+22. Configuration changes SHALL take effect within 5 seconds without requiring a redeployment
+
+#### Cost Monitoring
+
+23. THE admin panel SHALL display AWS costs pulled from AWS Cost Explorer API (24h delay, daily refresh)
+24. THE cost dashboard SHALL show per-service breakdown: Bedrock (LLM), Google Places, Textract, RDS, ElastiCache, ECS, S3, CloudFront, SES, SQS, Lambda
+25. THE cost dashboard SHALL show per-user cost attribution (emails parsed, AI searches, receipts scanned)
+26. THE admin panel SHALL support cost alerts: notify via email when daily or monthly spend exceeds a configurable threshold
+27. THE cost dashboard SHALL include a direct link to AWS Cost Explorer for detailed analysis
+
+#### System Health
+
+28. THE admin panel SHALL display system health: API uptime percentage, error rate (5xx), latency (p50/p95/p99), active connections
+29. THE admin panel SHALL display email queue status: pending, processing, completed, failed — with ability to retry failed items
+30. THE admin panel SHALL display LLM usage: requests by tier, average latency, error rate, escalation rate
+
+#### Support & Moderation
+
+31. THE admin panel SHALL allow user impersonation (read-only view of a user's account for debugging)
+32. THE admin panel SHALL support sending in-app announcements to all users (maintenance windows, new features)
+33. THE admin panel SHALL provide a content moderation queue for social media shares (review before publish if moderation is enabled)
+34. THE admin panel SHALL provide a moderation toggle: auto-approve all vs. require review
