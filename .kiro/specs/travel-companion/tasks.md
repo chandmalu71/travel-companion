@@ -633,6 +633,29 @@ This implementation plan builds the Travel Companion application incrementally, 
     - POST /api/email/connections/:id/scan — manual "Scan Now"
     - _Requirements: 27.4, 27.5, 27.9, 27.12_
 
+- [x] 31. Distributed shared trips
+  - [x] 31.1 Implement shared trip collaboration service
+    - Role management: owner, co-owner, editor, viewer
+    - Merged timeline of all members' bookings
+    - Booking assignment priority: shared trips → own trips → create new
+    - Member departure handling (greyed out bookings, retained expenses)
+    - Expense visibility: shared (visible to all) vs personal (owner only)
+    - _Requirements: 28.1-28.24_
+
+  - [x] 31.2 Database migration for shared trip enhancements
+    - trip_members: departed, departed_at columns
+    - expenses: is_shared column
+    - email_connections: scan_frequency, is_active, imap fields
+    - Updated access_level constraint for co-owner role
+    - _Requirements: 28.3, 28.20_
+
+  - [x] 31.3 Update booking ingestion for shared trip priority
+    - Check shared trips first (date overlap, then destination)
+    - Then check own trips
+    - Create new only if no match
+    - Ask user to confirm if multiple matches
+    - _Requirements: 28.8, 28.15, 28.16_
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP

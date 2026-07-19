@@ -131,9 +131,10 @@ export class BookingIngestionService {
 
   /**
    * Find a matching trip for a booking using priority order:
-   * 1. Date overlap
-   * 2. Destination match
-   * 3. Create new trip
+   * 1. Shared trips matching by date overlap
+   * 2. Shared trips matching by destination
+   * 3. User's own trips matching by date/destination
+   * 4. Create new trip (ask user to confirm)
    */
   async findMatchingTrip(
     userId: string,
@@ -143,16 +144,58 @@ export class BookingIngestionService {
     const bookingEnd = extractEndDate(extracted);
     const destination = extractDestination(extracted);
 
-    // Get all user trips
-    const trips = await this.db
+    // Priority 1 & 2: Check shared trips first
+    const sharedTripIds = await this.db
+      .selectFrom('trip_members')
+      .select('trip_id')
+      .where('user_id', '=', userId)
+      .execute();
+
+    if (sharedTripIds.length > 0) {
+      const sharedTrips = await this.db
+        .selectFrom('trips')
+        .select(['id', 'name', 'start_date', 'end_date'])
+        .where('id', 'in', sharedTripIds.map((t) => t.trip_id))
+        .execute();
+
+      // Check date overlap on shared trips
+      if (bookingStart) {
+        for (const trip of sharedTrips) {
+          if (trip.start_date && trip.end_date) {
+            const tripStart = new Date(trip.start_date);
+            const tripEnd = new Date(trip.end_date);
+            const bStart = new Date(bookingStart);
+            const buffer = 24 * 60 * 60 * 1000;
+            if (bStart >= new Date(tripStart.getTime() - buffer) &&
+                bStart <= new Date(tripEnd.getTime() + buffer)) {
+              return { type: 'date_overlap', tripId: trip.id, tripName: trip.name };
+            }
+          }
+        }
+      }
+
+      // Check destination on shared trips
+      if (destination) {
+        const destLower = destination.toLowerCase();
+        for (const trip of sharedTrips) {
+          const tripName = (trip.name ?? '').toLowerCase();
+          if (tripName.includes(destLower) || destLower.includes(tripName)) {
+            return { type: 'destination_match', tripId: trip.id, tripName: trip.name };
+          }
+        }
+      }
+    }
+
+    // Priority 3: User's own trips
+    const ownTrips = await this.db
       .selectFrom('trips')
       .select(['id', 'name', 'start_date', 'end_date'])
       .where('owner_id', '=', userId)
       .execute();
 
-    // Priority 1: Date overlap
+    // Priority 3 continued: Date overlap on own trips
     if (bookingStart) {
-      for (const trip of trips) {
+      for (const trip of ownTrips) {
         if (trip.start_date && trip.end_date) {
           const tripStart = new Date(trip.start_date);
           const tripEnd = new Date(trip.end_date);
@@ -173,10 +216,10 @@ export class BookingIngestionService {
       }
     }
 
-    // Priority 2: Destination match
+    // Priority 3 continued: Destination match on own trips
     if (destination) {
       const destLower = destination.toLowerCase();
-      for (const trip of trips) {
+      for (const trip of ownTrips) {
         const tripName = (trip.name ?? '').toLowerCase();
         if (tripName.includes(destLower) || destLower.includes(tripName)) {
           return { type: 'destination_match', tripId: trip.id, tripName: trip.name };
@@ -184,7 +227,7 @@ export class BookingIngestionService {
       }
     }
 
-    // Priority 3: Create new trip
+    // Priority 4: Create new trip
     const tripName = generateTripName(destination, bookingStart);
     const newTrip = await this.db
       .insertInto('trips')

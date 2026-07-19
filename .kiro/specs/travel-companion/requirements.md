@@ -486,3 +486,55 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 10. IF a connected account's OAuth token expires or becomes invalid, THE Application SHALL notify the user and pause scanning until re-authorized
 11. FOR IMAP providers, THE Application SHALL support TLS/SSL connections and validate server certificates
 12. THE Application SHALL allow users to disconnect an email account at any time, which stops all scanning but retains previously extracted bookings
+
+### Requirement 28: Distributed Shared Trips
+
+**User Story:** As a group of friends/family traveling together, we want a single shared trip where each person's bookings, expenses, and plans are visible to the group, so we can coordinate without switching between separate apps.
+
+#### Acceptance Criteria
+
+##### Trip Ownership & Roles
+
+1. THE trip creator SHALL be the primary owner with full control (edit, delete, manage members)
+2. THE primary owner SHALL be able to assign "co-owner" role to other members, granting them equal management rights (invite/remove members, edit trip details, delete trip)
+3. THE Application SHALL support the following member roles: **owner** (full control), **co-owner** (full control except deleting the trip), **editor** (add/edit bookings, expenses, events), **viewer** (read-only)
+4. THERE SHALL be exactly one shared trip per travel group — members do NOT create separate trips for the same journey
+
+##### Booking Visibility & Assignment
+
+5. ALL bookings in a shared trip SHALL be visible to all members regardless of who created/forwarded them
+6. EACH booking SHALL have an `owner_id` indicating who booked it, displayed in the UI (e.g., "Bob's flight")
+7. THE trip timeline SHALL display a merged view of all members' bookings and events, showing who each item belongs to (e.g., "Alice arrives 2pm", "Bob arrives 5pm")
+8. WHEN a member forwards a booking to trips@nayya.ai or it's detected via connected email scanning, the trip-matching logic SHALL check **shared trips the user is a member of** BEFORE checking the user's own trips, with this priority: shared trips (by date/destination) → own trips → create new trip
+9. IF the booking could match multiple shared trips, THE Application SHALL send the user a confirmation link asking which trip to add it to
+
+##### Expense Visibility & Privacy
+
+10. WHEN adding an expense, THE user SHALL choose between **"shared"** (visible to all trip members, included in group splitting) or **"personal"** (visible only to the expense owner, not split)
+11. ALL shared expenses SHALL be visible to all trip members with full details (amount, payer, category, merchant)
+12. PERSONAL expenses SHALL only appear in the owner's own expense view and SHALL NOT be included in group balance calculations
+13. THE trip expense summary SHALL show: total shared expenses, per-member balances (who owes whom), and a separate "Your personal expenses" section for each user
+14. WHEN scanning a receipt or adding an expense, THE Application SHALL prompt: "Is this a shared expense or personal?" with shared as the default for group trips
+
+##### Booking Auto-Assignment Priority
+
+15. WHEN a booking is detected for a user who is a member of shared trips, THE matching priority SHALL be:
+    a. Shared trips matching by date overlap
+    b. Shared trips matching by destination
+    c. User's own (non-shared) trips matching by date/destination
+    d. Create new trip (ask user to confirm)
+16. IF the user is a member of multiple shared trips that match, THE Application SHALL ask the user to choose (via notification with trip options)
+
+##### Real-Time Collaboration
+
+17. WHEN any member adds a booking, expense, or event to a shared trip, ALL other members SHALL receive a real-time notification (via Socket.io for active sessions, push notification for mobile/inactive)
+18. THE notification SHALL include: who made the change, what was added/modified, and a link to view it
+19. THE activity feed SHALL log all member actions with timestamps, visible to all trip members
+
+##### Member Departure
+
+20. WHEN a member leaves a shared trip (voluntarily or removed), their bookings SHALL remain visible on the trip but be displayed in a "greyed out" style indicating the member has departed
+21. DEPARTED members' future bookings/events (after departure date) SHALL be greyed out; past items remain normal
+22. DEPARTED members' shared expenses SHALL remain in the group balance for final settlement
+23. THE Application SHALL prompt remaining members to settle outstanding balances when a member departs
+24. A departed member SHALL retain read-only access to the trip for 30 days to view final settlements, after which access is revoked
