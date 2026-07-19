@@ -562,7 +562,9 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 
 **User Story:** As a platform administrator, I want a comprehensive admin panel to manage users, monitor system health, configure AI services, track costs, and moderate content, so I can operate the platform effectively.
 
-#### Access & Authentication
+#### Acceptance Criteria
+
+##### Access & Authentication
 
 1. THE admin panel SHALL be accessible at `admin.nayya.ai` as a separate frontend application
 2. THE admin panel SHALL require authentication with an admin-level account
@@ -570,7 +572,7 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 4. Admin accounts SHALL also function as regular user accounts (admins can use the main app with their own trips)
 5. THE admin panel SHALL log all admin actions in an audit trail (who, what, when, IP address)
 
-#### User Management
+##### User Management
 
 6. THE admin panel SHALL display a searchable, sortable user list with: email, display name, registration date, last login, status (active/suspended/deleted), connected emails count, trips count
 7. THE admin panel SHALL allow admins to: view user profile, suspend user, reactivate user, delete user and all data, impersonate user (view-only)
@@ -580,7 +582,7 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 11. Auto-detection SHALL be toggleable per-rule from the admin config panel
 12. WHEN a user is deleted, ALL their data (trips, bookings, expenses, documents, preferences) SHALL be permanently removed (GDPR right to erasure)
 
-#### Statistics & Analytics Dashboard
+##### Statistics & Analytics Dashboard
 
 13. THE admin dashboard SHALL display real-time metrics: DAU (daily active users), MAU (monthly active users), total registered users, online users now
 14. THE admin dashboard SHALL display activity metrics: trips created (today/week/month), bookings imported (by source: email forward vs. connected scan vs. manual), AI searches performed, expenses tracked, emails processed/failed
@@ -588,7 +590,7 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 16. THE admin panel SHALL provide per-user drill-down: click a user to see their trips, last login, connected emails, activity timeline, and cost attribution
 17. ALL metrics SHALL update in real-time (WebSocket or polling every 30s)
 
-#### Configuration Management
+##### Configuration Management
 
 18. THE admin panel SHALL provide AI model configuration: change Tier 1/Tier 2 models per feature, toggle auto-escalation, set confidence thresholds
 19. THE admin panel SHALL provide feature flags: toggle any feature on/off globally (email scanning, social sharing, AI search, expense splitting, etc.)
@@ -596,7 +598,7 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 21. THE admin panel SHALL provide a global email scanning pause/resume toggle
 22. Configuration changes SHALL take effect within 5 seconds without requiring a redeployment
 
-#### Cost Monitoring
+##### Cost Monitoring
 
 23. THE admin panel SHALL display AWS costs pulled from AWS Cost Explorer API (24h delay, daily refresh)
 24. THE cost dashboard SHALL show per-service breakdown: Bedrock (LLM), Google Places, Textract, RDS, ElastiCache, ECS, S3, CloudFront, SES, SQS, Lambda
@@ -604,13 +606,13 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 26. THE admin panel SHALL support cost alerts: notify via email when daily or monthly spend exceeds a configurable threshold
 27. THE cost dashboard SHALL include a direct link to AWS Cost Explorer for detailed analysis
 
-#### System Health
+##### System Health
 
 28. THE admin panel SHALL display system health: API uptime percentage, error rate (5xx), latency (p50/p95/p99), active connections
 29. THE admin panel SHALL display email queue status: pending, processing, completed, failed — with ability to retry failed items
 30. THE admin panel SHALL display LLM usage: requests by tier, average latency, error rate, escalation rate
 
-#### Support & Moderation
+##### Support & Moderation
 
 31. THE admin panel SHALL allow user impersonation (read-only view of a user's account for debugging)
 32. THE admin panel SHALL support sending in-app announcements to all users (maintenance windows, new features)
