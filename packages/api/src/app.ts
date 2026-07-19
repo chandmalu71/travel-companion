@@ -20,6 +20,7 @@ import { registerVoteRoutes } from './routes/votes.js';
 import { registerEmailRoutes } from './routes/email.js';
 import { registerEmailWebhookRoutes } from './routes/email-webhooks.js';
 import { registerSearchRoutes } from './routes/search.js';
+import { registerBookingForwardRoutes } from './routes/booking-forward.js';
 import { registerSharingRoutes } from './routes/sharing.js';
 import { registerSyncRoutes } from './routes/sync.js';
 import { registerActivityFeedRoutes } from './routes/activity-feed.js';
@@ -184,6 +185,11 @@ export async function buildApp(
       db: options.db,
       redis: options.redisClient ?? (app as unknown as { redis?: RedisClient }).redis,
     });
+  }
+
+  // Register booking forward ingestion routes (public + authenticated)
+  if (options.db) {
+    await registerBookingForwardRoutes(app, { db: options.db });
   }
 
   // Register sharing routes (requires DB)

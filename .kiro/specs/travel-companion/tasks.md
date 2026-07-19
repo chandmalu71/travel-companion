@@ -590,6 +590,30 @@ This implementation plan builds the Travel Companion application incrementally, 
     - Dropdown with 20+ supported languages
     - _Requirements: 20.12_
 
+- [x] 29. Email-forward booking ingestion
+  - [x] 29.1 Implement booking ingestion service
+    - Accept forwarded emails at trips@nayya.ai
+    - Identify user by "From" email address
+    - Match booking to trip (date overlap → destination → create new)
+    - Support unclaimed bookings for unregistered users (60-day hold)
+    - Send invitation email with booking summary and signup link
+    - Claim-by-token for users with different email
+    - Auto-claim on login/registration
+    - Cleanup expired unclaimed bookings
+    - _Requirements: 26.1-26.12_
+
+  - [x] 29.2 Create unclaimed_bookings database migration
+    - New table with email, booking_type, destination, dates, raw_data, claim_token, expires_at
+    - Indexes on email, claim_token, expires_at
+    - _Requirements: 26.6, 26.10_
+
+  - [x] 29.3 Implement booking forward API routes
+    - POST /api/bookings/forward — accept forwarded email (public, rate-limited)
+    - POST /api/bookings/claim/:token — claim with verification token
+    - GET /api/bookings/unclaimed — list unclaimed bookings for user
+    - POST /api/bookings/claim-all — auto-claim all matching bookings
+    - _Requirements: 26.3, 26.7_
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP

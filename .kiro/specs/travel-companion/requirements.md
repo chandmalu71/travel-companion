@@ -430,3 +430,28 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 5. THE E2E tests SHALL run in headless mode by default with options for headed and UI debug modes
 6. THE E2E tests SHALL generate an HTML report after each run
 7. THE E2E tests SHALL complete within 2 minutes for the full suite
+
+### Requirement 26: Email-Forward Booking Ingestion
+
+**User Story:** As a traveler, I want to forward my booking confirmation emails to a single address (trips@nayya.ai) and have them automatically added to the right trip, so I don't need to manually enter booking details.
+
+#### Acceptance Criteria
+
+1. THE Application SHALL accept forwarded booking confirmation emails at the address `trips@nayya.ai`
+2. THE Application SHALL identify the user by the "From" email address of the forwarded message
+3. IF the "From" email matches an existing registered user, THEN THE Application SHALL process the booking and attempt to assign it to an existing trip
+4. THE trip matching logic SHALL follow this priority order:
+   a. **Date overlap** — if the booking dates fall within an existing trip's date range, assign to that trip
+   b. **Destination match** — if the booking destination matches an existing trip's destination, assign to that trip
+   c. **Create new trip** — if no match is found, auto-create a trip named after the destination and dates (e.g., "Paris, Aug 2026")
+5. WHEN a booking is assigned to a trip (existing or new), THE Application SHALL notify the user and ask them to confirm the assignment or make changes
+6. IF the "From" email does NOT match any registered user, THEN THE Application SHALL:
+   a. Store the extracted booking data for 60 days
+   b. Send an email to the "From" address inviting them to create an account, including: a summary of the detected booking (destination, dates, type), a direct link to create an account, a note that the data will be held for 60 days
+   c. Include an option for users who already have an account with a different email to log in and claim the booking
+7. IF a user logs in with a different email and wants to claim a booking, THEN THE Application SHALL send a verification link to the original forwarding email address to confirm ownership before attaching the booking
+8. THE Application SHALL prevent duplicate bookings by checking against existing bookings for the same user (same flight number + date, same hotel + check-in/out, same car company + pickup/return)
+9. IF the same booking is received from both email forwarding and connected inbox scanning, THE Application SHALL keep the first processed version and discard the duplicate
+10. THE unclaimed booking data SHALL be automatically deleted after 60 days with no further emails sent to the user
+11. THE Application SHALL support extracting booking details from common confirmation email formats: airline bookings, hotel reservations, car rental confirmations, and general travel itineraries
+12. WHEN a new trip is auto-created from a booking, THE Application SHALL use the destination as the trip name and set start/end dates from the booking dates
