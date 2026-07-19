@@ -129,8 +129,8 @@ export async function registerTripRoutes(
 
         // Combine and sort: start_date ASC, NULLS LAST
         const allTrips = [...ownedTrips, ...sharedTrips].sort((a, b) => {
-          const aDate = a.start_date ?? '9999-12-31';
-          const bDate = b.start_date ?? '9999-12-31';
+          const aDate = a.start_date ? String(a.start_date) : '9999-12-31';
+          const bDate = b.start_date ? String(b.start_date) : '9999-12-31';
           return aDate.localeCompare(bDate);
         });
 

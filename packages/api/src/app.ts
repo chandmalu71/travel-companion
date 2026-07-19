@@ -24,6 +24,7 @@ import { registerBookingForwardRoutes } from './routes/booking-forward.js';
 import { registerEmailConnectionRoutes } from './routes/email-connections.js';
 import { registerAdminRoutes } from './routes/admin.js';
 import { registerAdminAuth } from './plugins/admin-auth.js';
+import { registerExpenseRoutes } from './routes/expenses.js';
 import { registerSharingRoutes } from './routes/sharing.js';
 import { registerSyncRoutes } from './routes/sync.js';
 import { registerActivityFeedRoutes } from './routes/activity-feed.js';
@@ -130,6 +131,14 @@ export async function buildApp(
   // Register booking routes (requires DB)
   if (options.db) {
     await registerBookingRoutes(app, { db: options.db });
+  }
+
+  // Register expense routes (requires DB + currency service)
+  if (options.db) {
+    const { CurrencyService } = await import('./services/currency.js');
+    const redis = (app as any).redis ?? { get: async () => null, set: async () => {}, setex: async () => {} };
+    const currencyService = new CurrencyService(redis);
+    await registerExpenseRoutes(app, { db: options.db, currencyService });
   }
 
   // Register favorites and collections routes (requires DB)
