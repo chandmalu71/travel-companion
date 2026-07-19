@@ -28,7 +28,7 @@ export default function DashboardLayout({
             <span className="text-xl">🧭</span>
             <div className="flex flex-col">
               <span className="text-lg font-bold text-primary-600 leading-tight">Nayya</span>
-              <span className="text-[9px] text-gray-400 leading-tight">Your AI Travel Guide</span>
+              <span className="text-[9px] text-gray-400 leading-tight">Your Complete Travel Companion</span>
             </div>
           </Link>
         </div>

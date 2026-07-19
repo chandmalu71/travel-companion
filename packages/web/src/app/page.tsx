@@ -97,7 +97,7 @@ export default function LandingPage() {
               <span className="text-2xl">🧭</span>
               <div className="flex flex-col">
                 <span className="text-xl font-bold text-gray-900 leading-tight">Nayya</span>
-                <span className="text-[10px] text-gray-500 leading-tight tracking-wide">Your AI Travel Guide</span>
+                <span className="text-[10px] text-gray-500 leading-tight tracking-wide">Your Complete Travel Companion</span>
               </div>
             </div>
 
@@ -399,7 +399,7 @@ export default function LandingPage() {
                 <span className="text-2xl">🧭</span>
                 <div>
                   <span className="text-lg font-bold text-white">Nayya</span>
-                  <p className="text-xs text-gray-400">Your AI Travel Guide</p>
+                  <p className="text-xs text-gray-400">Your Complete Travel Companion</p>
                 </div>
               </div>
               <p className="text-sm text-gray-400 leading-relaxed">
