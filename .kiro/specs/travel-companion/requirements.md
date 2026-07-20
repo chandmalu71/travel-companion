@@ -618,3 +618,22 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 32. THE admin panel SHALL support sending in-app announcements to all users (maintenance windows, new features)
 33. THE admin panel SHALL provide a content moderation queue for social media shares (review before publish if moderation is enabled)
 34. THE admin panel SHALL provide a moderation toggle: auto-approve all vs. require review
+
+### Requirement 31: Home Location
+
+**User Story:** As a traveler, I want to set my home location(s) so that the app can calculate travel times to airports, suggest directions, show timezone differences, and help me plan the start/end of my trips.
+
+#### Acceptance Criteria
+
+1. THE Application SHALL allow users to set up to two home locations: **Primary Home** (current residence) and **Native Home** (family/origin — for expats who frequently travel between both)
+2. EACH home location SHALL include: city (required), country (required), full address (optional), nearest airport(s) (auto-suggested, editable), timezone (auto-detected), coordinates (auto-geocoded)
+3. THE Application SHALL ask users to set their home location during onboarding (first login after registration) with a dismissable prompt: "Set your home location to help us plan your trips better"
+4. THE home location SHALL also be editable in Settings under a "Home & Travel" section
+5. THE Application SHALL auto-detect nearest airports based on the home city (up to 3 airports within 100km)
+6. THE Application SHALL store a **transport mode preference**: "How do you usually get to the airport?" with options: drive (own car), taxi/rideshare, public transport, train, drop-off (someone drives you)
+7. USING the home location and transport mode, THE Application SHALL calculate a personalized "Leave home by" time for flights: departure time - airport buffer (2h domestic / 3h international) - estimated travel time to airport based on transport mode
+8. THE timeline flight cards SHALL display the calculated "Leave home by" time using the user's actual home → airport travel estimate
+9. IF the user has set a Native Home, THE Application SHALL recognize trips to that city/country as "going home" and optionally adjust suggestions (e.g., no hotel needed, familiar restaurants)
+10. THE home location SHALL be optional — the app functions without it, but shows a gentle reminder on the dashboard if not set: "Set your home location for better trip planning"
+11. THE Application SHALL display timezone difference on trip cards: "Destination is UTC+7 (5h ahead of home)"
+12. THE Application SHALL use home location for weather comparison: "32°C in Bali vs 15°C at home"
