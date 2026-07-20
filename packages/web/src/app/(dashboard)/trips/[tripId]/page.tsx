@@ -162,36 +162,68 @@ function OverviewTab({ trip, bookings }: { trip: TripDetail; bookings: Booking[]
 }
 
 function TimelineTab({ tripId }: { tripId: string }) {
-  const [events, setEvents] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get<{ data: any[] }>(`/api/trips/${tripId}/timeline`)
-      .then((res) => setEvents(res.data ?? []))
+    api.get<{ data?: any[]; bookings?: any[] }>(`/api/bookings?tripId=${tripId}`)
+      .then((res) => setBookings(res.data ?? res.bookings ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [tripId]);
 
   if (loading) return <div className="animate-pulse h-32 bg-gray-200 rounded-lg" />;
 
+  // Sort bookings by created_at to form timeline
+  const sorted = [...bookings].sort((a, b) =>
+    (a.created_at ?? '').localeCompare(b.created_at ?? '')
+  );
+
+  const TYPE_ICONS: Record<string, string> = { flight: '✈️', hotel: '🏨', car_rental: '🚗' };
+  const TYPE_LABELS: Record<string, string> = { flight: 'Flight', hotel: 'Hotel', car_rental: 'Car Rental' };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-gray-900">Timeline</h3>
-        <button className="rounded-md bg-primary-600 px-3 py-1.5 text-xs text-white hover:bg-primary-500">
+        <button className="rounded-md bg-primary-500 px-3 py-1.5 text-xs text-white hover:bg-primary-600">
           + Add Event
         </button>
       </div>
-      {events.length === 0 ? (
+      {sorted.length === 0 ? (
         <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
-          <p className="text-gray-500">No timeline events yet. Add bookings or custom events to see them here.</p>
+          <p className="text-gray-500">No bookings yet. Add flights, hotels, or car rentals to build your timeline.</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {events.map((event: any, i: number) => (
-            <div key={i} className="rounded-lg bg-white p-4 border border-gray-200 shadow-sm">
-              <p className="font-medium text-gray-900">{event.title ?? 'Event'}</p>
-              <p className="text-sm text-gray-500">{event.date ?? ''} {event.time ?? ''}</p>
+        <div className="relative pl-8 space-y-4">
+          {/* Vertical line */}
+          <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-gray-200" />
+
+          {sorted.map((booking: any, i: number) => (
+            <div key={booking.id ?? i} className="relative">
+              {/* Dot */}
+              <div className="absolute -left-5 top-3 w-4 h-4 rounded-full bg-primary-500 border-2 border-white shadow" />
+
+              {/* Card */}
+              <div className="rounded-lg bg-white p-4 border border-gray-200 shadow-sm ml-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">{TYPE_ICONS[booking.type] ?? '📋'}</span>
+                  <span className="font-medium text-gray-900">
+                    {TYPE_LABELS[booking.type] ?? booking.type}
+                  </span>
+                  <span className="text-xs text-gray-400 ml-auto">
+                    {booking.source === 'email' ? '📧 Auto-imported' : '✍️ Manual'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Added {new Date(booking.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </p>
+                {booking.checked_in && (
+                  <span className="mt-2 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700">
+                    ✓ Checked In
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>
