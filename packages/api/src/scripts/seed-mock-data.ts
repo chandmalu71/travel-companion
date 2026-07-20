@@ -320,6 +320,24 @@ async function seed() {
   }
   console.log(`  ✅ ${SOURCE_ATTACHMENTS.length} source attachments`);
 
+  // Trip groups and travellers for the shared Bali trip
+  const baliTripId = '00000000-0000-4000-b000-000000000003';
+  await db.insertInto('trip_groups' as any).values({ trip_id: baliTripId, name: 'Smith Family', group_type: 'family', expense_split_mode: 'per_group', color: '#3B82F6' }).execute().catch(() => {});
+  const groups = await db.selectFrom('trip_groups' as any).selectAll().where('trip_id', '=', baliTripId).execute().catch(() => []) as any[];
+  const smithGroupId = groups[0]?.id;
+
+  const travellers = [
+    { trip_id: baliTripId, user_id: '00000000-0000-4000-a000-000000000001', group_id: smithGroupId, display_name: 'Alice Johnson', email: 'alice@demo.nayya.ai', traveller_type: 'adult', role: 'owner', status: 'active', joined_at: new Date() },
+    { trip_id: baliTripId, user_id: '00000000-0000-4000-a000-000000000002', group_id: null, display_name: 'Bob Smith', email: 'bob@demo.nayya.ai', traveller_type: 'adult', role: 'editor', status: 'active', joined_at: new Date() },
+    { trip_id: baliTripId, user_id: '00000000-0000-4000-a000-000000000003', group_id: null, display_name: 'Charlie Davis', email: 'charlie@demo.nayya.ai', traveller_type: 'adult', role: 'editor', status: 'active', joined_at: new Date() },
+    { trip_id: baliTripId, user_id: null, group_id: smithGroupId, display_name: 'Max Johnson', email: null, traveller_type: 'child', role: 'viewer', status: 'active', joined_at: new Date() },
+    { trip_id: baliTripId, user_id: null, group_id: smithGroupId, display_name: 'Baby Lily', email: null, traveller_type: 'infant', role: 'viewer', status: 'active', joined_at: new Date() },
+  ];
+  for (const t of travellers) {
+    await db.insertInto('trip_travellers' as any).values(t).execute().catch(() => {});
+  }
+  console.log(`  ✅ ${travellers.length} trip travellers + 1 group`);
+
   console.log('\n🎉 Mock data seeded successfully!');
   console.log('\n  Demo accounts (password: Demo1234):');
   for (const user of USERS) {
@@ -334,6 +352,10 @@ async function clean() {
   console.log('🧹 Cleaning mock data...\n');
 
   // Delete in reverse dependency order using known IDs
+  await db.deleteFrom('trip_travellers' as any).where('trip_id', 'in', TRIPS.map(t => t.id)).execute().catch(() => {});
+  await db.deleteFrom('trip_groups' as any).where('trip_id', 'in', TRIPS.map(t => t.id)).execute().catch(() => {});
+  console.log('  ✅ Trip travellers/groups cleaned');
+
   await db.deleteFrom('source_attachments').where('user_id', 'in', USERS.map((u) => u.id)).execute().catch(() => {});
   console.log('  ✅ Source attachments cleaned');
 

@@ -656,3 +656,58 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 10. THE default retention period SHALL be compliant with GDPR: stored for as long as the user has an active account, deleted within 30 days of account deletion
 11. WHEN a user deletes their account, ALL source attachments SHALL be permanently deleted from S3 within 30 days
 12. THE source attachment SHALL be accessible offline (cached locally when user selects trip for offline access)
+
+### Requirement 33: Trip Members & Travel Groups
+
+**User Story:** As a trip organizer, I want to manage all travellers in my trip — including family members, friends, and kids — organized into groups, so that bookings, expenses, and plans are properly attributed and split among the right people.
+
+#### Acceptance Criteria
+
+##### Travellers
+
+1. THE Application SHALL support adding travellers to a Trip with the following types: **adult** (18+), **child** (2-17), and **infant** (0-2)
+2. EACH traveller SHALL have: display name (required), email (optional), phone (optional), date of birth (optional), traveller type (required), and optionally passport name, passport number (encrypted), and nationality
+3. THE Application SHALL support travellers with a linked Nayya account (registered users) AND travellers without an account (kids, elderly, or anyone who won't use the app)
+4. WHEN adding a traveller by email, THE Application SHALL check if the email matches an existing Nayya user and display a "User found" indicator
+5. NON-ACCOUNT travellers SHALL still appear on booking cards (as traveller names), expense splits (as split members), and flight manifests
+
+##### Groups
+
+6. THE Application SHALL allow organizing travellers into named groups within a Trip (e.g., "Smith Family", "College Friends")
+7. EACH group SHALL have: name (required), type (family/friends/colleagues/custom), expense split mode (per_person or per_group), and a display color
+8. THE Application SHALL display travellers in a hierarchical view: groups with their members listed under them, plus ungrouped travellers at the bottom
+9. THE expense split mode "per_group" SHALL treat the entire group as one unit for expense splitting (e.g., a family of 4 counts as 1 share)
+
+##### Roles & Permissions
+
+10. THE Application SHALL support three roles for trip travellers: **owner** (full control including managing members and deleting the trip), **editor** (add/edit bookings, expenses, events), **viewer** (read-only access)
+11. ONLY the trip owner SHALL be able to add or remove travellers from the trip
+12. ANY traveller with an account SHALL be able to leave the trip voluntarily, UNLESS they have unsettled shared expenses
+13. THE trip owner SHALL be able to transfer ownership to another registered traveller
+
+##### Invitations
+
+14. THE Application SHALL support inviting travellers via: email, phone/SMS, WhatsApp message, or shareable link
+15. WHEN inviting via email, THE Application SHALL send an invitation email containing: trip name, destination, dates (if set), a personal message from the inviter, and an accept/decline link
+16. THE invitation SHALL have a configurable expiry period (1 day, 3 days, 7 days, 30 days, or never), set by the inviter with a default configurable in the admin panel
+17. THE Application SHALL allow the trip owner to resend or cancel pending invitations
+18. IF an invited user creates a new Nayya account, THE Application SHALL auto-add them to the trip (or require acceptance first — configurable in admin panel)
+19. WHEN an invitation is accepted, THE Application SHALL add the traveller to the trip with the specified role and group
+
+##### Visibility
+
+20. THE trip owner SHALL be able to configure member visibility per trip: **full** (all members see everyone), **group-only** (members see their own group only), or **owner-managed** (only owner sees full list)
+21. THE Application SHALL display the member list in the Trip detail page as a "Members" tab showing the hierarchical group structure
+22. THE Application SHALL display small avatar icons of trip members on the trip overview cards in the trips list
+
+##### Integration
+
+23. WHEN a traveller is added to a trip, THE Application SHALL automatically add them to the trip's expense group for split calculations
+24. WHEN a new traveller joins, THEY SHALL see all existing shared expenses and the settlement summary
+25. THE Application SHALL suggest trip traveller names when adding traveller_names to bookings
+26. THE Application SHALL notify all active trip members when bookings, expenses, or members change
+
+##### Admin
+
+27. THE admin panel SHALL display trip membership statistics (total memberships, invitations pending, average members per trip)
+28. THE admin panel SHALL allow force-adding or force-removing travellers from any trip for support purposes

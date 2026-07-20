@@ -38,6 +38,8 @@ export interface Database {
   locale_configs: LocaleConfigsTable;
   translation_keys: TranslationKeysTable;
   translations: TranslationsTable;
+  trip_groups: TripGroupsTable;
+  trip_travellers: TripTravellersTable;
 }
 
 // --- Users ---
@@ -677,3 +679,47 @@ export interface TranslationsTable {
 }
 
 export type Translation = Selectable<TranslationsTable>;
+
+// --- Trip Groups ---
+
+export interface TripGroupsTable {
+  id: Generated<string>;
+  trip_id: string;
+  name: string;
+  group_type: Generated<string>;
+  expense_split_mode: Generated<string>;
+  color: string | null;
+  display_order: Generated<number>;
+  created_at: Generated<Date>;
+}
+
+export type TripGroup = Selectable<TripGroupsTable>;
+export type NewTripGroup = Insertable<TripGroupsTable>;
+
+// --- Trip Travellers ---
+
+export interface TripTravellersTable {
+  id: Generated<string>;
+  trip_id: string;
+  user_id: string | null;
+  group_id: string | null;
+  display_name: string;
+  email: string | null;
+  phone: string | null;
+  avatar_url: string | null;
+  traveller_type: Generated<string>;
+  date_of_birth: string | null;
+  passport_name: string | null;
+  passport_number_encrypted: string | null;
+  nationality: string | null;
+  role: Generated<string>;
+  status: Generated<string>;
+  invited_by: string | null;
+  joined_at: Date | null;
+  left_at: Date | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export type TripTraveller = Selectable<TripTravellersTable>;
+export type NewTripTraveller = Insertable<TripTravellersTable>;
