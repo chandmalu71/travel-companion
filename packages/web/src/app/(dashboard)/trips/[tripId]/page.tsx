@@ -223,199 +223,85 @@ function FlightCard({ item }: { item: any }) {
   const formatDate = (d: Date) => d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   const durationHrs = item.flightDurationMinutes ? Math.floor(item.flightDurationMinutes / 60) : 0;
   const durationMin = item.flightDurationMinutes ? item.flightDurationMinutes % 60 : 0;
+  const names = item.travellerNames?.length > 0 ? (item.travellerNames.length > 3 ? `${item.travellerNames.slice(0, 2).join(', ')} +${item.travellerNames.length - 2}` : item.travellerNames.join(', ')) : null;
 
   return (
     <div className="rounded-lg bg-white p-4 border border-gray-200 shadow-sm ml-2 relative overflow-hidden">
-      {/* Countdown ribbon */}
       {item.countdown && item.status === 'upcoming' && (
-        <div className="absolute top-0 right-0 bg-primary-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-md">
-          {item.countdown}
-        </div>
+        <div className="absolute top-0 right-0 bg-primary-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-md">{item.countdown}</div>
       )}
-
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-xl">✈️</span>
-          <div>
-            <p className="font-semibold text-gray-900">{item.airline ?? 'Flight'} {item.flightNumber ?? ''}</p>
-            <p className="text-xs text-gray-500">{item.departureAirport ?? '???'} → {item.arrivalAirport ?? '???'}</p>
-          </div>
+          <span className="text-lg">✈️</span>
+          <p className="font-semibold text-gray-900 text-sm">{item.airline ?? 'Flight'} {item.flightNumber ?? ''} <span className="text-gray-400 font-normal">·</span> <span className="text-gray-500 font-normal">{item.departureAirport} → {item.arrivalAirport}</span></p>
         </div>
         <StatusBadge status={item.status} checkedIn={item.checkedIn} />
       </div>
-
-      {/* Confirmation + Cabin class row */}
-      {(item.confirmationNumber || item.cabinClass) && (
-        <div className="flex items-center gap-3 mb-3">
-          {item.confirmationNumber && (
-            <span className="inline-flex items-center gap-1 rounded bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-mono font-bold text-amber-800">
-              PNR: {item.confirmationNumber}
-            </span>
-          )}
-          {item.cabinClass && (
-            <span className="text-xs text-gray-500">{item.cabinClass}</span>
-          )}
-          {item.price && (
-            <span className="text-xs font-medium text-gray-700 ml-auto">{item.currency ?? '£'}{item.price.toLocaleString()}</span>
-          )}
-        </div>
-      )}
-
-      {/* Time grid */}
-      {dep && (
-        <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-lg p-3 mb-3">
-          <div>
-            <p className="text-xs text-gray-500">Departure</p>
-            <p className="text-sm font-semibold text-gray-900">{formatTime(dep)}</p>
-            <p className="text-xs text-gray-400">{formatDate(dep)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Duration</p>
-            <p className="text-sm font-semibold text-gray-900">{durationHrs}h {durationMin}m</p>
-            <p className="text-xs text-gray-400">✈️ ─ ─ ─ →</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Arrival</p>
-            <p className="text-sm font-semibold text-gray-900">{arr ? formatTime(arr) : '—'}</p>
-            <p className="text-xs text-gray-400">{arr ? formatDate(arr) : ''}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Seat / Terminal / Gate / Baggage */}
-      {(item.seat || item.terminal || item.gate || item.baggageAllowance) && (
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 mb-2">
-          {item.seat && <span>💺 Seat <strong>{item.seat}</strong></span>}
-          {item.terminal && <span>🏢 Terminal <strong>{item.terminal}</strong></span>}
-          {item.gate && <span>🚪 Gate <strong>{item.gate}</strong></span>}
-          {item.baggageAllowance && <span>🧳 {item.baggageAllowance}</span>}
-        </div>
-      )}
-
-      {/* Leave by + Check-in */}
-      <div className="flex gap-4 text-xs text-gray-500">
-        {leaveBy && (
-          <span className="flex items-center gap-1">
-            🏠 Leave by: <strong className="text-gray-700">{formatTime(leaveBy)}</strong>
-          </span>
-        )}
-        {item.checkinOpens && (
-          <span className="flex items-center gap-1">
-            📱 Check-in: <strong className="text-gray-700">{new Date(item.checkinOpens).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} {formatTime(new Date(item.checkinOpens))}</strong>
-          </span>
-        )}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-600 mb-2">
+        {item.confirmationNumber && <span className="font-mono font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded px-1.5 py-0">PNR: {item.confirmationNumber}</span>}
+        {item.seat && <span>💺 {item.seat}</span>}
+        {item.terminal && <span>🏢 {item.terminal}{item.gate ? `/${item.gate}` : ''}</span>}
+        {item.cabinClass && <span>{item.cabinClass}</span>}
+        {item.baggageAllowance && <span>🧳 {item.baggageAllowance}</span>}
+        {item.price && <span className="font-medium text-gray-700">{item.currency ?? '£'}{item.price.toLocaleString()}</span>}
+        {names && <span className="text-gray-400">· 👤 {names}</span>}
       </div>
-
-      {/* Traveller names */}
-      {item.travellerNames && item.travellerNames.length > 0 && (
-        <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
-          <span>👤</span>
-          <span>{item.travellerNames.join(', ')}</span>
+      {dep && (
+        <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-lg p-2.5 mb-2">
+          <div><p className="text-[10px] text-gray-500">Departure</p><p className="text-sm font-semibold text-gray-900">{formatTime(dep)}</p><p className="text-[10px] text-gray-400">{formatDate(dep)}</p></div>
+          <div><p className="text-[10px] text-gray-500">Duration</p><p className="text-sm font-semibold text-gray-900">{durationHrs}h {durationMin}m</p><p className="text-[10px] text-gray-400">✈️ ─ ─ →</p></div>
+          <div><p className="text-[10px] text-gray-500">Arrival</p><p className="text-sm font-semibold text-gray-900">{arr ? formatTime(arr) : '—'}</p><p className="text-[10px] text-gray-400">{arr ? formatDate(arr) : ''}</p></div>
         </div>
       )}
-
-      {/* Notes */}
-      {item.notes && (
-        <div className="mt-2 text-xs text-gray-500 italic bg-yellow-50 rounded px-2 py-1 border border-yellow-100">
-          📝 {item.notes}
+      {(leaveBy || item.checkinOpens) && (
+        <div className="flex gap-3 text-[11px] text-gray-500 mb-1">
+          {leaveBy && <span>🏠 Leave by <strong className="text-gray-700">{formatTime(leaveBy)}</strong></span>}
+          {item.checkinOpens && <span>📱 Check-in <strong className="text-gray-700">{new Date(item.checkinOpens).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} {formatTime(new Date(item.checkinOpens))}</strong></span>}
         </div>
       )}
-
-      <SourceIndicator source={item.source} sourceAttachment={item.sourceAttachment} bookingId={item.id} />
-      <QuickActions address={item.departureAirport ? `${item.departureAirport} Airport` : undefined} />
+      {item.notes && <p className="text-[11px] text-gray-500 italic bg-yellow-50 rounded px-2 py-0.5 border border-yellow-100 mb-1">📝 {item.notes}</p>}
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+        <SourceIndicator source={item.source} sourceAttachment={item.sourceAttachment} bookingId={item.id} className="mt-0 pt-0 border-0" />
+        <QuickActions address={item.departureAirport ? `${item.departureAirport} Airport` : undefined} className="mt-0 pt-0 border-0" />
+      </div>
     </div>
   );
 }
 
 function HotelCard({ item }: { item: any }) {
+  const names = item.travellerNames?.length > 0 ? (item.travellerNames.length > 3 ? `${item.travellerNames.slice(0, 2).join(', ')} +${item.travellerNames.length - 2}` : item.travellerNames.join(', ')) : null;
+
   return (
     <div className="rounded-lg bg-white p-4 border border-gray-200 shadow-sm ml-2 relative overflow-hidden">
-      {/* Countdown ribbon */}
       {item.countdown && item.status === 'upcoming' && (
-        <div className="absolute top-0 right-0 bg-primary-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-md">
-          {item.countdown}
-        </div>
+        <div className="absolute top-0 right-0 bg-primary-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-md">{item.countdown}</div>
       )}
-
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-xl">🏨</span>
+          <span className="text-lg">🏨</span>
           <div>
-            <p className="font-semibold text-gray-900">{item.hotelName ?? 'Hotel'}</p>
-            {item.address && <p className="text-xs text-gray-500">{item.address}</p>}
+            <p className="font-semibold text-gray-900 text-sm">{item.hotelName ?? 'Hotel'}</p>
+            {item.address && <p className="text-[11px] text-gray-400">{item.address}</p>}
           </div>
         </div>
         <StatusBadge status={item.status} />
       </div>
-
-      {/* Confirmation + Room + Price row */}
-      {(item.confirmationNumber || item.roomType || item.price) && (
-        <div className="flex items-center gap-3 mb-3 flex-wrap">
-          {item.confirmationNumber && (
-            <span className="inline-flex items-center gap-1 rounded bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-mono font-bold text-amber-800">
-              Ref: {item.confirmationNumber}
-            </span>
-          )}
-          {item.roomType && (
-            <span className="text-xs text-gray-600">🛏️ {item.roomType}</span>
-          )}
-          {item.price && (
-            <span className="text-xs font-medium text-gray-700 ml-auto">{item.currency ?? '€'}{item.price.toLocaleString()}</span>
-          )}
-        </div>
-      )}
-
-      {/* Stay grid */}
-      <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-lg p-3">
-        <div>
-          <p className="text-xs text-gray-500">Check-in</p>
-          <p className="text-sm font-semibold text-gray-900">{item.checkinDate ?? '—'}</p>
-          <p className="text-xs text-gray-400">{item.checkinTime ?? '15:00'}</p>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500">Nights</p>
-          <p className="text-lg font-bold text-gray-900">{item.numberOfNights ?? '—'}</p>
-          <p className="text-xs text-gray-400">🌙</p>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500">Check-out</p>
-          <p className="text-sm font-semibold text-gray-900">{item.checkoutDate ?? '—'}</p>
-          <p className="text-xs text-gray-400">{item.checkoutTime ?? '11:00'}</p>
-        </div>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-600 mb-2">
+        {item.confirmationNumber && <span className="font-mono font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded px-1.5 py-0">Ref: {item.confirmationNumber}</span>}
+        {item.roomType && <span>🛏️ {item.roomType}</span>}
+        {item.numberOfGuests && <span>👥 {item.numberOfGuests}{names ? ` (${names})` : ''}</span>}
+        {item.price && <span className="font-medium text-gray-700 ml-auto">{item.currency ?? '€'}{item.price.toLocaleString()}</span>}
       </div>
-
-      {/* Guests + Per night rate */}
-      {(item.numberOfGuests || item.pricePerNight) && (
-        <div className="flex gap-4 mt-2 text-xs text-gray-500">
-          {item.numberOfGuests && <span>👥 {item.numberOfGuests} guest{item.numberOfGuests > 1 ? 's' : ''}</span>}
-          {item.pricePerNight && <span>💰 {item.currency ?? '€'}{item.pricePerNight}/night</span>}
-        </div>
-      )}
-
-      {/* Traveller names */}
-      {item.travellerNames && item.travellerNames.length > 0 && (
-        <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
-          <span>👤</span>
-          <span>{item.travellerNames.join(', ')}</span>
-        </div>
-      )}
-
-      {/* Notes */}
-      {item.notes && (
-        <div className="mt-2 text-xs text-gray-500 italic bg-yellow-50 rounded px-2 py-1 border border-yellow-100">
-          📝 {item.notes}
-        </div>
-      )}
-
-      <SourceIndicator source={item.source} sourceAttachment={item.sourceAttachment} bookingId={item.id} />
-      <QuickActions
-        address={item.address}
-        latitude={item.latitude}
-        longitude={item.longitude}
-        phone={item.contactPhone}
-      />
+      <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-lg p-2.5 mb-2">
+        <div><p className="text-[10px] text-gray-500">Check-in</p><p className="text-sm font-semibold text-gray-900">{item.checkinDate ?? '—'}</p><p className="text-[10px] text-gray-400">{item.checkinTime ?? '15:00'}</p></div>
+        <div><p className="text-[10px] text-gray-500">Nights</p><p className="text-lg font-bold text-gray-900">{item.numberOfNights ?? '—'}</p><p className="text-[10px] text-gray-400">🌙</p></div>
+        <div><p className="text-[10px] text-gray-500">Check-out</p><p className="text-sm font-semibold text-gray-900">{item.checkoutDate ?? '—'}</p><p className="text-[10px] text-gray-400">{item.checkoutTime ?? '11:00'}</p></div>
+      </div>
+      {item.notes && <p className="text-[11px] text-gray-500 italic bg-yellow-50 rounded px-2 py-0.5 border border-yellow-100 mb-1">📝 {item.notes}</p>}
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+        <SourceIndicator source={item.source} sourceAttachment={item.sourceAttachment} bookingId={item.id} className="mt-0 pt-0 border-0" />
+        <QuickActions address={item.address} latitude={item.latitude} longitude={item.longitude} phone={item.contactPhone} className="mt-0 pt-0 border-0" />
+      </div>
     </div>
   );
 }
@@ -424,109 +310,41 @@ function CarRentalCard({ item }: { item: any }) {
   const pickup = item.pickupTime ? new Date(item.pickupTime) : null;
   const returnTime = item.returnTime ? new Date(item.returnTime) : null;
   const formatDateTime = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const names = item.travellerNames?.length > 0 ? item.travellerNames.join(', ') : null;
 
   return (
     <div className="rounded-lg bg-white p-4 border border-gray-200 shadow-sm ml-2 relative overflow-hidden">
-      {/* Countdown ribbon */}
       {item.countdown && item.status === 'upcoming' && (
-        <div className="absolute top-0 right-0 bg-primary-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-md">
-          {item.countdown}
-        </div>
+        <div className="absolute top-0 right-0 bg-primary-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-md">{item.countdown}</div>
       )}
-
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-xl">🚗</span>
-          <div>
-            <p className="font-semibold text-gray-900">{item.company ?? 'Car Rental'}</p>
-            {item.vehicleClass && <p className="text-xs text-gray-500">{item.vehicleClass}</p>}
-          </div>
+          <span className="text-lg">🚗</span>
+          <p className="font-semibold text-gray-900 text-sm">{item.company ?? 'Car Rental'} {item.vehicleClass ? <span className="text-gray-400 font-normal">·</span> : ''} <span className="font-normal text-gray-500 text-xs">{item.vehicleClass ?? ''}</span></p>
         </div>
         <StatusBadge status={item.status} />
       </div>
-
-      {/* Confirmation + Price row */}
-      {(item.confirmationNumber || item.price) && (
-        <div className="flex items-center gap-3 mb-3">
-          {item.confirmationNumber && (
-            <span className="inline-flex items-center gap-1 rounded bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-mono font-bold text-amber-800">
-              Ref: {item.confirmationNumber}
-            </span>
-          )}
-          {item.price && (
-            <span className="text-xs font-medium text-gray-700 ml-auto">{item.currency ?? '€'}{item.price.toLocaleString()}</span>
-          )}
-        </div>
-      )}
-
-      {/* Time grid */}
-      <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-lg p-3">
-        <div>
-          <p className="text-xs text-gray-500">Pickup</p>
-          <p className="text-sm font-semibold text-gray-900">{pickup ? formatDateTime(pickup) : '—'}</p>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500">Duration</p>
-          <p className="text-lg font-bold text-gray-900">{item.rentalDays ?? '—'}</p>
-          <p className="text-xs text-gray-400">days</p>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500">Return</p>
-          <p className="text-sm font-semibold text-gray-900">{returnTime ? formatDateTime(returnTime) : '—'}</p>
-        </div>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-600 mb-2">
+        {item.confirmationNumber && <span className="font-mono font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded px-1.5 py-0">Ref: {item.confirmationNumber}</span>}
+        {names && <span>🪪 {names}</span>}
+        {item.insurance && <span>🛡️ {item.insurance}</span>}
+        {item.fuelPolicy && <span>⛽ {item.fuelPolicy}</span>}
+        {item.price && <span className="font-medium text-gray-700 ml-auto">{item.currency ?? '€'}{item.price.toLocaleString()}</span>}
       </div>
-
-      {/* Pickup / Return locations */}
-      {(item.pickupLocation || item.returnLocation) && (
-        <div className="mt-2 space-y-1 text-xs text-gray-600">
-          {item.pickupLocation && (
-            <div className="flex items-start gap-1">
-              <span className="text-green-600">📍</span>
-              <span><strong>Pickup:</strong> {item.pickupLocation}</span>
-            </div>
-          )}
-          {item.returnLocation && item.returnLocation !== item.pickupLocation && (
-            <div className="flex items-start gap-1">
-              <span className="text-red-500">📍</span>
-              <span><strong>Return:</strong> {item.returnLocation}</span>
-            </div>
-          )}
-        </div>
+      <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-lg p-2.5 mb-2">
+        <div><p className="text-[10px] text-gray-500">Pickup</p><p className="text-sm font-semibold text-gray-900">{pickup ? formatDateTime(pickup) : '—'}</p></div>
+        <div><p className="text-[10px] text-gray-500">Duration</p><p className="text-lg font-bold text-gray-900">{item.rentalDays ?? '—'}</p><p className="text-[10px] text-gray-400">days</p></div>
+        <div><p className="text-[10px] text-gray-500">Return</p><p className="text-sm font-semibold text-gray-900">{returnTime ? formatDateTime(returnTime) : '—'}</p></div>
+      </div>
+      {item.pickupLocation && (
+        <p className="text-[11px] text-gray-500 mb-1">📍 {item.pickupLocation}{item.returnLocation && item.returnLocation !== item.pickupLocation ? ` → ${item.returnLocation}` : ''}</p>
       )}
-
-      {/* Insurance + Fuel policy + Extras */}
-      {(item.insurance || item.fuelPolicy || (item.extras && item.extras.length > 0)) && (
-        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-gray-500">
-          {item.insurance && <span>🛡️ {item.insurance}</span>}
-          {item.fuelPolicy && <span>⛽ {item.fuelPolicy}</span>}
-          {item.extras && item.extras.length > 0 && (
-            <span>➕ {item.extras.join(', ')}</span>
-          )}
-        </div>
-      )}
-
-      {/* Driver names */}
-      {item.travellerNames && item.travellerNames.length > 0 && (
-        <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
-          <span>🪪</span>
-          <span>Driver: {item.travellerNames.join(', ')}</span>
-        </div>
-      )}
-
-      {/* Notes */}
-      {item.notes && (
-        <div className="mt-2 text-xs text-gray-500 italic bg-yellow-50 rounded px-2 py-1 border border-yellow-100">
-          📝 {item.notes}
-        </div>
-      )}
-
-      <SourceIndicator source={item.source} sourceAttachment={item.sourceAttachment} bookingId={item.id} />
-      <QuickActions
-        address={item.pickupLocation}
-        latitude={item.pickupLatitude}
-        longitude={item.pickupLongitude}
-      />
+      {item.extras && item.extras.length > 0 && <p className="text-[11px] text-gray-400 mb-1">➕ {item.extras.join(', ')}</p>}
+      {item.notes && <p className="text-[11px] text-gray-500 italic bg-yellow-50 rounded px-2 py-0.5 border border-yellow-100 mb-1">📝 {item.notes}</p>}
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+        <SourceIndicator source={item.source} sourceAttachment={item.sourceAttachment} bookingId={item.id} className="mt-0 pt-0 border-0" />
+        <QuickActions address={item.pickupLocation} latitude={item.pickupLatitude} longitude={item.pickupLongitude} className="mt-0 pt-0 border-0" />
+      </div>
     </div>
   );
 }

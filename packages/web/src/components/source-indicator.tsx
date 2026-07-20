@@ -48,7 +48,7 @@ export function SourceIndicator({ source, sourceAttachment, bookingId, className
 
   return (
     <>
-      <div className={`flex items-center justify-between mt-3 pt-3 border-t border-gray-100 ${className}`}>
+      <div className={`flex items-center ${className ? className : 'justify-between mt-3 pt-3 border-t border-gray-100'}`}>
         <button
           onClick={handleClick}
           disabled={!isClickable}
