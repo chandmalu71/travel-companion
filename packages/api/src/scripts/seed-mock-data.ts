@@ -79,6 +79,12 @@ const HOTEL_DETAILS = [
   { bookingId: '00000000-0000-4000-c000-000000000005', hotelName: 'Park Hyatt Tokyo', address: '3-7-1-2 Nishi Shinjuku, Tokyo', checkinDate: '2027-03-21', checkoutDate: '2027-04-05' },
 ];
 
+// ─── Mock Car Rental Details ─────────────────────────────────────────────────
+
+const CAR_RENTAL_DETAILS = [
+  { bookingId: '00000000-0000-4000-c000-000000000003', company: 'Europcar', pickupTime: '2026-08-01T14:00:00Z', returnTime: '2026-08-15T10:00:00Z', pickupLocation: 'Rome Fiumicino Airport', returnLocation: 'Rome Fiumicino Airport' },
+];
+
 // ─── Mock Expenses ───────────────────────────────────────────────────────────
 
 const EXPENSES = [
@@ -165,6 +171,19 @@ async function seed() {
   }
   console.log(`  ✅ ${HOTEL_DETAILS.length} hotel details`);
 
+  // Car rental details
+  for (const car of CAR_RENTAL_DETAILS) {
+    await db.insertInto('car_rental_details').values({
+      booking_id: car.bookingId,
+      company: car.company,
+      pickup_time: new Date(car.pickupTime),
+      return_time: new Date(car.returnTime),
+      pickup_location: car.pickupLocation,
+      return_location: car.returnLocation,
+    }).onConflict((oc) => oc.column('booking_id').doNothing()).execute();
+  }
+  console.log(`  ✅ ${CAR_RENTAL_DETAILS.length} car rental details`);
+
   // Expenses
   for (const exp of EXPENSES) {
     await db.insertInto('expenses').values({
@@ -223,6 +242,7 @@ async function clean() {
 
   await db.deleteFrom('flight_details').where('booking_id', 'in', BOOKINGS.map((b) => b.id)).execute();
   await db.deleteFrom('hotel_details').where('booking_id', 'in', BOOKINGS.map((b) => b.id)).execute();
+  await db.deleteFrom('car_rental_details').where('booking_id', 'in', BOOKINGS.map((b) => b.id)).execute();
   console.log('  ✅ Booking details cleaned');
 
   await db.deleteFrom('bookings').where('id', 'in', BOOKINGS.map((b) => b.id)).execute();
