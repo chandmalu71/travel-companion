@@ -159,21 +159,63 @@ Components:
 
 ## 9. CI/CD
 
+### Branching Strategy (GitFlow)
+
+```
+feature/xyz  →  develop  →  main
+     ↓              ↓          ↓
+  Local dev      QA env     Production
+```
+
+| Branch | Purpose | Deploys to | Merge via |
+|--------|---------|------------|-----------|
+| `feature/*` | Individual features/fixes | — (local only) | PR → develop |
+| `develop` | Integration branch, QA testing | qa.nayya.ai | PR → main |
+| `release/*` | Pre-production stabilization | staging.nayya.ai | PR → main |
+| `main` | Production-ready code only | nayya.ai | Manual approval |
+
+### Branch Workflow
+
+1. **Create feature branch** from `develop`:
+   ```bash
+   git checkout develop
+   git pull origin develop
+   git checkout -b feature/my-feature
+   ```
+
+2. **Develop and commit** on feature branch (conventional commits)
+
+3. **Push and create PR** to `develop`:
+   ```bash
+   git push -u origin feature/my-feature
+   gh pr create --base develop --title "feat: my feature"
+   ```
+
+4. **After PR approval**, merge to `develop` (squash or merge commit)
+
+5. **QA testing** happens on `develop` (auto-deploys to qa.nayya.ai)
+
+6. **When ready for production**, create PR from `develop` → `main` (requires approval)
+
+### Git Rules
+
+- **NEVER push directly to `main`** — always via PR from develop
+- **NEVER push directly to `develop`** — always via PR from feature branch
+- Never force-push to shared branches (`main`, `develop`)
+- Production deploys require manual approval
+- Feature branches are deleted after merge
+- Commit messages: conventional commits (`feat:`, `fix:`, `docs:`, `chore:`, `security:`)
+
 ### Pipeline
 ```
-Feature Branch → QA Environment → E2E Tests → Production (manual gate)
+Feature Branch → PR to develop → CI tests → Merge → QA auto-deploy
+                                                        ↓
+                                              PR to main → Approval → Production
 ```
 
 ### GitHub Actions
-- `ci.yml` — Run tests on PRs
-- `deploy-qa.yml` — Deploy to QA on feature branches
-- `deploy-production.yml` — Deploy to production on push to main
-
-### Git Rules
-- Never push directly to `main` — use feature branches
-- Never force-push to shared branches
-- Production deploys require manual approval
-- Commit messages: conventional commits (`feat:`, `fix:`, `docs:`, `security:`)
+- `ci.yml` — Run tests on all PRs (to develop or main)
+- `deploy.yml` — Deploy to QA on push to `develop`, staging on `release/*`, production on `main` (with approval)
 
 ## 10. Infrastructure (AWS eu-west-1)
 
