@@ -162,25 +162,22 @@ function OverviewTab({ trip, bookings }: { trip: TripDetail; bookings: Booking[]
 }
 
 function TimelineTab({ tripId }: { tripId: string }) {
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get<{ data?: any[]; bookings?: any[] }>(`/api/bookings?tripId=${tripId}`)
-      .then((res) => setBookings(res.data ?? res.bookings ?? []))
-      .catch(() => {})
+    api.get<{ data?: any[] }>(`/api/trips/${tripId}/timeline-enriched`)
+      .then((res) => setItems(res.data ?? []))
+      .catch(() => {
+        // Fallback to basic bookings if enriched fails
+        api.get<{ data?: any[]; bookings?: any[] }>(`/api/bookings?tripId=${tripId}`)
+          .then((res) => setItems(res.data ?? res.bookings ?? []))
+          .catch(() => {});
+      })
       .finally(() => setLoading(false));
   }, [tripId]);
 
   if (loading) return <div className="animate-pulse h-32 bg-gray-200 rounded-lg" />;
-
-  // Sort bookings by created_at to form timeline
-  const sorted = [...bookings].sort((a, b) =>
-    (a.created_at ?? '').localeCompare(b.created_at ?? '')
-  );
-
-  const TYPE_ICONS: Record<string, string> = { flight: '✈️', hotel: '🏨', car_rental: '🚗' };
-  const TYPE_LABELS: Record<string, string> = { flight: 'Flight', hotel: 'Hotel', car_rental: 'Car Rental' };
 
   return (
     <div className="space-y-4">
@@ -190,46 +187,169 @@ function TimelineTab({ tripId }: { tripId: string }) {
           + Add Event
         </button>
       </div>
-      {sorted.length === 0 ? (
+      {items.length === 0 ? (
         <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
           <p className="text-gray-500">No bookings yet. Add flights, hotels, or car rentals to build your timeline.</p>
         </div>
       ) : (
         <div className="relative pl-8 space-y-4">
-          {/* Vertical line */}
           <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-gray-200" />
 
-          {sorted.map((booking: any, i: number) => (
-            <div key={booking.id ?? i} className="relative">
-              {/* Dot */}
-              <div className="absolute -left-5 top-3 w-4 h-4 rounded-full bg-primary-500 border-2 border-white shadow" />
+          {items.map((item: any, i: number) => (
+            <div key={item.id ?? i} className="relative">
+              <div className={`absolute -left-5 top-4 w-4 h-4 rounded-full border-2 border-white shadow ${
+                item.status === 'completed' ? 'bg-gray-400' :
+                item.status === 'active' ? 'bg-accent-500' : 'bg-primary-500'
+              }`} />
 
-              {/* Card */}
-              <div className="rounded-lg bg-white p-4 border border-gray-200 shadow-sm ml-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">{TYPE_ICONS[booking.type] ?? '📋'}</span>
-                  <span className="font-medium text-gray-900">
-                    {TYPE_LABELS[booking.type] ?? booking.type}
-                  </span>
-                  <span className="text-xs text-gray-400 ml-auto">
-                    {booking.source === 'email' ? '📧 Auto-imported' : '✍️ Manual'}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500">
-                  Added {new Date(booking.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                </p>
-                {booking.checked_in && (
-                  <span className="mt-2 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700">
-                    ✓ Checked In
-                  </span>
-                )}
-              </div>
+              {item.type === 'flight' && <FlightCard item={item} />}
+              {item.type === 'hotel' && <HotelCard item={item} />}
+              {item.type === 'car_rental' && <CarRentalCard item={item} />}
             </div>
           ))}
         </div>
       )}
     </div>
   );
+}
+
+function FlightCard({ item }: { item: any }) {
+  const dep = item.departureTime ? new Date(item.departureTime) : null;
+  const arr = item.arrivalTime ? new Date(item.arrivalTime) : null;
+  const leaveBy = item.leaveHomeBy ? new Date(item.leaveHomeBy) : null;
+  const formatTime = (d: Date) => d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const formatDate = (d: Date) => d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const durationHrs = item.flightDurationMinutes ? Math.floor(item.flightDurationMinutes / 60) : 0;
+  const durationMin = item.flightDurationMinutes ? item.flightDurationMinutes % 60 : 0;
+
+  return (
+    <div className="rounded-lg bg-white p-4 border border-gray-200 shadow-sm ml-2">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">✈️</span>
+          <div>
+            <p className="font-semibold text-gray-900">{item.airline ?? 'Flight'} {item.flightNumber ?? ''}</p>
+            <p className="text-xs text-gray-500">{item.departureAirport ?? '???'} → {item.arrivalAirport ?? '???'}</p>
+          </div>
+        </div>
+        <StatusBadge status={item.status} checkedIn={item.checkedIn} />
+      </div>
+
+      {dep && (
+        <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-lg p-3 mb-3">
+          <div>
+            <p className="text-xs text-gray-500">Departure</p>
+            <p className="text-sm font-semibold text-gray-900">{formatTime(dep)}</p>
+            <p className="text-xs text-gray-400">{formatDate(dep)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Duration</p>
+            <p className="text-sm font-semibold text-gray-900">{durationHrs}h {durationMin}m</p>
+            <p className="text-xs text-gray-400">✈️ ─ ─ ─ →</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Arrival</p>
+            <p className="text-sm font-semibold text-gray-900">{arr ? formatTime(arr) : '—'}</p>
+            <p className="text-xs text-gray-400">{arr ? formatDate(arr) : ''}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-4 text-xs text-gray-500">
+        {leaveBy && (
+          <span className="flex items-center gap-1">
+            🏠 Leave by: <strong className="text-gray-700">{formatTime(leaveBy)}</strong>
+          </span>
+        )}
+        {item.checkinOpens && (
+          <span className="flex items-center gap-1">
+            📱 Check-in: <strong className="text-gray-700">{new Date(item.checkinOpens).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} {formatTime(new Date(item.checkinOpens))}</strong>
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function HotelCard({ item }: { item: any }) {
+  return (
+    <div className="rounded-lg bg-white p-4 border border-gray-200 shadow-sm ml-2">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">🏨</span>
+          <div>
+            <p className="font-semibold text-gray-900">{item.hotelName ?? 'Hotel'}</p>
+            {item.address && <p className="text-xs text-gray-500">{item.address}</p>}
+          </div>
+        </div>
+        <StatusBadge status={item.status} />
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-lg p-3">
+        <div>
+          <p className="text-xs text-gray-500">Check-in</p>
+          <p className="text-sm font-semibold text-gray-900">{item.checkinDate ?? '—'}</p>
+          <p className="text-xs text-gray-400">{item.checkinTime ?? '15:00'}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">Nights</p>
+          <p className="text-lg font-bold text-gray-900">{item.numberOfNights ?? '—'}</p>
+          <p className="text-xs text-gray-400">🌙</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">Check-out</p>
+          <p className="text-sm font-semibold text-gray-900">{item.checkoutDate ?? '—'}</p>
+          <p className="text-xs text-gray-400">{item.checkoutTime ?? '11:00'}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CarRentalCard({ item }: { item: any }) {
+  const pickup = item.pickupTime ? new Date(item.pickupTime) : null;
+  const returnTime = item.returnTime ? new Date(item.returnTime) : null;
+  const formatDateTime = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+  return (
+    <div className="rounded-lg bg-white p-4 border border-gray-200 shadow-sm ml-2">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">🚗</span>
+          <div>
+            <p className="font-semibold text-gray-900">{item.company ?? 'Car Rental'}</p>
+          </div>
+        </div>
+        <StatusBadge status={item.status} />
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-lg p-3">
+        <div>
+          <p className="text-xs text-gray-500">Pickup</p>
+          <p className="text-sm font-semibold text-gray-900">{pickup ? formatDateTime(pickup) : '—'}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">Duration</p>
+          <p className="text-lg font-bold text-gray-900">{item.rentalDays ?? '—'}</p>
+          <p className="text-xs text-gray-400">days</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">Return</p>
+          <p className="text-sm font-semibold text-gray-900">{returnTime ? formatDateTime(returnTime) : '—'}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status, checkedIn }: { status: string; checkedIn?: boolean }) {
+  if (checkedIn) return <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">✓ Checked In</span>;
+  const styles: Record<string, string> = {
+    upcoming: 'bg-blue-100 text-blue-700',
+    active: 'bg-amber-100 text-amber-700',
+    completed: 'bg-gray-100 text-gray-500',
+  };
+  return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${styles[status] ?? ''}`}>{status}</span>;
 }
 
 function MapTab({ tripId }: { tripId: string }) {

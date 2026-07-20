@@ -30,6 +30,7 @@ import { registerDocumentRoutes } from './routes/documents.js';
 import { registerHighlightRoutes } from './routes/highlights.js';
 import { registerPreferencesRoutes } from './routes/preferences.js';
 import { registerReceiptScanRoute } from './routes/receipt-scan.js';
+import { registerTripTimelineRoute } from './routes/trip-timeline.js';
 import { registerSharingRoutes } from './routes/sharing.js';
 import { registerSyncRoutes } from './routes/sync.js';
 import { registerActivityFeedRoutes } from './routes/activity-feed.js';
@@ -173,6 +174,11 @@ export async function buildApp(
 
   // Register receipt scanning route
   await registerReceiptScanRoute(app);
+
+  // Register enriched trip timeline route
+  if (options.db) {
+    await registerTripTimelineRoute(app, { db: options.db });
+  }
 
   // Register favorites and collections routes (requires DB)
   if (options.db) {
