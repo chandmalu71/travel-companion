@@ -65,17 +65,37 @@ export default function ExpensesPage() {
 
   const totalSpent = expenses.reduce((sum, e) => sum + (Number(e.converted_amount) || Number(e.amount) || 0), 0);
 
-  const handleAttachReceipt = async (expenseId: string) => {
+  const receiptFileRef = useRef<HTMLInputElement>(null);
+  const [receiptExpenseId, setReceiptExpenseId] = useState<string | null>(null);
+
+  const handleAttachReceipt = (expenseId: string) => {
+    setReceiptExpenseId(expenseId);
+    receiptFileRef.current?.click();
+  };
+
+  const handleReceiptFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const expenseId = receiptExpenseId;
+    if (!file || !expenseId) return;
+
+    if (file.size > 10 * 1024 * 1024) { alert('File too large. Maximum 10MB.'); return; }
+
     setAttachingExpenseId(expenseId);
     try {
       const res = await api.post<{ data: { id: string } }>(`/api/expenses/${expenseId}/receipt`, {
-        mimeType: 'image/jpeg', fileName: 'receipt.jpg',
+        mimeType: file.type || 'image/jpeg',
+        fileName: file.name,
       });
-      setExpenses(prev => prev.map(e =>
-        e.id === expenseId ? { ...e, sourceAttachment: { id: res.data.id, sourceType: 'receipt_scan', mimeType: 'image/jpeg' } } : e
+      setExpenses(prev => prev.map(ex =>
+        ex.id === expenseId ? { ...ex, sourceAttachment: { id: res.data.id, sourceType: 'receipt_scan', mimeType: file.type || 'image/jpeg' } } : ex
       ));
     } catch { /* toast in production */ }
-    finally { setAttachingExpenseId(null); }
+    finally {
+      setAttachingExpenseId(null);
+      setReceiptExpenseId(null);
+      // Reset the file input so the same file can be selected again
+      if (receiptFileRef.current) receiptFileRef.current.value = '';
+    }
   };
 
   if (loading) {
@@ -86,6 +106,9 @@ export default function ExpensesPage() {
 
   return (
     <div className="space-y-6">
+      {/* Hidden file input for receipt attachment */}
+      <input ref={receiptFileRef} type="file" accept="image/jpeg,image/png,image/heic,application/pdf" className="hidden" onChange={handleReceiptFileSelected} />
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Expenses</h1>
         <div className="flex gap-2">
