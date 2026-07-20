@@ -1,0 +1,154 @@
+/**
+ * Source Attachments Route
+ *
+ * GET /api/bookings/:bookingId/source-attachment
+ * GET /api/expenses/:expenseId/source-attachment
+ *
+ * Returns source attachment metadata for a booking or expense.
+ */
+
+import { type FastifyInstance, type FastifyRequest, type FastifyReply } from 'fastify';
+import { type Kysely } from 'kysely';
+import { type Database } from '../db/types.js';
+
+export interface SourceAttachmentOptions {
+  db: Kysely<Database>;
+}
+
+export async function registerSourceAttachmentsRoute(
+  app: FastifyInstance,
+  options: SourceAttachmentOptions,
+): Promise<void> {
+  const { db } = options;
+
+  // Get source attachment for a booking
+  app.get(
+    '/api/bookings/:bookingId/source-attachment',
+    async (request: FastifyRequest<{ Params: { bookingId: string } }>, reply: FastifyReply) => {
+      const { bookingId } = request.params;
+      const userId = (request as any).userId as string;
+
+      // Verify the user owns this booking
+      const booking = await db
+        .selectFrom('bookings')
+        .select(['id', 'user_id'])
+        .where('id', '=', bookingId)
+        .executeTakeFirst();
+
+      if (!booking || booking.user_id !== userId) {
+        return reply.status(404).send({ statusCode: 404, error: 'Booking not found' });
+      }
+
+      const attachment = await db
+        .selectFrom('source_attachments')
+        .selectAll()
+        .where('entity_type', '=', 'booking')
+        .where('entity_id', '=', bookingId)
+        .executeTakeFirst()
+        .catch(() => null);
+
+      if (!attachment) {
+        return reply.send({ statusCode: 200, data: null });
+      }
+
+      return reply.send({
+        statusCode: 200,
+        data: {
+          id: attachment.id,
+          sourceType: attachment.source_type,
+          mimeType: attachment.mime_type,
+          fileSize: attachment.file_size,
+          emailSubject: attachment.email_subject,
+          emailFrom: attachment.email_from,
+          emailDate: attachment.email_date ? new Date(attachment.email_date).toISOString() : null,
+          retentionPolicy: attachment.retention_policy,
+          expiresAt: attachment.expires_at ? new Date(attachment.expires_at).toISOString() : null,
+          createdAt: new Date(attachment.created_at).toISOString(),
+          // In production, generate a presigned S3 URL here
+          viewUrl: attachment.s3_key ? `/api/source-attachments/${attachment.id}/view` : null,
+        },
+      });
+    },
+  );
+
+  // Get source attachment for an expense
+  app.get(
+    '/api/expenses/:expenseId/source-attachment',
+    async (request: FastifyRequest<{ Params: { expenseId: string } }>, reply: FastifyReply) => {
+      const { expenseId } = request.params;
+      const userId = (request as any).userId as string;
+
+      const expense = await db
+        .selectFrom('expenses')
+        .select(['id', 'user_id'])
+        .where('id', '=', expenseId)
+        .executeTakeFirst();
+
+      if (!expense || expense.user_id !== userId) {
+        return reply.status(404).send({ statusCode: 404, error: 'Expense not found' });
+      }
+
+      const attachment = await db
+        .selectFrom('source_attachments')
+        .selectAll()
+        .where('entity_type', '=', 'expense')
+        .where('entity_id', '=', expenseId)
+        .executeTakeFirst()
+        .catch(() => null);
+
+      if (!attachment) {
+        return reply.send({ statusCode: 200, data: null });
+      }
+
+      return reply.send({
+        statusCode: 200,
+        data: {
+          id: attachment.id,
+          sourceType: attachment.source_type,
+          mimeType: attachment.mime_type,
+          fileSize: attachment.file_size,
+          emailSubject: attachment.email_subject,
+          emailFrom: attachment.email_from,
+          emailDate: attachment.email_date ? new Date(attachment.email_date).toISOString() : null,
+          retentionPolicy: attachment.retention_policy,
+          expiresAt: attachment.expires_at ? new Date(attachment.expires_at).toISOString() : null,
+          createdAt: new Date(attachment.created_at).toISOString(),
+          viewUrl: attachment.s3_key ? `/api/source-attachments/${attachment.id}/view` : null,
+        },
+      });
+    },
+  );
+
+  // View/download source attachment (returns presigned URL or file in production)
+  app.get(
+    '/api/source-attachments/:attachmentId/view',
+    async (request: FastifyRequest<{ Params: { attachmentId: string } }>, reply: FastifyReply) => {
+      const { attachmentId } = request.params;
+      const userId = (request as any).userId as string;
+
+      const attachment = await db
+        .selectFrom('source_attachments')
+        .selectAll()
+        .where('id', '=', attachmentId)
+        .where('user_id', '=', userId)
+        .executeTakeFirst()
+        .catch(() => null);
+
+      if (!attachment) {
+        return reply.status(404).send({ statusCode: 404, error: 'Attachment not found' });
+      }
+
+      // In production, generate a presigned S3 URL and redirect
+      // For now, return metadata indicating where the file would be
+      return reply.send({
+        statusCode: 200,
+        data: {
+          id: attachment.id,
+          s3Key: attachment.s3_key,
+          mimeType: attachment.mime_type,
+          message: 'In production, this would redirect to a presigned S3 URL',
+        },
+      });
+    },
+  );
+}

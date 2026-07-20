@@ -35,6 +35,7 @@ import { registerHomeLocationRoutes } from './routes/home-location.js';
 import { registerSharingRoutes } from './routes/sharing.js';
 import { registerSyncRoutes } from './routes/sync.js';
 import { registerActivityFeedRoutes } from './routes/activity-feed.js';
+import { registerSourceAttachmentsRoute } from './routes/source-attachments.js';
 import { CognitoService } from './services/cognito.js';
 import { type Kysely } from 'kysely';
 import { type Database } from './db/types.js';
@@ -179,6 +180,11 @@ export async function buildApp(
   // Register enriched trip timeline route
   if (options.db) {
     await registerTripTimelineRoute(app, { db: options.db });
+  }
+
+  // Register source attachments routes
+  if (options.db) {
+    await registerSourceAttachmentsRoute(app, { db: options.db });
   }
 
   // Register home location routes

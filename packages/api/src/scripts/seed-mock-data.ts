@@ -220,6 +220,30 @@ async function seed() {
   }
   console.log(`  ✅ ${activities.length} activity feed entries`);
 
+  // Source attachments (demonstrate source provenance on bookings)
+  const SOURCE_ATTACHMENTS = [
+    { userId: '00000000-0000-4000-a000-000000000001', entityType: 'booking', entityId: '00000000-0000-4000-c000-000000000001', sourceType: 'email', emailSubject: 'Your British Airways Booking Confirmation - BA560', emailFrom: 'noreply@ba.com', emailDate: '2026-06-15T10:30:00Z', mimeType: 'text/html' },
+    { userId: '00000000-0000-4000-a000-000000000001', entityType: 'booking', entityId: '00000000-0000-4000-c000-000000000002', sourceType: 'email', emailSubject: 'Hotel Booking Confirmation - Grand Palazzo Roma', emailFrom: 'reservations@grandpalazzo.it', emailDate: '2026-06-20T14:00:00Z', mimeType: 'text/html' },
+    { userId: '00000000-0000-4000-a000-000000000002', entityType: 'booking', entityId: '00000000-0000-4000-c000-000000000004', sourceType: 'email', emailSubject: 'Japan Airlines e-Ticket - JL44', emailFrom: 'tickets@jal.co.jp', emailDate: '2027-01-05T09:00:00Z', mimeType: 'text/html' },
+    { userId: '00000000-0000-4000-a000-000000000001', entityType: 'booking', entityId: '00000000-0000-4000-c000-000000000006', sourceType: 'pdf', mimeType: 'application/pdf' },
+    { userId: '00000000-0000-4000-a000-000000000001', entityType: 'expense', entityId: '00000000-0000-4000-d000-000000000001', sourceType: 'receipt_scan', mimeType: 'image/jpeg' },
+  ];
+  for (const sa of SOURCE_ATTACHMENTS) {
+    await db.insertInto('source_attachments').values({
+      user_id: sa.userId,
+      entity_type: sa.entityType,
+      entity_id: sa.entityId,
+      source_type: sa.sourceType,
+      email_subject: sa.emailSubject ?? null,
+      email_from: sa.emailFrom ?? null,
+      email_date: sa.emailDate ? new Date(sa.emailDate) : null,
+      mime_type: sa.mimeType ?? null,
+      s3_key: null,
+      s3_bucket: null,
+    }).execute().catch(() => {}); // Skip if already exists
+  }
+  console.log(`  ✅ ${SOURCE_ATTACHMENTS.length} source attachments`);
+
   console.log('\n🎉 Mock data seeded successfully!');
   console.log('\n  Demo accounts (password: Demo1234):');
   for (const user of USERS) {
@@ -234,6 +258,9 @@ async function clean() {
   console.log('🧹 Cleaning mock data...\n');
 
   // Delete in reverse dependency order using known IDs
+  await db.deleteFrom('source_attachments').where('user_id', 'in', USERS.map((u) => u.id)).execute().catch(() => {});
+  console.log('  ✅ Source attachments cleaned');
+
   await db.deleteFrom('activity_feed').where('user_id', 'in', USERS.map((u) => u.id)).execute();
   console.log('  ✅ Activity feed cleaned');
 
