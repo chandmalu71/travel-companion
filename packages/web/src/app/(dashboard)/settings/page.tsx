@@ -192,6 +192,24 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* ─── Home Location Quick Link ─────────────────────────────────── */}
+      <section className="rounded-lg border border-gray-200 bg-white p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-medium text-gray-900">🏠 Home & Travel</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Set your home location for personalized leave-by times, directions, and timezone info.
+            </p>
+          </div>
+          <a
+            href="/settings/home-location"
+            className="rounded-md bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200 whitespace-nowrap"
+          >
+            Set Up →
+          </a>
+        </div>
+      </section>
+
       {/* ─── Interests ──────────────────────────────────────────────── */}
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-2">Interests</h2>
