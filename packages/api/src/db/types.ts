@@ -21,6 +21,8 @@ export interface Database {
   expense_groups: ExpenseGroupsTable;
   group_members: GroupMembersTable;
   expense_splits: ExpenseSplitsTable;
+  expense_split_members: ExpenseSplitMembersTable;
+  split_preferences: SplitPreferencesTable;
   settlements: SettlementsTable;
   documents: DocumentsTable;
   scheduled_notifications: ScheduledNotificationsTable;
@@ -313,6 +315,7 @@ export interface ExpensesTable {
   notes: string | null;
   receipt_document_id: string | null;
   source_attachment_id: string | null;
+  payer_id: string | null;
   is_shared: Generated<boolean>;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
@@ -376,12 +379,46 @@ export interface SettlementsTable {
   currency: string;
   settled: Generated<boolean>;
   settled_at: Date | null;
+  amount_paid: ColumnType<string, string, string>;
+  notes: string | null;
   created_at: Generated<Date>;
 }
 
 export type Settlement = Selectable<SettlementsTable>;
 export type NewSettlement = Insertable<SettlementsTable>;
 export type SettlementUpdate = Updateable<SettlementsTable>;
+
+// --- Expense Split Members ---
+
+export interface ExpenseSplitMembersTable {
+  id: Generated<string>;
+  expense_id: string;
+  member_id: string;
+  split_type: 'equal' | 'percentage' | 'per_item';
+  percentage: ColumnType<string | null, string | null, string | null>;
+  amount: ColumnType<string | null, string | null, string | null>;
+  items: string | null; // JSON array
+  created_at: Generated<Date>;
+}
+
+export type ExpenseSplitMember = Selectable<ExpenseSplitMembersTable>;
+export type NewExpenseSplitMember = Insertable<ExpenseSplitMembersTable>;
+export type ExpenseSplitMemberUpdate = Updateable<ExpenseSplitMembersTable>;
+
+// --- Split Preferences ---
+
+export interface SplitPreferencesTable {
+  id: Generated<string>;
+  user_id: string;
+  trip_id: string;
+  default_split_type: Generated<string>;
+  default_included_members: string | null; // JSON array of member_ids
+  updated_at: Generated<Date>;
+}
+
+export type SplitPreference = Selectable<SplitPreferencesTable>;
+export type NewSplitPreference = Insertable<SplitPreferencesTable>;
+export type SplitPreferenceUpdate = Updateable<SplitPreferencesTable>;
 
 // --- Documents ---
 
