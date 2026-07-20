@@ -109,6 +109,7 @@ export interface BookingsTable {
   type: 'flight' | 'hotel' | 'car_rental';
   source: Generated<'email' | 'manual'>;
   source_email_id: string | null;
+  source_attachment_id: string | null;
   checked_in: Generated<boolean>;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
@@ -283,6 +284,7 @@ export interface ExpensesTable {
   merchant_name: string | null;
   notes: string | null;
   receipt_document_id: string | null;
+  source_attachment_id: string | null;
   is_shared: Generated<boolean>;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
