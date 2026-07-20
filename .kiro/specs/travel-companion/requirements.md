@@ -637,3 +637,22 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 10. THE home location SHALL be optional — the app functions without it, but shows a gentle reminder on the dashboard if not set: "Set your home location for better trip planning"
 11. THE Application SHALL display timezone difference on trip cards: "Destination is UTC+7 (5h ahead of home)"
 12. THE Application SHALL use home location for weather comparison: "32°C in Bali vs 15°C at home"
+
+### Requirement 32: Source Attachments (Provenance Tracking)
+
+**User Story:** As a traveler, I want every booking and expense to link back to its original source (email, receipt photo, PDF) so I can verify details and have proof when needed.
+
+#### Acceptance Criteria
+
+1. EVERY booking and expense SHALL track its **source type**: `email` (auto-imported), `receipt_scan` (photo), `pdf` (attached document), `manual` (user-typed), `forwarded` (via trips@nayya.ai)
+2. FOR email-sourced items, THE Application SHALL store BOTH: a) the full original email (HTML body, stored in S3) for offline viewing, and b) a reference (provider + message ID) for linking back to the user's inbox
+3. FOR receipt-scanned expenses, THE Application SHALL retain the original image (JPEG/PNG/HEIC) in S3 linked to the expense
+4. FOR PDF attachments, THE Application SHALL store the original PDF in S3 linked to the booking/expense
+5. FOR manual entries, THE Application SHALL prompt: "Attach a confirmation screenshot, email, or PDF?" (optional)
+6. THE Application SHALL perform **privacy sanitization** on stored emails: strip credit card numbers, CVVs, billing addresses, and payment details — but KEEP traveller names, dates, confirmation numbers, and booking details
+7. THE UI SHALL display a source indicator on each booking/expense card with a "View Original" link: `📧 Source: email` / `📷 Source: receipt photo` / `📄 Source: PDF` / `✍️ Manually entered`
+8. CLICKING "View Original" SHALL open a modal/page showing: the original email (rendered HTML), receipt image (full-size), or PDF viewer
+9. THE Application SHALL allow users to configure **source data retention** in their settings with options: a) Keep forever (default for paid plans), b) Delete after 1 year, c) Delete after 6 months, d) Delete after 30 days (minimum for GDPR right of access period)
+10. THE default retention period SHALL be compliant with GDPR: stored for as long as the user has an active account, deleted within 30 days of account deletion
+11. WHEN a user deletes their account, ALL source attachments SHALL be permanently deleted from S3 within 30 days
+12. THE source attachment SHALL be accessible offline (cached locally when user selects trip for offline access)
