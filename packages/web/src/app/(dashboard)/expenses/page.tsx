@@ -662,216 +662,117 @@ function EditExpenseModal({ expense, onClose, onSaved }: { expense: Expense; onC
   const [merchantName, setMerchantName] = useState(expense.merchant_name ?? '');
   const [notes, setNotes] = useState(expense.notes ?? '');
   const [isShared, setIsShared] = useState(expense.is_shared ?? false);
-  const [splitType, setSplitType] = useState<'equal' | 'percentage' | 'per_item'>(
-    (expense.sharedWith?.[0]?.splitType as any) ?? 'equal'
-  );
+  const [selectedTripId, setSelectedTripId] = useState(expense.trip_id ?? '');
+  const [splitType, setSplitType] = useState<'equal' | 'percentage' | 'per_item'>((expense.sharedWith?.[0]?.splitType as any) ?? 'equal');
+  const [trips, setTrips] = useState<Array<{ id: string; name: string }>>([]);
+  const [tripMembers, setTripMembers] = useState<Array<{ id: string; name: string }>>([]);
+  const [includedMembers, setIncludedMembers] = useState<Record<string, boolean>>({});
+  const [percentages, setPercentages] = useState<Record<string, string>>({});
+  const [itemAmounts, setItemAmounts] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Trip members (mock — in production fetch from trip context)
-  const tripMembers = [
-    { id: 'member-1', name: 'Alice Johnson' },
-    { id: 'member-2', name: 'Bob Smith' },
-    { id: 'member-3', name: 'Charlie Davis' },
-  ];
+  // Fetch trips
+  useEffect(() => {
+    api.get<{ data?: any[]; trips?: any[] }>('/api/trips').then(r => setTrips(r.data ?? r.trips ?? [])).catch(() => {});
+  }, []);
 
-  // Initialize included members from existing split data
-  const [includedMembers, setIncludedMembers] = useState<Record<string, boolean>>(() => {
-    if (expense.sharedWith && expense.sharedWith.length > 0) {
-      const included: Record<string, boolean> = {};
-      tripMembers.forEach(m => { included[m.id] = expense.sharedWith!.some(s => s.memberId === m.id); });
-      return included;
-    }
-    return Object.fromEntries(tripMembers.map(m => [m.id, true]));
-  });
-
-  const [percentages, setPercentages] = useState<Record<string, string>>(() => {
-    if (expense.sharedWith) {
-      const pcts: Record<string, string> = {};
-      expense.sharedWith.forEach(s => { if (s.percentage) pcts[s.memberId] = String(s.percentage); });
-      return pcts;
-    }
-    return {};
-  });
-
-  const [itemAmounts, setItemAmounts] = useState<Record<string, string>>(() => {
-    if (expense.sharedWith) {
-      const amts: Record<string, string> = {};
-      expense.sharedWith.forEach(s => { if (s.amount) amts[s.memberId] = String(s.amount); });
-      return amts;
-    }
-    return {};
-  });
+  // Fetch trip members when trip changes
+  useEffect(() => {
+    if (selectedTripId) {
+      api.get<{ data: Array<{ id: string; name: string }> }>(`/api/trips/${selectedTripId}/members`)
+        .then(r => {
+          const members = r.data ?? [];
+          setTripMembers(members);
+          // Pre-select from existing sharedWith or all
+          if (expense.sharedWith && expense.sharedWith.length > 0) {
+            const inc: Record<string, boolean> = {};
+            members.forEach(m => { inc[m.id] = expense.sharedWith!.some(s => s.memberId === m.id); });
+            setIncludedMembers(inc);
+            const pcts: Record<string, string> = {};
+            const amts: Record<string, string> = {};
+            expense.sharedWith.forEach(s => { if (s.percentage) pcts[s.memberId] = String(s.percentage); if (s.amount) amts[s.memberId] = String(s.amount); });
+            setPercentages(pcts);
+            setItemAmounts(amts);
+          } else {
+            setIncludedMembers(Object.fromEntries(members.map(m => [m.id, true])));
+          }
+        })
+        .catch(() => setTripMembers([]));
+    } else { setTripMembers([]); }
+  }, [selectedTripId]);
 
   const amt = parseFloat(amount) || 0;
   const includedCount = Object.values(includedMembers).filter(Boolean).length;
   const equalShare = includedCount > 0 ? (amt / includedCount).toFixed(2) : '0.00';
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (!amt || amt <= 0) { setError('Please enter a valid amount'); return; }
-
+    e.preventDefault(); setError('');
+    if (!amt || amt <= 0) { setError('Enter a valid amount'); return; }
     if (isShared && splitType === 'percentage') {
-      const totalPct = Object.entries(percentages).filter(([id]) => includedMembers[id]).reduce((s, [, v]) => s + (parseFloat(v) || 0), 0);
-      if (Math.abs(totalPct - 100) > 0.01) { setError(`Percentages must sum to 100% (currently ${totalPct.toFixed(1)}%)`); return; }
+      const t = Object.entries(percentages).filter(([id]) => includedMembers[id]).reduce((s, [, v]) => s + (parseFloat(v) || 0), 0);
+      if (Math.abs(t - 100) > 0.01) { setError(`Percentages must sum to 100%`); return; }
     }
-
     setSubmitting(true);
     try {
-      await api.put(`/api/expenses/${expense.id}`, {
-        amount: amt, currency, category, date,
-        merchantName: merchantName || undefined,
-        notes: notes || undefined,
-        isShared,
-      });
-
-      // Update split config if shared
-      if (isShared) {
-        const includedMemberList = tripMembers.filter(m => includedMembers[m.id]);
-        if (includedMemberList.length > 0) {
-          const splitMembers = includedMemberList.map(m => {
-            const entry: { memberId: string; percentage?: number; amount?: number } = { memberId: m.id };
-            if (splitType === 'percentage') entry.percentage = parseFloat(percentages[m.id] ?? '0');
-            if (splitType === 'per_item') entry.amount = parseFloat(itemAmounts[m.id] ?? '0');
-            if (splitType === 'equal') entry.amount = amt / includedMemberList.length;
-            return entry;
-          });
-          await api.post(`/api/trips/00000000-0000-4000-b000-000000000001/expenses/${expense.id}/split`, {
-            splitType, members: splitMembers,
-          }).catch(() => {});
+      await api.put(`/api/expenses/${expense.id}`, { amount: amt, currency, category, date, merchantName: merchantName || undefined, notes: notes || undefined, isShared, tripId: selectedTripId || null });
+      if (isShared && selectedTripId) {
+        const list = tripMembers.filter(m => includedMembers[m.id]);
+        if (list.length > 0) {
+          const members = list.map(m => ({ memberId: m.id, ...(splitType === 'equal' ? { amount: amt / list.length } : splitType === 'percentage' ? { percentage: parseFloat(percentages[m.id] ?? '0') } : { amount: parseFloat(itemAmounts[m.id] ?? '0') }) }));
+          await api.post(`/api/trips/${selectedTripId}/expenses/${expense.id}/split`, { splitType, members }).catch(() => {});
         }
       }
-
       onSaved();
-    } catch {
-      setError('Failed to update expense.');
-    } finally {
-      setSubmitting(false);
-    }
+    } catch { setError('Failed to update expense.'); } finally { setSubmitting(false); }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit Expense</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Shared/Personal toggle */}
           <div className="flex rounded-lg border border-gray-200 overflow-hidden">
-            <button type="button" onClick={() => setIsShared(true)}
-              className={`flex-1 py-2 text-sm font-medium transition-all ${isShared ? 'bg-primary-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
-              👥 Shared
-            </button>
-            <button type="button" onClick={() => setIsShared(false)}
-              className={`flex-1 py-2 text-sm font-medium transition-all ${!isShared ? 'bg-gray-700 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
-              🔒 Personal
-            </button>
+            <button type="button" onClick={() => setIsShared(true)} className={`flex-1 py-2 text-sm font-medium ${isShared ? 'bg-primary-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>👥 Shared</button>
+            <button type="button" onClick={() => setIsShared(false)} className={`flex-1 py-2 text-sm font-medium ${!isShared ? 'bg-gray-700 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>🔒 Personal</button>
           </div>
-
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Trip</label>
+            <select value={selectedTripId} onChange={e => setSelectedTripId(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <option value="">No trip</option>
+              {trips.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
           <div className="flex gap-2">
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Amount</label>
-              <input type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" autoFocus />
-            </div>
-            <div className="w-24">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Currency</label>
-              <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-2 text-sm">
-                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
+            <div className="flex-1"><label className="block text-xs font-medium text-gray-700 mb-1">Amount</label><input type="number" step="0.01" min="0.01" value={amount} onChange={e => setAmount(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" autoFocus /></div>
+            <div className="w-24"><label className="block text-xs font-medium text-gray-700 mb-1">Currency</label><select value={currency} onChange={e => setCurrency(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-2 text-sm">{CURRENCIES.map(c => <option key={c}>{c}</option>)}</select></div>
           </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Category</label>
-            <div className="grid grid-cols-4 gap-1.5">
-              {CATEGORIES.map(cat => (
-                <button key={cat.value} type="button" onClick={() => setCategory(cat.value)}
-                  className={`flex flex-col items-center gap-0.5 rounded-md border px-2 py-2 text-[10px] transition-all ${
-                    category === cat.value ? 'border-primary-500 bg-primary-50 text-primary-700 font-medium' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                  <span className="text-base">{cat.icon}</span>
-                  <span className="truncate w-full text-center">{cat.label.split(' ')[0]}</span>
-                </button>
-              ))}
-            </div>
+          <div><label className="block text-xs font-medium text-gray-700 mb-1">Category</label>
+            <div className="grid grid-cols-4 gap-1.5">{CATEGORIES.map(cat => (<button key={cat.value} type="button" onClick={() => setCategory(cat.value)} className={`flex flex-col items-center gap-0.5 rounded-md border px-2 py-2 text-[10px] ${category === cat.value ? 'border-primary-500 bg-primary-50 text-primary-700 font-medium' : 'border-gray-200 text-gray-600'}`}><span className="text-base">{cat.icon}</span><span className="truncate w-full text-center">{cat.label.split(' ')[0]}</span></button>))}</div>
           </div>
-
           <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Merchant</label>
-              <input type="text" value={merchantName} onChange={(e) => setMerchantName(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
-            </div>
+            <div><label className="block text-xs font-medium text-gray-700 mb-1">Date</label><input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+            <div><label className="block text-xs font-medium text-gray-700 mb-1">Merchant</label><input type="text" value={merchantName} onChange={e => setMerchantName(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
           </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
-            <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
-          </div>
-
-          {/* Split config (shared only) */}
-          {isShared && (
-            <div className="border border-gray-200 rounded-lg p-3 space-y-3 bg-gray-50">
-              <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Split Configuration</p>
-              <div className="flex gap-1">
-                {(['equal', 'percentage', 'per_item'] as const).map(type => (
-                  <button key={type} type="button" onClick={() => setSplitType(type)}
-                    className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${splitType === type ? 'bg-white border border-primary-300 text-primary-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                    {type === 'equal' ? '÷ Equal' : type === 'percentage' ? '% Percent' : '🏷️ Per Item'}
-                  </button>
-                ))}
-              </div>
-              <div className="space-y-1.5">
-                {tripMembers.map(member => (
-                  <div key={member.id} className="flex items-center gap-2">
-                    <input type="checkbox" checked={includedMembers[member.id] ?? false}
-                      onChange={(e) => setIncludedMembers(prev => ({ ...prev, [member.id]: e.target.checked }))}
-                      className="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
-                    <span className="text-sm text-gray-700 flex-1">{member.name}</span>
-                    {splitType === 'equal' && includedMembers[member.id] && (
-                      <span className="text-xs text-gray-500 font-mono">{currency} {equalShare}</span>
-                    )}
-                    {splitType === 'percentage' && includedMembers[member.id] && (
-                      <input type="number" step="0.1" min="0" max="100" placeholder="%" value={percentages[member.id] ?? ''}
-                        onChange={(e) => setPercentages(prev => ({ ...prev, [member.id]: e.target.value }))}
-                        className="w-16 rounded border border-gray-300 px-2 py-1 text-xs text-right" />
-                    )}
-                    {splitType === 'per_item' && includedMembers[member.id] && (
-                      <input type="number" step="0.01" min="0" placeholder="0.00" value={itemAmounts[member.id] ?? ''}
-                        onChange={(e) => setItemAmounts(prev => ({ ...prev, [member.id]: e.target.value }))}
-                        className="w-20 rounded border border-gray-300 px-2 py-1 text-xs text-right" />
-                    )}
-                  </div>
-                ))}
-              </div>
-              <div className="text-[11px] text-gray-500 pt-1 border-t border-gray-200">
-                {splitType === 'equal' && <span>Split equally among {includedCount} = {currency} {equalShare} each</span>}
-                {splitType === 'percentage' && <span>Total: {Object.entries(percentages).filter(([id]) => includedMembers[id]).reduce((s, [, v]) => s + (parseFloat(v) || 0), 0).toFixed(1)}%</span>}
-                {splitType === 'per_item' && <span>Assigned: {currency} {Object.entries(itemAmounts).filter(([id]) => includedMembers[id]).reduce((s, [, v]) => s + (parseFloat(v) || 0), 0).toFixed(2)} of {amt.toFixed(2)}</span>}
-              </div>
+          <div><label className="block text-xs font-medium text-gray-700 mb-1">Notes</label><input type="text" value={notes} onChange={e => setNotes(e.target.value)} maxLength={500} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+          {isShared && tripMembers.length > 0 && (
+            <div className="border border-gray-200 rounded-lg p-3 space-y-2 bg-gray-50">
+              <p className="text-xs font-semibold text-gray-700 uppercase">Split</p>
+              <div className="flex gap-1">{(['equal','percentage','per_item'] as const).map(t => (<button key={t} type="button" onClick={() => setSplitType(t)} className={`flex-1 py-1.5 text-xs rounded-md ${splitType === t ? 'bg-white border border-primary-300 text-primary-700 shadow-sm' : 'text-gray-500'}`}>{t === 'equal' ? '÷ Equal' : t === 'percentage' ? '% Pct' : '🏷️ Item'}</button>))}</div>
+              {tripMembers.map(m => (<div key={m.id} className="flex items-center gap-2"><input type="checkbox" checked={includedMembers[m.id] ?? false} onChange={e => setIncludedMembers(p => ({...p,[m.id]:e.target.checked}))} className="rounded border-gray-300 text-primary-600" /><span className="text-sm flex-1">{m.name}</span>{splitType === 'equal' && includedMembers[m.id] && <span className="text-xs text-gray-500">{currency} {equalShare}</span>}{splitType === 'percentage' && includedMembers[m.id] && <input type="number" step="0.1" placeholder="%" value={percentages[m.id]??''} onChange={e => setPercentages(p=>({...p,[m.id]:e.target.value}))} className="w-14 rounded border px-1 py-0.5 text-xs text-right" />}{splitType === 'per_item' && includedMembers[m.id] && <input type="number" step="0.01" placeholder="0" value={itemAmounts[m.id]??''} onChange={e => setItemAmounts(p=>({...p,[m.id]:e.target.value}))} className="w-16 rounded border px-1 py-0.5 text-xs text-right" />}</div>))}
             </div>
           )}
-
+          {isShared && !selectedTripId && <p className="text-[11px] text-amber-600 bg-amber-50 rounded px-2 py-1 border border-amber-200">⚠️ Select a trip to configure split</p>}
           {error && <p className="text-xs text-red-600">{error}</p>}
-
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Cancel</button>
-            <button type="submit" disabled={submitting} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500 disabled:opacity-50">
-              {submitting ? 'Saving...' : 'Save Changes'}
-            </button>
+            <button type="button" onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm">Cancel</button>
+            <button type="submit" disabled={submitting} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{submitting ? 'Saving...' : 'Save Changes'}</button>
           </div>
         </form>
       </div>
     </div>
   );
 }
-
 // ─── Delete Expense Confirmation ─────────────────────────────────────────────
 
 function DeleteExpenseConfirm({ expense, onClose, onDeleted }: { expense: Expense; onClose: () => void; onDeleted: () => void }) {
