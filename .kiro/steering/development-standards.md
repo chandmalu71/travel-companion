@@ -180,10 +180,12 @@ feature/xyz  →  develop  →  main
    ```bash
    git checkout develop
    git pull origin develop
-   git checkout -b feature/my-feature
+   git checkout -b feature/my-feature   # for features
+   git checkout -b fix/my-bugfix        # for bug fixes
+   git checkout -b chore/my-task        # for chores/docs/refactoring
    ```
 
-2. **Develop and commit** on feature branch (conventional commits)
+2. **Develop and commit** on the branch (conventional commits)
 
 3. **Push and create PR** to `develop`:
    ```bash
@@ -197,13 +199,23 @@ feature/xyz  →  develop  →  main
 
 6. **When ready for production**, create PR from `develop` → `main` (requires approval)
 
+### Branch Naming
+
+| Type | Prefix | Example |
+|------|--------|---------|
+| New feature | `feature/` | `feature/rich-timeline-cards` |
+| Bug fix | `fix/` | `fix/expenses-toFixed-error` |
+| Hotfix (urgent prod) | `hotfix/` | `hotfix/login-crash` |
+| Chore/docs/refactor | `chore/` | `chore/update-steering-file` |
+
 ### Git Rules
 
 - **NEVER push directly to `main`** — always via PR from develop
-- **NEVER push directly to `develop`** — always via PR from feature branch
+- **NEVER push directly to `develop`** — always via PR from feature/fix/chore branch
+- **ALL changes** (features, bugs, hotfixes, docs, config, any modification) MUST go through a branch + PR
 - Never force-push to shared branches (`main`, `develop`)
 - Production deploys require manual approval
-- Feature branches are deleted after merge
+- Feature/fix branches are deleted after merge
 - Commit messages: conventional commits (`feat:`, `fix:`, `docs:`, `chore:`, `security:`)
 
 ### Pipeline
