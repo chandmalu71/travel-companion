@@ -40,6 +40,7 @@ export interface Database {
   translations: TranslationsTable;
   trip_groups: TripGroupsTable;
   trip_travellers: TripTravellersTable;
+  trip_invitations: TripInvitationsTable;
 }
 
 // --- Users ---
@@ -723,3 +724,24 @@ export interface TripTravellersTable {
 
 export type TripTraveller = Selectable<TripTravellersTable>;
 export type NewTripTraveller = Insertable<TripTravellersTable>;
+
+// --- Trip Invitations ---
+
+export interface TripInvitationsTable {
+  id: Generated<string>;
+  trip_id: string;
+  invited_by: string;
+  channel: string;
+  recipient: string | null;
+  role: Generated<string>;
+  group_id: string | null;
+  message: string | null;
+  expires_at: Date | null;
+  token: string;
+  status: Generated<string>;
+  accepted_at: Date | null;
+  created_at: Generated<Date>;
+}
+
+export type TripInvitation = Selectable<TripInvitationsTable>;
+export type NewTripInvitation = Insertable<TripInvitationsTable>;

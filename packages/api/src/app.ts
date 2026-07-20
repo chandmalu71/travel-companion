@@ -22,13 +22,13 @@ import { registerEmailWebhookRoutes } from './routes/email-webhooks.js';
 import { registerSearchRoutes } from './routes/search.js';
 import { registerBookingForwardRoutes } from './routes/booking-forward.js';
 import { registerEmailConnectionRoutes } from './routes/email-connections.js';
-import { registerAdminRoutes } from './routes/admin.js';
+import { registerAdminRoutes, registerAdminRoleRoutes } from './routes/admin.js';
 import { registerAdminAuth } from './plugins/admin-auth.js';
 import { registerExpenseRoutes } from './routes/expenses.js';
 import { registerExpenseGroupRoutes } from './routes/expense-groups.js';
 import { registerExpenseSplittingRoutes } from './routes/expense-splitting.js';
 import { registerI18nRoutes } from './routes/i18n.js';
-import { registerTripMembersRoutes } from './routes/trip-members.js';
+import { registerTripMembersRoutes, registerTripInvitationRoutes, registerAdminTripMembershipRoutes } from './routes/trip-members.js';
 import { registerDocumentRoutes } from './routes/documents.js';
 import { registerHighlightRoutes } from './routes/highlights.js';
 import { registerPreferencesRoutes } from './routes/preferences.js';
@@ -158,6 +158,8 @@ export async function buildApp(
     await registerExpenseSplittingRoutes(app, { db: options.db });
     await registerI18nRoutes(app, { db: options.db });
     await registerTripMembersRoutes(app, { db: options.db });
+    await registerTripInvitationRoutes(app, { db: options.db });
+    await registerAdminTripMembershipRoutes(app, { db: options.db });
   }
 
   // Register document routes
@@ -274,6 +276,7 @@ export async function buildApp(
   if (options.db) {
     await app.register(registerAdminAuth, { db: options.db });
     await registerAdminRoutes(app, { db: options.db });
+    await registerAdminRoleRoutes(app, { db: options.db });
   }
 
   return app;
