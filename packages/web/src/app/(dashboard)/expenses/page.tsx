@@ -22,6 +22,7 @@ interface Expense {
   notes: string | null;
   trip_id: string | null;
   is_shared: boolean;
+  tripName: string | null;
   sourceAttachment: SourceAttachment | null;
   sharedWith: Array<{ memberId: string; name: string; amount: number | null; percentage: number | null; splitType: string }> | null;
 }
@@ -122,6 +123,7 @@ export default function ExpensesPage() {
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-gray-900 text-sm truncate">{expense.merchant_name ?? expense.category.replace('_', ' ')}</p>
                   <span className="text-[11px] text-gray-400">{expense.date}</span>
+                  {expense.tripName && <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 rounded px-1 truncate max-w-[120px]">{expense.tripName}</span>}
                   {expense.is_shared && <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1">shared</span>}
                   {!expense.is_shared && <span className="text-[10px] bg-gray-50 text-gray-400 border border-gray-200 rounded px-1">personal</span>}
                 </div>
