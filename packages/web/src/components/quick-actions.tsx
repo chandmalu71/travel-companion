@@ -35,7 +35,7 @@ export function QuickActions({ address, latitude, longitude, phone, bookingId, c
   };
 
   return (
-    <div className={`flex items-center gap-1.5 mt-3 pt-3 border-t border-gray-100 ${className}`}>
+    <div className={`flex items-center gap-1.5 ${className ? className : 'mt-3 pt-3 border-t border-gray-100'}`}>
       {(hasLocation || hasAddress) && (
         <a
           href={getNavigateUrl()}
