@@ -56,9 +56,10 @@ export default function BookingsPage() {
       ) : (
         <div className="space-y-3">
           {bookings.map((booking) => (
-            <div
+            <a
               key={booking.id}
-              className="flex items-center justify-between rounded-lg bg-white p-4 border border-gray-200 shadow-sm"
+              href={booking.trip_id ? `/trips/${booking.trip_id}` : '#'}
+              className="flex items-center justify-between rounded-lg bg-white p-4 border border-gray-200 shadow-sm hover:border-primary-300 hover:shadow-md transition-all block"
             >
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{TYPE_ICONS[booking.type] ?? '📋'}</span>
@@ -75,8 +76,9 @@ export default function BookingsPage() {
                     Checked In
                   </span>
                 )}
+                <span className="text-gray-400 text-sm">→</span>
               </div>
-            </div>
+            </a>
           ))}
         </div>
       )}
