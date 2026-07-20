@@ -71,7 +71,7 @@ export default function TranslationsPage() {
 
       {/* Language selector + actions */}
       <div className="flex items-center gap-4 flex-wrap">
-        <select value={selectedLang} onChange={e => setSelectedLang(e.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+        <select value={selectedLang} onChange={e => setSelectedLang(e.target.value)} className="rounded-md border border-gray-600 bg-gray-800 text-white px-3 py-2 text-sm">
           <option value="">Select language...</option>
           {languages.map(l => <option key={l.code} value={l.code}>{l.native_name} ({l.name}) — {l.translation_coverage}%</option>)}
         </select>
@@ -91,8 +91,8 @@ export default function TranslationsPage() {
       {selectedLang && (
         <div className="flex gap-3">
           <input type="text" placeholder="Search keys or text..." value={search} onChange={e => setSearch(e.target.value)}
-            className="flex-1 max-w-xs rounded-md border border-gray-300 px-3 py-2 text-sm" />
-          <select value={nsFilter} onChange={e => setNsFilter(e.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+            className="flex-1 max-w-xs rounded-md border border-gray-600 bg-gray-800 text-white px-3 py-2 text-sm" />
+          <select value={nsFilter} onChange={e => setNsFilter(e.target.value)} className="rounded-md border border-gray-600 bg-gray-800 text-white px-3 py-2 text-sm">
             <option value="">All namespaces</option>
             {namespaces.map(ns => <option key={ns} value={ns}>{ns}</option>)}
           </select>
@@ -153,7 +153,7 @@ export default function TranslationsPage() {
       ) : selectedLang ? (
         <p className="text-gray-400 text-sm">No matching keys found.</p>
       ) : (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
+        <div className="rounded-lg border-2 border-dashed border-gray-600 p-12 text-center">
           <p className="text-2xl mb-2">🌐</p>
           <p className="text-gray-400">Select a language to view and edit translations.</p>
         </div>

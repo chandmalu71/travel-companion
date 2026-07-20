@@ -111,7 +111,7 @@ export default function I18nPage() {
         <div>
           <div className="mb-3">
             <input type="text" placeholder="Search currencies..." value={searchCurrency} onChange={e => setSearchCurrency(e.target.value)}
-              className="w-full max-w-xs rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+              className="w-full max-w-xs rounded-md border border-gray-600 bg-gray-800 text-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
           </div>
           <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
             <table className="w-full text-sm">
