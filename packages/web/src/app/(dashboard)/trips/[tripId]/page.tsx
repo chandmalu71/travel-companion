@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { SourceIndicator } from '@/components/source-indicator';
+import { QuickActions } from '@/components/quick-actions';
 
 interface TripDetail {
   id: string;
@@ -224,7 +225,15 @@ function FlightCard({ item }: { item: any }) {
   const durationMin = item.flightDurationMinutes ? item.flightDurationMinutes % 60 : 0;
 
   return (
-    <div className="rounded-lg bg-white p-4 border border-gray-200 shadow-sm ml-2">
+    <div className="rounded-lg bg-white p-4 border border-gray-200 shadow-sm ml-2 relative overflow-hidden">
+      {/* Countdown ribbon */}
+      {item.countdown && item.status === 'upcoming' && (
+        <div className="absolute top-0 right-0 bg-primary-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-md">
+          {item.countdown}
+        </div>
+      )}
+
+      {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-xl">✈️</span>
@@ -236,6 +245,24 @@ function FlightCard({ item }: { item: any }) {
         <StatusBadge status={item.status} checkedIn={item.checkedIn} />
       </div>
 
+      {/* Confirmation + Cabin class row */}
+      {(item.confirmationNumber || item.cabinClass) && (
+        <div className="flex items-center gap-3 mb-3">
+          {item.confirmationNumber && (
+            <span className="inline-flex items-center gap-1 rounded bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-mono font-bold text-amber-800">
+              PNR: {item.confirmationNumber}
+            </span>
+          )}
+          {item.cabinClass && (
+            <span className="text-xs text-gray-500">{item.cabinClass}</span>
+          )}
+          {item.price && (
+            <span className="text-xs font-medium text-gray-700 ml-auto">{item.currency ?? '£'}{item.price.toLocaleString()}</span>
+          )}
+        </div>
+      )}
+
+      {/* Time grid */}
       {dep && (
         <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-lg p-3 mb-3">
           <div>
@@ -256,6 +283,17 @@ function FlightCard({ item }: { item: any }) {
         </div>
       )}
 
+      {/* Seat / Terminal / Gate / Baggage */}
+      {(item.seat || item.terminal || item.gate || item.baggageAllowance) && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 mb-2">
+          {item.seat && <span>💺 Seat <strong>{item.seat}</strong></span>}
+          {item.terminal && <span>🏢 Terminal <strong>{item.terminal}</strong></span>}
+          {item.gate && <span>🚪 Gate <strong>{item.gate}</strong></span>}
+          {item.baggageAllowance && <span>🧳 {item.baggageAllowance}</span>}
+        </div>
+      )}
+
+      {/* Leave by + Check-in */}
       <div className="flex gap-4 text-xs text-gray-500">
         {leaveBy && (
           <span className="flex items-center gap-1">
@@ -268,14 +306,39 @@ function FlightCard({ item }: { item: any }) {
           </span>
         )}
       </div>
+
+      {/* Traveller names */}
+      {item.travellerNames && item.travellerNames.length > 0 && (
+        <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+          <span>👤</span>
+          <span>{item.travellerNames.join(', ')}</span>
+        </div>
+      )}
+
+      {/* Notes */}
+      {item.notes && (
+        <div className="mt-2 text-xs text-gray-500 italic bg-yellow-50 rounded px-2 py-1 border border-yellow-100">
+          📝 {item.notes}
+        </div>
+      )}
+
       <SourceIndicator source={item.source} sourceAttachment={item.sourceAttachment} bookingId={item.id} />
+      <QuickActions address={item.departureAirport ? `${item.departureAirport} Airport` : undefined} />
     </div>
   );
 }
 
 function HotelCard({ item }: { item: any }) {
   return (
-    <div className="rounded-lg bg-white p-4 border border-gray-200 shadow-sm ml-2">
+    <div className="rounded-lg bg-white p-4 border border-gray-200 shadow-sm ml-2 relative overflow-hidden">
+      {/* Countdown ribbon */}
+      {item.countdown && item.status === 'upcoming' && (
+        <div className="absolute top-0 right-0 bg-primary-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-md">
+          {item.countdown}
+        </div>
+      )}
+
+      {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-xl">🏨</span>
@@ -287,6 +350,24 @@ function HotelCard({ item }: { item: any }) {
         <StatusBadge status={item.status} />
       </div>
 
+      {/* Confirmation + Room + Price row */}
+      {(item.confirmationNumber || item.roomType || item.price) && (
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
+          {item.confirmationNumber && (
+            <span className="inline-flex items-center gap-1 rounded bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-mono font-bold text-amber-800">
+              Ref: {item.confirmationNumber}
+            </span>
+          )}
+          {item.roomType && (
+            <span className="text-xs text-gray-600">🛏️ {item.roomType}</span>
+          )}
+          {item.price && (
+            <span className="text-xs font-medium text-gray-700 ml-auto">{item.currency ?? '€'}{item.price.toLocaleString()}</span>
+          )}
+        </div>
+      )}
+
+      {/* Stay grid */}
       <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-lg p-3">
         <div>
           <p className="text-xs text-gray-500">Check-in</p>
@@ -304,7 +385,37 @@ function HotelCard({ item }: { item: any }) {
           <p className="text-xs text-gray-400">{item.checkoutTime ?? '11:00'}</p>
         </div>
       </div>
+
+      {/* Guests + Per night rate */}
+      {(item.numberOfGuests || item.pricePerNight) && (
+        <div className="flex gap-4 mt-2 text-xs text-gray-500">
+          {item.numberOfGuests && <span>👥 {item.numberOfGuests} guest{item.numberOfGuests > 1 ? 's' : ''}</span>}
+          {item.pricePerNight && <span>💰 {item.currency ?? '€'}{item.pricePerNight}/night</span>}
+        </div>
+      )}
+
+      {/* Traveller names */}
+      {item.travellerNames && item.travellerNames.length > 0 && (
+        <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+          <span>👤</span>
+          <span>{item.travellerNames.join(', ')}</span>
+        </div>
+      )}
+
+      {/* Notes */}
+      {item.notes && (
+        <div className="mt-2 text-xs text-gray-500 italic bg-yellow-50 rounded px-2 py-1 border border-yellow-100">
+          📝 {item.notes}
+        </div>
+      )}
+
       <SourceIndicator source={item.source} sourceAttachment={item.sourceAttachment} bookingId={item.id} />
+      <QuickActions
+        address={item.address}
+        latitude={item.latitude}
+        longitude={item.longitude}
+        phone={item.contactPhone}
+      />
     </div>
   );
 }
@@ -315,17 +426,41 @@ function CarRentalCard({ item }: { item: any }) {
   const formatDateTime = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
 
   return (
-    <div className="rounded-lg bg-white p-4 border border-gray-200 shadow-sm ml-2">
+    <div className="rounded-lg bg-white p-4 border border-gray-200 shadow-sm ml-2 relative overflow-hidden">
+      {/* Countdown ribbon */}
+      {item.countdown && item.status === 'upcoming' && (
+        <div className="absolute top-0 right-0 bg-primary-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-md">
+          {item.countdown}
+        </div>
+      )}
+
+      {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-xl">🚗</span>
           <div>
             <p className="font-semibold text-gray-900">{item.company ?? 'Car Rental'}</p>
+            {item.vehicleClass && <p className="text-xs text-gray-500">{item.vehicleClass}</p>}
           </div>
         </div>
         <StatusBadge status={item.status} />
       </div>
 
+      {/* Confirmation + Price row */}
+      {(item.confirmationNumber || item.price) && (
+        <div className="flex items-center gap-3 mb-3">
+          {item.confirmationNumber && (
+            <span className="inline-flex items-center gap-1 rounded bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-mono font-bold text-amber-800">
+              Ref: {item.confirmationNumber}
+            </span>
+          )}
+          {item.price && (
+            <span className="text-xs font-medium text-gray-700 ml-auto">{item.currency ?? '€'}{item.price.toLocaleString()}</span>
+          )}
+        </div>
+      )}
+
+      {/* Time grid */}
       <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-lg p-3">
         <div>
           <p className="text-xs text-gray-500">Pickup</p>
@@ -341,7 +476,57 @@ function CarRentalCard({ item }: { item: any }) {
           <p className="text-sm font-semibold text-gray-900">{returnTime ? formatDateTime(returnTime) : '—'}</p>
         </div>
       </div>
+
+      {/* Pickup / Return locations */}
+      {(item.pickupLocation || item.returnLocation) && (
+        <div className="mt-2 space-y-1 text-xs text-gray-600">
+          {item.pickupLocation && (
+            <div className="flex items-start gap-1">
+              <span className="text-green-600">📍</span>
+              <span><strong>Pickup:</strong> {item.pickupLocation}</span>
+            </div>
+          )}
+          {item.returnLocation && item.returnLocation !== item.pickupLocation && (
+            <div className="flex items-start gap-1">
+              <span className="text-red-500">📍</span>
+              <span><strong>Return:</strong> {item.returnLocation}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Insurance + Fuel policy + Extras */}
+      {(item.insurance || item.fuelPolicy || (item.extras && item.extras.length > 0)) && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-gray-500">
+          {item.insurance && <span>🛡️ {item.insurance}</span>}
+          {item.fuelPolicy && <span>⛽ {item.fuelPolicy}</span>}
+          {item.extras && item.extras.length > 0 && (
+            <span>➕ {item.extras.join(', ')}</span>
+          )}
+        </div>
+      )}
+
+      {/* Driver names */}
+      {item.travellerNames && item.travellerNames.length > 0 && (
+        <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+          <span>🪪</span>
+          <span>Driver: {item.travellerNames.join(', ')}</span>
+        </div>
+      )}
+
+      {/* Notes */}
+      {item.notes && (
+        <div className="mt-2 text-xs text-gray-500 italic bg-yellow-50 rounded px-2 py-1 border border-yellow-100">
+          📝 {item.notes}
+        </div>
+      )}
+
       <SourceIndicator source={item.source} sourceAttachment={item.sourceAttachment} bookingId={item.id} />
+      <QuickActions
+        address={item.pickupLocation}
+        latitude={item.pickupLatitude}
+        longitude={item.pickupLongitude}
+      />
     </div>
   );
 }

@@ -27,6 +27,12 @@ export interface EnrichedTimelineItem {
     emailFrom?: string;
     emailDate?: string;
   };
+  // Common enhanced fields
+  confirmationNumber?: string;
+  travellerNames?: string[];
+  notes?: string;
+  price?: number;
+  currency?: string;
   // Flight-specific
   airline?: string;
   flightNumber?: string;
@@ -37,14 +43,25 @@ export interface EnrichedTimelineItem {
   flightDurationMinutes?: number;
   leaveHomeBy?: string;
   checkinOpens?: string;
+  seat?: string;
+  terminal?: string;
+  gate?: string;
+  baggageAllowance?: string;
+  cabinClass?: string;
   // Hotel-specific
   hotelName?: string;
   address?: string;
   checkinDate?: string;
   checkoutDate?: string;
   numberOfNights?: number;
-  checkinTime?: string; // "15:00" default
-  checkoutTime?: string; // "11:00" default
+  checkinTime?: string;
+  checkoutTime?: string;
+  roomType?: string;
+  numberOfGuests?: number;
+  contactPhone?: string;
+  pricePerNight?: number;
+  latitude?: number;
+  longitude?: number;
   // Car-specific
   company?: string;
   pickupTime?: string;
@@ -52,9 +69,16 @@ export interface EnrichedTimelineItem {
   pickupLocation?: string;
   returnLocation?: string;
   rentalDays?: number;
+  vehicleClass?: string;
+  insurance?: string;
+  fuelPolicy?: string;
+  extras?: string[];
+  pickupLatitude?: number;
+  pickupLongitude?: number;
   // Computed
   status: 'upcoming' | 'active' | 'completed';
-  sortDate: string; // For chronological sorting
+  sortDate: string;
+  countdown?: string; // e.g. "In 3 days", "12h from now", "Now"
 }
 
 export interface TripTimelineOptions {
@@ -66,6 +90,31 @@ export async function registerTripTimelineRoute(
   options: TripTimelineOptions,
 ): Promise<void> {
   const { db } = options;
+
+  function computeCountdown(targetDate: Date | null, now: Date): string | undefined {
+    if (!targetDate) return undefined;
+    const diffMs = targetDate.getTime() - now.getTime();
+    if (diffMs < 0) return undefined; // already passed
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 60) return `In ${diffMin}m`;
+    const diffHrs = Math.floor(diffMin / 60);
+    if (diffHrs < 24) return `In ${diffHrs}h ${diffMin % 60}m`;
+    const diffDays = Math.floor(diffHrs / 24);
+    if (diffDays === 1) return 'Tomorrow';
+    if (diffDays < 7) return `In ${diffDays} days`;
+    if (diffDays < 30) return `In ${Math.floor(diffDays / 7)} weeks`;
+    return `In ${Math.floor(diffDays / 30)} months`;
+  }
+
+  function parseTravellerNames(json: string | null | undefined): string[] | undefined {
+    if (!json) return undefined;
+    try { return JSON.parse(json); } catch { return undefined; }
+  }
+
+  function parseExtras(json: string | null | undefined): string[] | undefined {
+    if (!json) return undefined;
+    try { return JSON.parse(json); } catch { return undefined; }
+  }
 
   app.get(
     '/api/trips/:tripId/timeline-enriched',
@@ -151,6 +200,11 @@ export async function registerTripTimelineRoute(
             sourceAttachment,
             checkedIn: booking.checked_in ?? false,
             createdAt: new Date(booking.created_at).toISOString(),
+            confirmationNumber: details?.confirmation_number ?? undefined,
+            travellerNames: parseTravellerNames(details?.traveller_names),
+            notes: details?.notes ?? undefined,
+            price: details?.price ? Number(details.price) : undefined,
+            currency: details?.currency ?? undefined,
             airline: details?.airline ?? undefined,
             flightNumber: details?.flight_number ?? undefined,
             departureAirport: details?.departure_airport ?? undefined,
@@ -160,8 +214,14 @@ export async function registerTripTimelineRoute(
             flightDurationMinutes: durationMin,
             leaveHomeBy: leaveBy,
             checkinOpens,
+            seat: details?.seat ?? undefined,
+            terminal: details?.terminal ?? undefined,
+            gate: details?.gate ?? undefined,
+            baggageAllowance: details?.baggage_allowance ?? undefined,
+            cabinClass: details?.cabin_class ?? undefined,
             status,
             sortDate: depTime?.toISOString() ?? new Date(booking.created_at).toISOString(),
+            countdown: computeCountdown(depTime, now),
           });
 
         } else if (booking.type === 'hotel') {
@@ -190,6 +250,11 @@ export async function registerTripTimelineRoute(
             sourceAttachment,
             checkedIn: booking.checked_in ?? false,
             createdAt: new Date(booking.created_at).toISOString(),
+            confirmationNumber: details?.confirmation_number ?? undefined,
+            travellerNames: parseTravellerNames(details?.traveller_names),
+            notes: details?.notes ?? undefined,
+            price: details?.total_price ? Number(details.total_price) : undefined,
+            currency: details?.currency ?? undefined,
             hotelName: details?.hotel_name ?? undefined,
             address: details?.address ?? undefined,
             checkinDate: checkin?.toISOString()?.slice(0, 10),
@@ -197,8 +262,15 @@ export async function registerTripTimelineRoute(
             numberOfNights: nights,
             checkinTime: '15:00',
             checkoutTime: '11:00',
+            roomType: details?.room_type ?? undefined,
+            numberOfGuests: details?.number_of_guests ?? undefined,
+            contactPhone: details?.contact_phone ?? undefined,
+            pricePerNight: details?.price_per_night ? Number(details.price_per_night) : undefined,
+            latitude: details?.latitude ? Number(details.latitude) : undefined,
+            longitude: details?.longitude ? Number(details.longitude) : undefined,
             status,
             sortDate: checkin?.toISOString() ?? new Date(booking.created_at).toISOString(),
+            countdown: computeCountdown(checkin, now),
           });
 
         } else if (booking.type === 'car_rental') {
@@ -227,12 +299,26 @@ export async function registerTripTimelineRoute(
             sourceAttachment,
             checkedIn: booking.checked_in ?? false,
             createdAt: new Date(booking.created_at).toISOString(),
+            confirmationNumber: details?.confirmation_number ?? undefined,
+            travellerNames: parseTravellerNames(details?.driver_names),
+            notes: details?.notes ?? undefined,
+            price: details?.total_price ? Number(details.total_price) : undefined,
+            currency: details?.currency ?? undefined,
             company: details?.company ?? undefined,
             pickupTime: pickup?.toISOString(),
             returnTime: returnTime?.toISOString(),
+            pickupLocation: details?.pickup_location ?? undefined,
+            returnLocation: details?.return_location ?? undefined,
             rentalDays: days,
+            vehicleClass: details?.vehicle_class ?? undefined,
+            insurance: details?.insurance ?? undefined,
+            fuelPolicy: details?.fuel_policy ?? undefined,
+            extras: parseExtras(details?.extras),
+            pickupLatitude: details?.pickup_latitude ? Number(details.pickup_latitude) : undefined,
+            pickupLongitude: details?.pickup_longitude ? Number(details.pickup_longitude) : undefined,
             status,
             sortDate: pickup?.toISOString() ?? new Date(booking.created_at).toISOString(),
+            countdown: computeCountdown(pickup, now),
           });
         }
       }
