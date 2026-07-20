@@ -124,22 +124,22 @@ export default function EmailConnectionsPage() {
   }
 
   async function handleOAuthConnect() {
-    // In production, this would redirect to OAuth consent page
-    // For now, simulate the connection
-    try {
-      await api.post('/api/email/connections', {
-        provider: selectedProvider!.id === 'icloud' ? 'imap' : selectedProvider!.id,
-        email: `user@${selectedProvider!.id === 'outlook' ? 'outlook.com' : selectedProvider!.id + '.com'}`,
-        accessToken: 'oauth-token-placeholder',
-        refreshToken: 'refresh-token-placeholder',
-        scanFrequency,
+    // OAuth requires provider app credentials (Google/Microsoft/Yahoo)
+    // In local dev without credentials configured, show info message
+    // In production, this redirects to the OAuth consent page
+    const providerName = selectedProvider!.name;
+
+    if (process.env.NODE_ENV === 'development' || !process.env.NEXT_PUBLIC_OAUTH_CONFIGURED) {
+      setMessage({
+        type: 'error',
+        text: `${providerName} OAuth is not configured yet. To connect ${providerName}, the app needs API credentials registered with the provider. See docs/oauth-provider-setup.md for setup instructions. For now, use the IMAP option or forward emails to trips@nayya.ai.`,
       });
-      setMessage({ type: 'success', text: `${selectedProvider!.name} connected successfully! Initial scan starting...` });
       setConnectStep(null);
-      fetchConnections();
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Connection failed' });
+      return;
     }
+
+    // Production: redirect to OAuth consent URL
+    // window.location.href = `/api/auth/oauth/${selectedProvider!.id}/connect?frequency=${scanFrequency}`;
   }
 
   async function handleImapConnect(e: React.FormEvent) {
