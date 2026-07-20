@@ -24,12 +24,12 @@ import { type CurrencyService } from '../services/currency.js';
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export const EXPENSE_CATEGORIES = [
-  'food_drink',
-  'transport',
   'accommodation',
-  'activities',
+  'transportation',
+  'food_dining',
   'shopping',
-  'health',
+  'tours_activities',
+  'entertainment',
   'other',
 ] as const;
 
@@ -100,9 +100,15 @@ export async function registerExpenseRoutes(
         let homeCurrency = 'USD';
 
         if (body.currency.toUpperCase() !== 'USD') {
-          const conversion = await currencyService.convert(body.amount, body.currency, 'USD');
-          convertedAmount = conversion.convertedAmount;
-          homeCurrency = conversion.to;
+          try {
+            const conversion = await currencyService.convert(body.amount, body.currency, 'USD');
+            if (conversion) {
+              convertedAmount = conversion.convertedAmount;
+              homeCurrency = conversion.to;
+            }
+          } catch {
+            // Currency service unavailable — store without conversion
+          }
         }
 
         const expense = await db
