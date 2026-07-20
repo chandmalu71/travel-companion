@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: '🏠' },
@@ -18,6 +19,23 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [user, setUser] = useState<{ displayName: string; email: string } | null>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      try { setUser(JSON.parse(stored)); } catch {}
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem('loginProvider');
+    window.location.href = '/login';
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -58,13 +76,47 @@ export default function DashboardLayout({
               <img src="/logo-icon.svg" alt="Nayya" className="h-8" />
             </span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 ml-auto">
             <button className="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200" aria-label="Notifications">
               🔔
             </button>
-            <button className="h-8 w-8 rounded-full bg-primary-100 text-sm font-medium text-primary-700" aria-label="User menu">
-              U
-            </button>
+
+            {/* User menu */}
+            <div className="relative">
+              <button onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-100 transition-colors">
+                <div className="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">{user?.displayName?.charAt(0)?.toUpperCase() ?? 'U'}</span>
+                </div>
+                <div className="hidden sm:block text-left">
+                  <p className="text-sm font-medium text-gray-900">{user?.displayName ?? 'User'}</p>
+                  <p className="text-[10px] text-gray-500">{user?.email ?? ''}</p>
+                </div>
+                <svg className="h-4 w-4 text-gray-400 hidden sm:block" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                </svg>
+              </button>
+
+              {showUserMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
+                  <div className="absolute right-0 top-12 z-50 w-56 rounded-lg border border-gray-200 bg-white shadow-lg py-1">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900">{user?.displayName ?? 'User'}</p>
+                      <p className="text-xs text-gray-500">{user?.email ?? ''}</p>
+                    </div>
+                    <Link href="/settings" onClick={() => setShowUserMenu(false)}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">⚙️ Settings</Link>
+                    <Link href="/settings" onClick={() => setShowUserMenu(false)}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">👤 Profile</Link>
+                    <div className="border-t border-gray-100 mt-1 pt-1">
+                      <button onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">↪️ Log Out</button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
 

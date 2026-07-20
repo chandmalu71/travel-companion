@@ -32,6 +32,12 @@ export default function LoginPage() {
       localStorage.setItem('accessToken', data.data.accessToken);
       localStorage.setItem('refreshToken', data.data.refreshToken);
       localStorage.setItem('loginProvider', 'email'); // Track how user logged in
+      if (data.data.user) {
+        localStorage.setItem('user', JSON.stringify({
+          displayName: data.data.user.display_name ?? data.data.user.displayName ?? 'User',
+          email: data.data.user.email ?? '',
+        }));
+      }
       window.location.href = '/dashboard';
     } catch {
       setError('Network error. Please try again.');
