@@ -333,3 +333,54 @@ export async function registerAdminRoleRoutes(app: any, options: { db: any }): P
     return reply.send({ statusCode: 200, data: users });
   });
 }
+
+// ─── Admin All Trips ─────────────────────────────────────────────────────────
+
+export async function registerAdminTripsRoute(app: any, options: { db: any }): Promise<void> {
+  const { db } = options;
+
+  app.get('/api/admin/trips', async (_request: any, reply: any) => {
+    const trips = await db
+      .selectFrom('trips')
+      .innerJoin('users', 'users.id', 'trips.owner_id')
+      .select([
+        'trips.id', 'trips.name', 'trips.destination', 'trips.start_date',
+        'trips.end_date', 'trips.created_at',
+        'users.display_name as owner_name', 'users.email as owner_email',
+      ])
+      .orderBy('trips.created_at', 'desc')
+      .execute();
+
+    // Get member and booking counts
+    const tripIds = trips.map((t: any) => t.id);
+
+    const memberCounts = tripIds.length > 0
+      ? await db.selectFrom('trip_travellers')
+          .select(['trip_id', db.fn.count('id').as('count')])
+          .where('trip_id', 'in', tripIds)
+          .groupBy('trip_id')
+          .execute()
+          .catch(() => [] as any[])
+      : [];
+
+    const bookingCounts = tripIds.length > 0
+      ? await db.selectFrom('bookings')
+          .select(['trip_id', db.fn.count('id').as('count')])
+          .where('trip_id', 'in', tripIds)
+          .groupBy('trip_id')
+          .execute()
+          .catch(() => [] as any[])
+      : [];
+
+    const memberMap = new Map(memberCounts.map((m: any) => [m.trip_id, Number(m.count)]));
+    const bookingMap = new Map(bookingCounts.map((b: any) => [b.trip_id, Number(b.count)]));
+
+    const result = trips.map((t: any) => ({
+      ...t,
+      member_count: memberMap.get(t.id) ?? 0,
+      booking_count: bookingMap.get(t.id) ?? 0,
+    }));
+
+    return reply.send({ statusCode: 200, data: result });
+  });
+}
