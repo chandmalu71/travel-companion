@@ -24,7 +24,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('email_from', 'varchar(255)')
     .addColumn('email_date', 'timestamptz')
     .addColumn('sanitized', 'boolean', (col) => col.defaultTo(false)) // has PII been stripped?
-    .addColumn('retention_policy', 'varchar(20)', (col) => col.defaultTo('account_lifetime')) // account_lifetime, 1year, 6months, 30days
+    .addColumn('retention_policy', 'varchar(20)', (col) => col.defaultTo('account_lifetime')) // account_lifetime, 5years, 2years, 1year, 6months
     .addColumn('expires_at', 'timestamptz') // null = no expiry (account_lifetime)
     .addColumn('created_at', 'timestamptz', (col) => col.notNull().defaultTo(sql`NOW()`))
     .execute();
