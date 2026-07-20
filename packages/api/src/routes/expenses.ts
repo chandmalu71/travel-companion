@@ -173,9 +173,36 @@ export async function registerExpenseRoutes(
 
       const expenses = await query.execute();
 
+      // Fetch source attachments for these expenses
+      const expenseIds = expenses.map(e => e.id);
+      const attachments = expenseIds.length > 0
+        ? await db
+            .selectFrom('source_attachments')
+            .selectAll()
+            .where('entity_type', '=', 'expense')
+            .where('entity_id', 'in', expenseIds)
+            .execute()
+            .catch(() => [] as any[])
+        : [];
+      const attachmentMap = new Map(attachments.map(a => [a.entity_id, a]));
+
+      const enrichedExpenses = expenses.map(exp => {
+        const sa = attachmentMap.get(exp.id);
+        return {
+          ...exp,
+          sourceAttachment: sa ? {
+            id: sa.id,
+            sourceType: sa.source_type,
+            mimeType: sa.mime_type,
+            emailSubject: sa.email_subject,
+            createdAt: new Date(sa.created_at).toISOString(),
+          } : null,
+        };
+      });
+
       return reply.send({
         statusCode: 200,
-        data: expenses,
+        data: enrichedExpenses,
         pagination: {
           limit: parseInt(limit, 10) || 50,
           offset: parseInt(offset, 10) || 0,
