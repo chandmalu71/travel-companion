@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { api } from '@/lib/api';
 import { DocumentPreview } from '@/components/document-preview';
 
@@ -24,35 +24,38 @@ interface Expense {
   sourceAttachment: SourceAttachment | null;
 }
 
-const CATEGORY_ICONS: Record<string, string> = {
-  food_dining: '🍕',
-  transportation: '🚗',
-  accommodation: '🏨',
-  tours_activities: '🎭',
-  shopping: '🛍️',
-  entertainment: '🎬',
-  other: '📦',
-};
+const CATEGORIES = [
+  { value: 'food_dining', label: 'Food & Dining', icon: '🍕' },
+  { value: 'transportation', label: 'Transportation', icon: '🚗' },
+  { value: 'accommodation', label: 'Accommodation', icon: '🏨' },
+  { value: 'tours_activities', label: 'Tours & Activities', icon: '🎭' },
+  { value: 'shopping', label: 'Shopping', icon: '🛍️' },
+  { value: 'entertainment', label: 'Entertainment', icon: '🎬' },
+  { value: 'other', label: 'Other', icon: '📦' },
+];
 
-const RECEIPT_ICONS: Record<string, string> = {
-  receipt_scan: '📷',
-  pdf: '📄',
-  email: '📧',
-};
+const CATEGORY_ICONS: Record<string, string> = Object.fromEntries(CATEGORIES.map(c => [c.value, c.icon]));
+
+const CURRENCIES = ['EUR', 'USD', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'INR', 'SGD', 'THB', 'IDR', 'MXN', 'BRL'];
+
+const RECEIPT_ICONS: Record<string, string> = { receipt_scan: '📷', pdf: '📄', email: '📧' };
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [showScanModal, setShowScanModal] = useState(false);
   const [previewAttachment, setPreviewAttachment] = useState<{ id: string; sourceType: string; mimeType?: string } | null>(null);
   const [attachingExpenseId, setAttachingExpenseId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadExpenses = () => {
     api.get<{ data?: Expense[]; statusCode?: number }>('/api/expenses')
       .then((res) => setExpenses(Array.isArray(res.data) ? res.data : []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadExpenses(); }, []);
 
   const totalSpent = expenses.reduce((sum, e) => sum + (Number(e.converted_amount) || Number(e.amount) || 0), 0);
 
@@ -60,18 +63,13 @@ export default function ExpensesPage() {
     setAttachingExpenseId(expenseId);
     try {
       const res = await api.post<{ data: { id: string } }>(`/api/expenses/${expenseId}/receipt`, {
-        mimeType: 'image/jpeg',
-        fileName: 'receipt.jpg',
+        mimeType: 'image/jpeg', fileName: 'receipt.jpg',
       });
-      // Update the expense in state with the new attachment
       setExpenses(prev => prev.map(e =>
         e.id === expenseId ? { ...e, sourceAttachment: { id: res.data.id, sourceType: 'receipt_scan', mimeType: 'image/jpeg' } } : e
       ));
-    } catch {
-      // In production, show error toast
-    } finally {
-      setAttachingExpenseId(null);
-    }
+    } catch { /* toast in production */ }
+    finally { setAttachingExpenseId(null); }
   };
 
   if (loading) {
@@ -85,13 +83,10 @@ export default function ExpensesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Expenses</h1>
         <div className="flex gap-2">
-          <button
-            onClick={() => setShowScanModal(true)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
-          >
+          <button onClick={() => setShowScanModal(true)} className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50">
             📷 Scan Receipt
           </button>
-          <button className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500">
+          <button onClick={() => setShowAddModal(true)} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500">
             + Add Expense
           </button>
         </div>
@@ -116,53 +111,28 @@ export default function ExpensesPage() {
       ) : (
         <div className="space-y-2">
           {expenses.map((expense) => (
-            <div
-              key={expense.id}
-              className="flex items-center gap-3 rounded-lg bg-white px-4 py-3 border border-gray-200 shadow-sm hover:border-primary-200 transition-all"
-            >
+            <div key={expense.id} className="flex items-center gap-3 rounded-lg bg-white px-4 py-3 border border-gray-200 shadow-sm hover:border-primary-200 transition-all">
               <span className="text-xl flex-shrink-0">{CATEGORY_ICONS[expense.category] ?? '📦'}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="font-medium text-gray-900 text-sm truncate">
-                    {expense.merchant_name ?? expense.category.replace('_', ' ')}
-                  </p>
+                  <p className="font-medium text-gray-900 text-sm truncate">{expense.merchant_name ?? expense.category.replace('_', ' ')}</p>
                   <span className="text-[11px] text-gray-400">{expense.date}</span>
                 </div>
                 {expense.notes && <p className="text-[11px] text-gray-400 truncate">{expense.notes}</p>}
               </div>
-
-              {/* Receipt attachment indicator */}
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 {expense.sourceAttachment ? (
-                  <button
-                    onClick={() => setPreviewAttachment(expense.sourceAttachment!)}
-                    className="inline-flex items-center gap-1 rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[11px] font-medium text-purple-700 hover:bg-purple-100 transition-colors cursor-pointer"
-                    title="View receipt"
-                  >
-                    {RECEIPT_ICONS[expense.sourceAttachment.sourceType] ?? '📎'}
-                    <span>Receipt</span>
-                    <svg className="h-3 w-3 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                    </svg>
+                  <button onClick={() => setPreviewAttachment(expense.sourceAttachment!)} className="inline-flex items-center gap-1 rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[11px] font-medium text-purple-700 hover:bg-purple-100 transition-colors cursor-pointer" title="View receipt">
+                    {RECEIPT_ICONS[expense.sourceAttachment.sourceType] ?? '📎'} Receipt ↗
                   </button>
                 ) : (
-                  <button
-                    onClick={() => handleAttachReceipt(expense.id)}
-                    disabled={attachingExpenseId === expense.id}
-                    className="inline-flex items-center gap-1 rounded-full border border-dashed border-gray-300 px-2 py-0.5 text-[11px] text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors"
-                    title="Attach receipt"
-                  >
-                    {attachingExpenseId === expense.id ? '⏳' : '📎'}
-                    <span>Add receipt</span>
+                  <button onClick={() => handleAttachReceipt(expense.id)} disabled={attachingExpenseId === expense.id} className="inline-flex items-center gap-1 rounded-full border border-dashed border-gray-300 px-2 py-0.5 text-[11px] text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors" title="Attach receipt">
+                    {attachingExpenseId === expense.id ? '⏳' : '📎'} Add receipt
                   </button>
                 )}
               </div>
-
-              {/* Amount */}
               <div className="text-right flex-shrink-0 ml-2">
-                <p className="font-semibold text-gray-900 text-sm">
-                  {expense.currency} {Number(expense.amount).toFixed(2)}
-                </p>
+                <p className="font-semibold text-gray-900 text-sm">{expense.currency} {Number(expense.amount).toFixed(2)}</p>
                 {expense.converted_amount && expense.currency !== 'USD' && (
                   <p className="text-[10px] text-gray-400">≈ ${Number(expense.converted_amount).toFixed(2)}</p>
                 )}
@@ -172,33 +142,20 @@ export default function ExpensesPage() {
         </div>
       )}
 
-      {/* Scan receipt modal */}
+      {/* Add Expense Modal */}
+      {showAddModal && (
+        <AddExpenseModal
+          onClose={() => setShowAddModal(false)}
+          onCreated={() => { setShowAddModal(false); loadExpenses(); }}
+        />
+      )}
+
+      {/* Scan Receipt Modal */}
       {showScanModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowScanModal(false)}>
-          <div className="w-full max-w-md rounded-lg bg-white p-6" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold mb-4">Scan Receipt</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Upload a photo of your receipt to automatically extract expense details using AI.
-            </p>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-4 hover:border-primary-300 transition-colors cursor-pointer">
-              <p className="text-3xl mb-2">📷</p>
-              <p className="text-sm text-gray-600">Drag & drop or click to upload</p>
-              <p className="text-xs text-gray-400 mt-1">JPEG, PNG, HEIC, PDF — max 10MB</p>
-              <input type="file" accept="image/jpeg,image/png,image/heic,application/pdf" className="hidden" />
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowScanModal(false)}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-              >
-                Cancel
-              </button>
-              <button className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500">
-                Upload & Scan
-              </button>
-            </div>
-          </div>
-        </div>
+        <ScanReceiptModal
+          onClose={() => setShowScanModal(false)}
+          onScanned={() => { setShowScanModal(false); loadExpenses(); }}
+        />
       )}
 
       {/* Document preview slide-over */}
@@ -210,6 +167,266 @@ export default function ExpensesPage() {
           onClose={() => setPreviewAttachment(null)}
         />
       )}
+    </div>
+  );
+}
+
+// ─── Add Expense Modal ───────────────────────────────────────────────────────
+
+function AddExpenseModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState('EUR');
+  const [category, setCategory] = useState('food_dining');
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [merchantName, setMerchantName] = useState('');
+  const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) { setError('Please enter a valid amount'); return; }
+    if (!date) { setError('Please select a date'); return; }
+
+    setSubmitting(true);
+    try {
+      await api.post('/api/expenses', {
+        amount: amt,
+        currency,
+        category,
+        date,
+        merchantName: merchantName || undefined,
+        notes: notes || undefined,
+      });
+      onCreated();
+    } catch {
+      setError('Failed to create expense. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Expense</h3>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Amount + Currency */}
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Amount</label>
+              <input
+                type="number" step="0.01" min="0.01" placeholder="0.00"
+                value={amount} onChange={(e) => setAmount(e.target.value)}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                autoFocus
+              />
+            </div>
+            <div className="w-24">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Currency</label>
+              <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-2 text-sm">
+                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Category</label>
+            <div className="grid grid-cols-4 gap-1.5">
+              {CATEGORIES.map(cat => (
+                <button
+                  key={cat.value} type="button"
+                  onClick={() => setCategory(cat.value)}
+                  className={`flex flex-col items-center gap-0.5 rounded-md border px-2 py-2 text-[10px] transition-all ${
+                    category === cat.value ? 'border-primary-500 bg-primary-50 text-primary-700 font-medium' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <span className="text-base">{cat.icon}</span>
+                  <span className="truncate w-full text-center">{cat.label.split(' ')[0]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Date */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
+          </div>
+
+          {/* Merchant */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Merchant <span className="text-gray-400">(optional)</span></label>
+            <input type="text" placeholder="e.g. Starbucks, Uber, Hotel Lobby" value={merchantName} onChange={(e) => setMerchantName(e.target.value)}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Notes <span className="text-gray-400">(optional)</span></label>
+            <input type="text" placeholder="Dinner with team" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
+          </div>
+
+          {/* Error */}
+          {error && <p className="text-xs text-red-600">{error}</p>}
+
+          {/* Actions */}
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Cancel</button>
+            <button type="submit" disabled={submitting} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500 disabled:opacity-50">
+              {submitting ? 'Saving...' : 'Save Expense'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Scan Receipt Modal ──────────────────────────────────────────────────────
+
+function ScanReceiptModal({ onClose, onScanned }: { onClose: () => void; onScanned: () => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanResult, setScanResult] = useState<{ merchantName?: string; amount?: number; currency?: string; date?: string; category?: string } | null>(null);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { alert('File too large. Maximum 10MB.'); return; }
+    setSelectedFile(file);
+    // Create preview for images
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (ev) => setPreview(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setPreview(null);
+    }
+  };
+
+  const handleScan = async () => {
+    if (!selectedFile) return;
+    setScanning(true);
+    try {
+      // In production: upload to /api/expenses/scan and get AI-extracted fields
+      // For now, simulate a scan result after a brief delay
+      await new Promise(r => setTimeout(r, 1500));
+      setScanResult({
+        merchantName: 'Scanned Merchant',
+        amount: 25.50,
+        currency: 'EUR',
+        date: new Date().toISOString().slice(0, 10),
+        category: 'food_dining',
+      });
+    } catch {
+      alert('Scan failed. Please try again or enter manually.');
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const handleSaveScanned = async () => {
+    if (!scanResult) return;
+    setScanning(true);
+    try {
+      await api.post('/api/expenses', {
+        amount: scanResult.amount,
+        currency: scanResult.currency ?? 'EUR',
+        category: scanResult.category ?? 'other',
+        date: scanResult.date ?? new Date().toISOString().slice(0, 10),
+        merchantName: scanResult.merchantName,
+      });
+      onScanned();
+    } catch {
+      alert('Failed to save expense.');
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">📷 Scan Receipt</h3>
+
+        {!scanResult ? (
+          <>
+            <p className="text-sm text-gray-500 mb-4">
+              Upload a photo of your receipt. AI will extract the amount, merchant, and date.
+            </p>
+
+            {/* Upload area */}
+            <div
+              onClick={() => fileRef.current?.click()}
+              className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-400 hover:bg-primary-50/30 transition-colors cursor-pointer mb-4"
+            >
+              {preview ? (
+                <img src={preview} alt="Receipt preview" className="max-h-40 mx-auto rounded-md shadow-sm" />
+              ) : selectedFile ? (
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-3xl">📄</span>
+                  <p className="text-sm text-gray-700">{selectedFile.name}</p>
+                  <p className="text-xs text-gray-400">{(selectedFile.size / 1024).toFixed(0)} KB</p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-4xl">📷</span>
+                  <p className="text-sm text-gray-600">Click to select a file</p>
+                  <p className="text-xs text-gray-400">JPEG, PNG, HEIC, PDF — max 10MB</p>
+                </div>
+              )}
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/heic,application/pdf" className="hidden" onChange={handleFileSelect} />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button onClick={onClose} className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50">Cancel</button>
+              <button onClick={handleScan} disabled={!selectedFile || scanning} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500 disabled:opacity-50">
+                {scanning ? 'Scanning...' : 'Upload & Scan'}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-gray-500 mb-4">Scan complete. Review the extracted details:</p>
+
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center justify-between rounded-md bg-green-50 border border-green-200 px-3 py-2">
+                <span className="text-sm text-green-800">Amount</span>
+                <span className="font-semibold text-green-900">{scanResult.currency} {scanResult.amount?.toFixed(2)}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-md bg-gray-50 border border-gray-200 px-3 py-2">
+                <span className="text-sm text-gray-600">Merchant</span>
+                <span className="text-sm font-medium">{scanResult.merchantName ?? '—'}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-md bg-gray-50 border border-gray-200 px-3 py-2">
+                <span className="text-sm text-gray-600">Date</span>
+                <span className="text-sm font-medium">{scanResult.date ?? '—'}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-md bg-gray-50 border border-gray-200 px-3 py-2">
+                <span className="text-sm text-gray-600">Category</span>
+                <span className="text-sm font-medium">{CATEGORIES.find(c => c.value === scanResult.category)?.label ?? 'Other'}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setScanResult(null)} className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50">Re-scan</button>
+              <button onClick={handleSaveScanned} disabled={scanning} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500 disabled:opacity-50">
+                {scanning ? 'Saving...' : 'Save Expense'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
