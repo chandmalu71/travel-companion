@@ -96,10 +96,10 @@ export default function ExpensesPage() {
               </div>
               <div className="text-right">
                 <p className="font-semibold text-gray-900">
-                  {expense.currency} {expense.amount.toFixed(2)}
+                  {expense.currency} {Number(expense.amount).toFixed(2)}
                 </p>
                 {expense.converted_amount && expense.currency !== 'USD' && (
-                  <p className="text-xs text-gray-500">≈ ${expense.converted_amount.toFixed(2)}</p>
+                  <p className="text-xs text-gray-500">≈ ${Number(expense.converted_amount).toFixed(2)}</p>
                 )}
               </div>
             </div>
