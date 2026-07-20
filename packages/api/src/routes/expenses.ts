@@ -373,9 +373,17 @@ export async function registerExpenseRoutes(
         const newCurrency = body.currency?.toUpperCase() ?? 'USD';
 
         if (newCurrency !== 'USD') {
-          const conversion = await currencyService.convert(newAmount, newCurrency, 'USD');
-          updateFields['converted_amount'] = conversion.convertedAmount;
-          updateFields['home_currency'] = 'USD';
+          try {
+            const conversion = await currencyService.convert(newAmount, newCurrency, 'USD');
+            if (conversion) {
+              updateFields['converted_amount'] = conversion.convertedAmount;
+              updateFields['home_currency'] = 'USD';
+            }
+          } catch {
+            // Currency service unavailable — skip conversion
+            updateFields['converted_amount'] = newAmount;
+            updateFields['home_currency'] = 'USD';
+          }
         } else {
           updateFields['converted_amount'] = newAmount;
           updateFields['home_currency'] = 'USD';
@@ -393,7 +401,7 @@ export async function registerExpenseRoutes(
       // Recheck budget thresholds
       const tripId = body.tripId ?? existing.trip_id;
       if (tripId) {
-        await checkBudgetThresholds(db, tripId, userId);
+        await checkBudgetThresholds(db, tripId, userId).catch(() => {});
       }
 
       return reply.send({ statusCode: 200, data: updated });
@@ -430,7 +438,7 @@ export async function registerExpenseRoutes(
 
       // Recheck budget thresholds
       if (existing.trip_id) {
-        await checkBudgetThresholds(db, existing.trip_id, userId);
+        await checkBudgetThresholds(db, existing.trip_id, userId).catch(() => {});
       }
 
       return reply.send({ statusCode: 200, message: 'Expense deleted' });
