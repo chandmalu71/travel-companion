@@ -212,7 +212,13 @@ export default function ExpensesPage() {
 
 // ─── Add Expense Modal ───────────────────────────────────────────────────────
 
-function AddExpenseModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+interface AddExpenseModalProps {
+  onClose: () => void;
+  onCreated: () => void;
+  tripId?: string; // If provided, auto-selects this trip
+}
+
+function AddExpenseModal({ onClose, onCreated, tripId: initialTripId }: AddExpenseModalProps) {
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('EUR');
   const [category, setCategory] = useState('food_dining');
@@ -221,76 +227,83 @@ function AddExpenseModal({ onClose, onCreated }: { onClose: () => void; onCreate
   const [notes, setNotes] = useState('');
   const [isShared, setIsShared] = useState(true);
   const [splitType, setSplitType] = useState<'equal' | 'percentage' | 'per_item'>('equal');
+  const [selectedTripId, setSelectedTripId] = useState(initialTripId ?? '');
+  const [trips, setTrips] = useState<Array<{ id: string; name: string }>>([]);
+  const [tripMembers, setTripMembers] = useState<Array<{ id: string; name: string }>>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Mock trip members — in production, fetch from trip context
-  const tripMembers = [
-    { id: 'member-1', name: 'Alice Johnson', included: true },
-    { id: 'member-2', name: 'Bob Smith', included: true },
-    { id: 'member-3', name: 'Charlie Davis', included: true },
-  ];
-  const [includedMembers, setIncludedMembers] = useState<Record<string, boolean>>(
-    Object.fromEntries(tripMembers.map(m => [m.id, m.included]))
-  );
-  const [percentages, setPercentages] = useState<Record<string, string>>(
-    Object.fromEntries(tripMembers.map(m => [m.id, '']))
-  );
-  const [itemAmounts, setItemAmounts] = useState<Record<string, string>>(
-    Object.fromEntries(tripMembers.map(m => [m.id, '']))
-  );
+  const [includedMembers, setIncludedMembers] = useState<Record<string, boolean>>({});
+  const [percentages, setPercentages] = useState<Record<string, string>>({});
+  const [itemAmounts, setItemAmounts] = useState<Record<string, string>>({});
 
-  const includedCount = Object.values(includedMembers).filter(Boolean).length;
+  // Fetch user's trips (only if no initialTripId)
+  useEffect(() => {
+    if (!initialTripId) {
+      api.get<{ data?: Array<{ id: string; name: string }>; trips?: Array<{ id: string; name: string }> }>('/api/trips')
+        .then(res => setTrips(res.data ?? res.trips ?? []))
+        .catch(() => {});
+    }
+  }, [initialTripId]);
+
+  // Fetch trip members when trip is selected
+  useEffect(() => {
+    const tid = selectedTripId || initialTripId;
+    if (tid) {
+      api.get<{ data: Array<{ id: string; userId: string; name: string }> }>(`/api/trips/${tid}/members`)
+        .then(res => {
+          const members = res.data ?? [];
+          setTripMembers(members);
+          setIncludedMembers(Object.fromEntries(members.map(m => [m.id, true])));
+          setPercentages({});
+          setItemAmounts({});
+        })
+        .catch(() => setTripMembers([]));
+    } else {
+      setTripMembers([]);
+    }
+  }, [selectedTripId, initialTripId]);
+
   const amt = parseFloat(amount) || 0;
+  const includedCount = Object.values(includedMembers).filter(Boolean).length;
   const equalShare = includedCount > 0 ? (amt / includedCount).toFixed(2) : '0.00';
+  const activeTripId = selectedTripId || initialTripId;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
     if (!amt || amt <= 0) { setError('Please enter a valid amount'); return; }
     if (!date) { setError('Please select a date'); return; }
 
     if (isShared && splitType === 'percentage') {
-      const totalPct = Object.entries(percentages)
-        .filter(([id]) => includedMembers[id])
-        .reduce((sum, [, v]) => sum + (parseFloat(v) || 0), 0);
-      if (Math.abs(totalPct - 100) > 0.01) {
-        setError(`Percentages must sum to 100% (currently ${totalPct.toFixed(1)}%)`);
-        return;
-      }
+      const totalPct = Object.entries(percentages).filter(([id]) => includedMembers[id]).reduce((s, [, v]) => s + (parseFloat(v) || 0), 0);
+      if (Math.abs(totalPct - 100) > 0.01) { setError(`Percentages must sum to 100% (currently ${totalPct.toFixed(1)}%)`); return; }
     }
 
     setSubmitting(true);
     try {
       const res = await api.post<{ data: { id: string } }>('/api/expenses', {
-        amount: amt,
-        currency,
-        category,
-        date,
+        amount: amt, currency, category, date,
         merchantName: merchantName || undefined,
         notes: notes || undefined,
         isShared,
-        tripId: undefined, // TODO: get from trip context when in trip view
+        tripId: activeTripId || undefined,
       });
 
-      // If shared, save the split configuration
-      if (isShared && res.data?.id) {
+      // Save split configuration for shared expenses
+      if (isShared && res.data?.id && activeTripId) {
         const includedMemberList = tripMembers.filter(m => includedMembers[m.id]);
         if (includedMemberList.length > 0) {
           const splitMembers = includedMemberList.map(m => {
-            const entry: { memberId: string; percentage?: number; amount?: number; items?: string[] } = { memberId: m.id };
+            const entry: { memberId: string; percentage?: number; amount?: number } = { memberId: m.id };
             if (splitType === 'percentage') entry.percentage = parseFloat(percentages[m.id] ?? '0');
             if (splitType === 'per_item') entry.amount = parseFloat(itemAmounts[m.id] ?? '0');
             if (splitType === 'equal') entry.amount = amt / includedMemberList.length;
             return entry;
           });
-
-          // Use a default tripId for now (first trip context)
-          await api.post(`/api/trips/00000000-0000-4000-b000-000000000001/expenses/${res.data.id}/split`, {
-            splitType,
-            members: splitMembers,
-          }).catch(() => {}); // Non-critical if split save fails
+          await api.post(`/api/trips/${activeTripId}/expenses/${res.data.id}/split`, {
+            splitType, members: splitMembers,
+          }).catch(() => {});
         }
       }
 
@@ -308,7 +321,7 @@ function AddExpenseModal({ onClose, onCreated }: { onClose: () => void; onCreate
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Expense</h3>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Shared / Personal toggle — FIRST question */}
+          {/* Shared / Personal toggle */}
           <div className="flex rounded-lg border border-gray-200 overflow-hidden">
             <button type="button" onClick={() => setIsShared(true)}
               className={`flex-1 py-2.5 text-sm font-medium transition-all ${isShared ? 'bg-primary-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
@@ -319,6 +332,18 @@ function AddExpenseModal({ onClose, onCreated }: { onClose: () => void; onCreate
               🔒 Personal
             </button>
           </div>
+
+          {/* Trip selector (only when not in trip context) */}
+          {!initialTripId && (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Trip</label>
+              <select value={selectedTripId} onChange={(e) => setSelectedTripId(e.target.value)}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+                <option value="">No trip (general expense)</option>
+                {trips.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </div>
+          )}
 
           {/* Amount + Currency */}
           <div className="flex gap-2">
@@ -371,12 +396,10 @@ function AddExpenseModal({ onClose, onCreated }: { onClose: () => void; onCreate
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
           </div>
 
-          {/* Split configuration — only shown for shared */}
-          {isShared && (
+          {/* Split config (shared + trip selected) */}
+          {isShared && tripMembers.length > 0 && (
             <div className="border border-gray-200 rounded-lg p-3 space-y-3 bg-gray-50">
               <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Split Configuration</p>
-
-              {/* Split type selector */}
               <div className="flex gap-1">
                 {(['equal', 'percentage', 'per_item'] as const).map(type => (
                   <button key={type} type="button" onClick={() => setSplitType(type)}
@@ -385,8 +408,6 @@ function AddExpenseModal({ onClose, onCreated }: { onClose: () => void; onCreate
                   </button>
                 ))}
               </div>
-
-              {/* Members list */}
               <div className="space-y-1.5">
                 {tripMembers.map(member => (
                   <div key={member.id} className="flex items-center gap-2">
@@ -394,10 +415,7 @@ function AddExpenseModal({ onClose, onCreated }: { onClose: () => void; onCreate
                       onChange={(e) => setIncludedMembers(prev => ({ ...prev, [member.id]: e.target.checked }))}
                       className="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
                     <span className="text-sm text-gray-700 flex-1">{member.name}</span>
-
-                    {splitType === 'equal' && includedMembers[member.id] && (
-                      <span className="text-xs text-gray-500 font-mono">{currency} {equalShare}</span>
-                    )}
+                    {splitType === 'equal' && includedMembers[member.id] && <span className="text-xs text-gray-500 font-mono">{currency} {equalShare}</span>}
                     {splitType === 'percentage' && includedMembers[member.id] && (
                       <input type="number" step="0.1" min="0" max="100" placeholder="%" value={percentages[member.id] ?? ''}
                         onChange={(e) => setPercentages(prev => ({ ...prev, [member.id]: e.target.value }))}
@@ -411,32 +429,26 @@ function AddExpenseModal({ onClose, onCreated }: { onClose: () => void; onCreate
                   </div>
                 ))}
               </div>
-
-              {/* Split summary */}
               <div className="text-[11px] text-gray-500 pt-1 border-t border-gray-200">
-                {splitType === 'equal' && <span>Split equally among {includedCount} member{includedCount !== 1 ? 's' : ''} = {currency} {equalShare} each</span>}
-                {splitType === 'percentage' && (
-                  <span>Total: {Object.entries(percentages).filter(([id]) => includedMembers[id]).reduce((s, [, v]) => s + (parseFloat(v) || 0), 0).toFixed(1)}% of 100%</span>
-                )}
-                {splitType === 'per_item' && (
-                  <span>Assigned: {currency} {Object.entries(itemAmounts).filter(([id]) => includedMembers[id]).reduce((s, [, v]) => s + (parseFloat(v) || 0), 0).toFixed(2)} of {amt.toFixed(2)}</span>
-                )}
+                {splitType === 'equal' && <span>Split equally among {includedCount} = {currency} {equalShare} each</span>}
+                {splitType === 'percentage' && <span>Total: {Object.entries(percentages).filter(([id]) => includedMembers[id]).reduce((s, [, v]) => s + (parseFloat(v) || 0), 0).toFixed(1)}%</span>}
+                {splitType === 'per_item' && <span>Assigned: {currency} {Object.entries(itemAmounts).filter(([id]) => includedMembers[id]).reduce((s, [, v]) => s + (parseFloat(v) || 0), 0).toFixed(2)} of {amt.toFixed(2)}</span>}
               </div>
             </div>
           )}
 
-          {/* Personal badge */}
+          {isShared && !activeTripId && (
+            <p className="text-[11px] text-amber-600 bg-amber-50 rounded px-2 py-1 border border-amber-200">⚠️ Select a trip to configure split among trip members</p>
+          )}
+
           {!isShared && (
             <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
-              <span>🔒</span>
-              <span>This expense will only be visible to you and won&apos;t be included in group settlements.</span>
+              <span>🔒</span><span>This expense will only be visible to you.</span>
             </div>
           )}
 
-          {/* Error */}
           {error && <p className="text-xs text-red-600">{error}</p>}
 
-          {/* Actions */}
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Cancel</button>
             <button type="submit" disabled={submitting} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500 disabled:opacity-50">
