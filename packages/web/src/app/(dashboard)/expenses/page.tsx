@@ -51,6 +51,7 @@ export default function ExpensesPage() {
   const [attachingExpenseId, setAttachingExpenseId] = useState<string | null>(null);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
+  const [movingExpense, setMovingExpense] = useState<Expense | null>(null);
 
   const loadExpenses = () => {
     api.get<{ data?: Expense[]; statusCode?: number }>('/api/expenses')
@@ -156,6 +157,7 @@ export default function ExpensesPage() {
                   expense={expense}
                   onEdit={() => setEditingExpense(expense)}
                   onDelete={() => setDeletingExpense(expense)}
+                  onMoveToTrip={() => setMovingExpense(expense)}
                 />
               </div>
             </div>
@@ -204,6 +206,15 @@ export default function ExpensesPage() {
           expense={deletingExpense}
           onClose={() => setDeletingExpense(null)}
           onDeleted={() => { setDeletingExpense(null); loadExpenses(); }}
+        />
+      )}
+
+      {/* Move to Trip */}
+      {movingExpense && (
+        <MoveToTripModal
+          expense={movingExpense}
+          onClose={() => setMovingExpense(null)}
+          onMoved={() => { setMovingExpense(null); loadExpenses(); }}
         />
       )}
     </div>
@@ -605,7 +616,7 @@ function ScanReceiptModal({ onClose, onScanned }: { onClose: () => void; onScann
 
 // ─── Expense Actions Menu ────────────────────────────────────────────────────
 
-function ExpenseActions({ expense, onEdit, onDelete }: { expense: Expense; onEdit: () => void; onDelete: () => void }) {
+function ExpenseActions({ expense, onEdit, onDelete, onMoveToTrip }: { expense: Expense; onEdit: () => void; onDelete: () => void; onMoveToTrip: () => void }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -619,10 +630,14 @@ function ExpenseActions({ expense, onEdit, onDelete }: { expense: Expense; onEdi
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-8 z-50 w-32 rounded-md border border-gray-200 bg-white shadow-lg py-1">
+          <div className="absolute right-0 top-8 z-50 w-40 rounded-md border border-gray-200 bg-white shadow-lg py-1">
             <button onClick={() => { setOpen(false); onEdit(); }}
               className="w-full px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
               ✏️ Edit
+            </button>
+            <button onClick={() => { setOpen(false); onMoveToTrip(); }}
+              className="w-full px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+              📂 Move to trip
             </button>
             <button onClick={() => { setOpen(false); onDelete(); }}
               className="w-full px-3 py-1.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
@@ -887,6 +902,66 @@ function DeleteExpenseConfirm({ expense, onClose, onDeleted }: { expense: Expens
           <button onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Cancel</button>
           <button onClick={handleDelete} disabled={deleting} className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50">
             {deleting ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ─── Move to Trip Modal ──────────────────────────────────────────────────────
+
+function MoveToTripModal({ expense, onClose, onMoved }: { expense: Expense; onClose: () => void; onMoved: () => void }) {
+  const [trips, setTrips] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedTripId, setSelectedTripId] = useState(expense.trip_id ?? '');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api.get<{ data?: Array<{ id: string; name: string }>; trips?: Array<{ id: string; name: string }> }>('/api/trips')
+      .then(res => setTrips(res.data ?? res.trips ?? []))
+      .catch(() => {});
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.put(`/api/expenses/${expense.id}`, {
+        tripId: selectedTripId || null,
+      });
+      onMoved();
+    } catch {
+      alert('Failed to move expense.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">📂 Move to Trip</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Assign <strong>{expense.merchant_name ?? expense.category}</strong> ({expense.currency} {Number(expense.amount).toFixed(2)}) to a trip.
+        </p>
+
+        <div className="space-y-2 mb-4">
+          <label className="flex items-center gap-3 rounded-md border border-gray-200 p-3 cursor-pointer hover:bg-gray-50 transition-colors">
+            <input type="radio" name="trip" value="" checked={selectedTripId === ''} onChange={() => setSelectedTripId('')} className="text-primary-600" />
+            <span className="text-sm text-gray-500">No trip (unassigned)</span>
+          </label>
+          {trips.map(trip => (
+            <label key={trip.id} className={`flex items-center gap-3 rounded-md border p-3 cursor-pointer transition-colors ${selectedTripId === trip.id ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+              <input type="radio" name="trip" value={trip.id} checked={selectedTripId === trip.id} onChange={() => setSelectedTripId(trip.id)} className="text-primary-600" />
+              <span className="text-sm text-gray-900">{trip.name}</span>
+            </label>
+          ))}
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Cancel</button>
+          <button onClick={handleSave} disabled={saving} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500 disabled:opacity-50">
+            {saving ? 'Moving...' : 'Move'}
           </button>
         </div>
       </div>
