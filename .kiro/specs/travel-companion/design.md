@@ -1555,3 +1555,116 @@ Multi-select currency chips with default indicator:
 - First selected = default (shown with ⭐ indicator)
 - Star button (☆) on non-default currencies to promote to default
 - Minimum 1 currency must remain selected
+
+
+## Recent Implementation Details (Jul 2026)
+
+### Migration 007: Source Attachments
+
+```sql
+CREATE TABLE source_attachments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    entity_type VARCHAR(20) NOT NULL,      -- 'booking' or 'expense'
+    entity_id UUID NOT NULL,
+    source_type VARCHAR(20) NOT NULL,      -- email, receipt_scan, pdf, manual, forwarded
+    s3_key TEXT,
+    s3_bucket VARCHAR(100),
+    mime_type VARCHAR(50),
+    file_size INTEGER,
+    email_provider VARCHAR(20),
+    email_message_id TEXT,
+    email_subject VARCHAR(500),
+    email_from VARCHAR(255),
+    email_date TIMESTAMPTZ,
+    sanitized BOOLEAN DEFAULT FALSE,
+    retention_policy VARCHAR(20) DEFAULT 'account_lifetime',  -- account_lifetime, 5years, 2years, 1year, 6months
+    expires_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**API Endpoints:**
+- `GET /api/bookings/:id/source-attachment` — metadata for a booking's source
+- `GET /api/expenses/:id/source-attachment` — metadata for an expense's source
+- `GET /api/source-attachments/:id/view` — returns preview data (previewUrl, downloadUrl, emailHtml)
+- `POST /api/expenses/:id/receipt` — attach a receipt to an expense
+- `DELETE /api/source-attachments/:id` — remove an attachment
+
+### Migration 008: Booking Detail Enhancements
+
+Added 30+ columns across flight_details, hotel_details, and car_rental_details for richer timeline card display:
+
+**flight_details additions:** confirmation_number, seat, terminal, gate, baggage_allowance, cabin_class, traveller_names (JSON), notes, price, currency
+
+**hotel_details additions:** room_type, number_of_guests, contact_phone, traveller_names (JSON), notes, price_per_night, total_price, currency
+
+**car_rental_details additions:** vehicle_class, driver_names (JSON), insurance, fuel_policy, extras (JSON), notes, total_price, currency, pickup_latitude, pickup_longitude
+
+### Enriched Timeline API
+
+`GET /api/trips/:tripId/timeline-enriched` returns all booking data with:
+- `confirmationNumber`, `travellerNames[]`, `notes`, `countdown` (computed human-readable string)
+- Flight: `seat`, `terminal`, `gate`, `baggageAllowance`, `cabinClass`
+- Hotel: `roomType`, `numberOfGuests`, `contactPhone`, `pricePerNight`, `latitude`, `longitude`
+- Car: `vehicleClass`, `pickupLocation`, `returnLocation`, `insurance`, `fuelPolicy`, `extras[]`, `pickupLatitude`, `pickupLongitude`
+- `sourceAttachment` object with id, sourceType, mimeType, emailSubject, emailFrom, emailDate
+
+**Countdown helper:** Computes "In 3 days", "Tomorrow", "In 12h 30m" etc. for upcoming events.
+
+### UI Components (packages/web/src/components/)
+
+| Component | Purpose |
+|-----------|---------|
+| `SourceIndicator` | Clickable source badge (📧/📷/📄/✍️/🔗) that opens DocumentPreview. Supports custom className for embedding in footer rows. |
+| `DocumentPreview` | Slide-over panel from right. Renders email HTML (sandboxed iframe), PDF (embedded), images (centered preview). Has "Open Full" button, metadata bar, Escape/backdrop close. |
+| `QuickActions` | Navigate (Google Maps), Call (tel: link), Share buttons. Accepts lat/lng or address for directions. |
+
+### Timeline Card Layout (Compact)
+
+Each card follows a max 4-5 row structure:
+1. **Header row:** Icon + title/route + status badge + countdown ribbon (absolute top-right)
+2. **Info line:** PNR/Ref badge · seat · terminal/gate · class · baggage · names (wrapping, dot-separated)
+3. **Grid:** Departure/Duration/Arrival or Check-in/Nights/Check-out (centered, gray bg)
+4. **Notes:** (conditional) Yellow sticky, 11px italic
+5. **Footer:** Source badge (left) + Quick Actions (right) on same row, single border-top divider
+
+### Expense Management UI
+
+**Add Expense modal:**
+- Amount + currency selector (13 currencies)
+- Visual category grid (7 categories with icons)
+- Date picker (defaults today)
+- Merchant name + Notes (optional)
+- POSTs to `/api/expenses`, refreshes list
+
+**Scan Receipt modal:**
+- File picker with preview (image thumbnail or PDF icon)
+- File size validation (10MB max)
+- AI scan step (production: AWS Textract; dev: simulated)
+- Review step showing extracted merchant, amount, currency, date, category
+- Save creates expense via API
+
+**Receipt attachment on existing expenses:**
+- Each expense row shows `📷 Receipt ↗` (clickable → DocumentPreview) or `📎 Add receipt` (creates source_attachment record)
+
+### Admin Panel Architecture
+
+**Frontend:** `packages/admin` — Next.js app on port 3002
+
+**Pages:** Dashboard (stats), Users (list/detail/suspend), Config (rate limits, feature flags), Costs (AWS breakdown), Audit (action log), Health (API metrics, email queue, LLM usage), Moderation (impersonation, announcements, content review)
+
+**Backend:** `packages/api/src/routes/admin.ts` — 11 endpoints (stats, user CRUD, config, audit, announcements, health)
+
+**Auth:** `packages/api/src/plugins/admin-auth.ts` — `requireAdmin` and `requireSuperAdmin` decorators, role lookup from users.admin_role column
+
+**Migration 005:** Added `audit_log` table, `admin_role` and `suspended` columns to users table
+
+### Bookings List View
+
+`/bookings` page shows rich summary for each booking row:
+- Flight: `✈️ BA560 [BAWX7K] · LHR → FCO · Aug 1 08:30 · Economy · Seat 14A`
+- Hotel: `🏨 Hotel Artemide [ART-294817] · Superior Double · Aug 1–Aug 15 (14n) · Rome`
+- Car: `🚗 Europcar [EU-7829341] · Compact SUV · Aug 1–Aug 15 · Rome Fiumicino`
+
+Plus status badge (upcoming/active/completed) and source icon.
