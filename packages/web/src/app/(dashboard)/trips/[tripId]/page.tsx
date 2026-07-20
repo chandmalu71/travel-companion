@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { SourceIndicator } from '@/components/source-indicator';
 import { QuickActions } from '@/components/quick-actions';
 import { SettlementView } from '@/components/settlement-view';
+import { AddExpenseModal } from '@/components/add-expense-modal';
 
 interface TripDetail {
   id: string;
@@ -441,7 +442,7 @@ function ExpensesTab({ tripId }: { tripId: string }) {
 
       {/* Add Expense Modal (trip context) */}
       {showAddExpense && (
-        <AddExpenseInTrip
+        <AddExpenseModal
           tripId={tripId}
           onClose={() => setShowAddExpense(false)}
           onCreated={() => { setShowAddExpense(false); loadSummary(); }}
@@ -451,137 +452,6 @@ function ExpensesTab({ tripId }: { tripId: string }) {
   );
 }
 
-function AddExpenseInTrip({ tripId, onClose, onCreated }: { tripId: string; onClose: () => void; onCreated: () => void }) {
-  const [amount, setAmount] = useState('');
-  const [currency, setCurrency] = useState('EUR');
-  const [category, setCategory] = useState('food_dining');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [merchantName, setMerchantName] = useState('');
-  const [notes, setNotes] = useState('');
-  const [isShared, setIsShared] = useState(true);
-  const [splitType, setSplitType] = useState<'equal' | 'percentage' | 'per_item'>('equal');
-  const [tripMembers, setTripMembers] = useState<Array<{ id: string; name: string }>>([]);
-  const [includedMembers, setIncludedMembers] = useState<Record<string, boolean>>({});
-  const [percentages, setPercentages] = useState<Record<string, string>>({});
-  const [itemAmounts, setItemAmounts] = useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    api.get<{ data: Array<{ id: string; name: string }> }>(`/api/trips/${tripId}/members`)
-      .then(res => {
-        const members = res.data ?? [];
-        setTripMembers(members);
-        setIncludedMembers(Object.fromEntries(members.map(m => [m.id, true])));
-      })
-      .catch(() => {});
-  }, [tripId]);
-
-  const amt = parseFloat(amount) || 0;
-  const includedCount = Object.values(includedMembers).filter(Boolean).length;
-  const equalShare = includedCount > 0 ? (amt / includedCount).toFixed(2) : '0.00';
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (!amt || amt <= 0) { setError('Enter a valid amount'); return; }
-
-    setSubmitting(true);
-    try {
-      const res = await api.post<{ data: { id: string } }>('/api/expenses', {
-        amount: amt, currency, category, date, merchantName: merchantName || undefined,
-        notes: notes || undefined, isShared, tripId,
-      });
-
-      if (isShared && res.data?.id) {
-        const included = tripMembers.filter(m => includedMembers[m.id]);
-        if (included.length > 0) {
-          const members = included.map(m => {
-            const entry: { memberId: string; percentage?: number; amount?: number } = { memberId: m.id };
-            if (splitType === 'equal') entry.amount = amt / included.length;
-            if (splitType === 'percentage') entry.percentage = parseFloat(percentages[m.id] ?? '0');
-            if (splitType === 'per_item') entry.amount = parseFloat(itemAmounts[m.id] ?? '0');
-            return entry;
-          });
-          await api.post(`/api/trips/${tripId}/expenses/${res.data.id}/split`, { splitType, members }).catch(() => {});
-        }
-      }
-      onCreated();
-    } catch { setError('Failed to create expense.'); }
-    finally { setSubmitting(false); }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Expense to Trip</h3>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden">
-            <button type="button" onClick={() => setIsShared(true)} className={`flex-1 py-2 text-sm font-medium ${isShared ? 'bg-primary-500 text-white' : 'bg-white text-gray-600'}`}>👥 Shared</button>
-            <button type="button" onClick={() => setIsShared(false)} className={`flex-1 py-2 text-sm font-medium ${!isShared ? 'bg-gray-700 text-white' : 'bg-white text-gray-600'}`}>🔒 Personal</button>
-          </div>
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Amount</label>
-              <input type="number" step="0.01" min="0.01" placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" autoFocus />
-            </div>
-            <div className="w-20">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Curr</label>
-              <select value={currency} onChange={e => setCurrency(e.target.value)} className="w-full rounded-md border border-gray-300 px-1 py-2 text-sm">
-                {['EUR','USD','GBP','JPY','AUD','CAD','CHF','INR','SGD','THB','IDR'].map(c => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Merchant</label>
-              <input type="text" placeholder="Restaurant" value={merchantName} onChange={e => setMerchantName(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Category</label>
-            <select value={category} onChange={e => setCategory(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-              <option value="food_dining">🍕 Food & Dining</option><option value="transportation">🚗 Transport</option>
-              <option value="accommodation">🏨 Accommodation</option><option value="tours_activities">🎭 Tours</option>
-              <option value="shopping">🛍️ Shopping</option><option value="entertainment">🎬 Entertainment</option><option value="other">📦 Other</option>
-            </select>
-          </div>
-          {isShared && tripMembers.length > 0 && (
-            <div className="border border-gray-200 rounded-lg p-3 space-y-2 bg-gray-50">
-              <div className="flex gap-1">
-                {(['equal','percentage','per_item'] as const).map(t => (
-                  <button key={t} type="button" onClick={() => setSplitType(t)}
-                    className={`flex-1 py-1 text-xs rounded ${splitType === t ? 'bg-white border border-primary-300 text-primary-700 shadow-sm' : 'text-gray-500'}`}>
-                    {t === 'equal' ? '÷ Equal' : t === 'percentage' ? '% Pct' : '🏷️ Item'}
-                  </button>
-                ))}
-              </div>
-              {tripMembers.map(m => (
-                <div key={m.id} className="flex items-center gap-2">
-                  <input type="checkbox" checked={includedMembers[m.id] ?? false} onChange={e => setIncludedMembers(p => ({...p,[m.id]:e.target.checked}))} className="rounded border-gray-300 text-primary-600" />
-                  <span className="text-sm flex-1">{m.name}</span>
-                  {splitType === 'equal' && includedMembers[m.id] && <span className="text-xs text-gray-500">{currency} {equalShare}</span>}
-                  {splitType === 'percentage' && includedMembers[m.id] && <input type="number" step="0.1" placeholder="%" value={percentages[m.id]??''} onChange={e=>setPercentages(p=>({...p,[m.id]:e.target.value}))} className="w-14 rounded border px-1 py-0.5 text-xs text-right" />}
-                  {splitType === 'per_item' && includedMembers[m.id] && <input type="number" step="0.01" placeholder="0" value={itemAmounts[m.id]??''} onChange={e=>setItemAmounts(p=>({...p,[m.id]:e.target.value}))} className="w-16 rounded border px-1 py-0.5 text-xs text-right" />}
-                </div>
-              ))}
-            </div>
-          )}
-          {error && <p className="text-xs text-red-600">{error}</p>}
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm">Cancel</button>
-            <button type="submit" disabled={submitting} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{submitting ? 'Saving...' : 'Save'}</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
 
 function DocumentsTab({ tripId }: { tripId: string }) {
   return (
