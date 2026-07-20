@@ -200,6 +200,55 @@ export async function registerTripRoutes(
     },
   );
 
+  // ─── GET /api/trips/:tripId/members ─────────────────────────────────────
+
+  app.get(
+    '/api/trips/:tripId/members',
+    { preHandler: [app.requireAuth] },
+    async (request: FastifyRequest<{ Params: TripParams }>, reply: FastifyReply) => {
+      const { tripId } = request.params;
+      const userId = request.user!.userId;
+
+      const trip = await db.selectFrom('trips').select(['id', 'owner_id']).where('id', '=', tripId).executeTakeFirst();
+      if (!trip) return reply.status(404).send({ statusCode: 404, error: 'Trip not found' });
+
+      // Get trip owner details
+      const owner = await db.selectFrom('users').select(['id', 'display_name', 'email']).where('id', '=', trip.owner_id).executeTakeFirst();
+
+      // Get trip members
+      const members = await db
+        .selectFrom('trip_members')
+        .selectAll()
+        .where('trip_id', '=', tripId)
+        .execute();
+
+      // Get user details for members with user_id
+      const memberUserIds = members.filter(m => m.user_id).map(m => m.user_id!);
+      const memberUsers = memberUserIds.length > 0
+        ? await db.selectFrom('users').select(['id', 'display_name', 'email']).where('id', 'in', memberUserIds).execute()
+        : [];
+      const userMap = new Map(memberUsers.map(u => [u.id, u]));
+
+      const result = [
+        // Owner is always a member
+        { id: `owner-${trip.owner_id}`, userId: trip.owner_id, name: owner?.display_name ?? 'Trip Owner', email: owner?.email, role: 'owner' },
+        // Other members
+        ...members.map(m => {
+          const user = m.user_id ? userMap.get(m.user_id) : null;
+          return {
+            id: m.id,
+            userId: m.user_id,
+            name: user?.display_name ?? m.email ?? 'Member',
+            email: user?.email ?? m.email,
+            role: m.access_level ?? 'edit',
+          };
+        }),
+      ];
+
+      return reply.send({ statusCode: 200, data: result });
+    },
+  );
+
   // ─── PUT /api/trips/:tripId ──────────────────────────────────────────────
 
   app.put(
