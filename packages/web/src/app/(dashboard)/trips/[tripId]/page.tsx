@@ -243,7 +243,6 @@ function FlightCard({ item }: { item: any }) {
         {item.terminal && <span>🏢 {item.terminal}{item.gate ? `/${item.gate}` : ''}</span>}
         {item.cabinClass && <span>{item.cabinClass}</span>}
         {item.baggageAllowance && <span>🧳 {item.baggageAllowance}</span>}
-        {item.price && <span className="font-medium text-gray-700">{item.currency ?? '£'}{item.price.toLocaleString()}</span>}
         {names && <span className="text-gray-400">· 👤 {names}</span>}
       </div>
       {dep && (
@@ -290,7 +289,6 @@ function HotelCard({ item }: { item: any }) {
         {item.confirmationNumber && <span className="font-mono font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded px-1.5 py-0">Ref: {item.confirmationNumber}</span>}
         {item.roomType && <span>🛏️ {item.roomType}</span>}
         {item.numberOfGuests && <span>👥 {item.numberOfGuests}{names ? ` (${names})` : ''}</span>}
-        {item.price && <span className="font-medium text-gray-700 ml-auto">{item.currency ?? '€'}{item.price.toLocaleString()}</span>}
       </div>
       <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-lg p-2.5 mb-2">
         <div><p className="text-[10px] text-gray-500">Check-in</p><p className="text-sm font-semibold text-gray-900">{item.checkinDate ?? '—'}</p><p className="text-[10px] text-gray-400">{item.checkinTime ?? '15:00'}</p></div>
@@ -329,7 +327,6 @@ function CarRentalCard({ item }: { item: any }) {
         {names && <span>🪪 {names}</span>}
         {item.insurance && <span>🛡️ {item.insurance}</span>}
         {item.fuelPolicy && <span>⛽ {item.fuelPolicy}</span>}
-        {item.price && <span className="font-medium text-gray-700 ml-auto">{item.currency ?? '€'}{item.price.toLocaleString()}</span>}
       </div>
       <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-lg p-2.5 mb-2">
         <div><p className="text-[10px] text-gray-500">Pickup</p><p className="text-sm font-semibold text-gray-900">{pickup ? formatDateTime(pickup) : '—'}</p></div>
