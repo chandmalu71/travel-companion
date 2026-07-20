@@ -65,24 +65,69 @@ const BOOKINGS = [
 // ─── Mock Flight Details ─────────────────────────────────────────────────────
 
 const FLIGHT_DETAILS = [
-  { bookingId: '00000000-0000-4000-c000-000000000001', airline: 'British Airways', flightNumber: 'BA560', departureAirport: 'LHR', arrivalAirport: 'FCO', departureTime: '2026-08-01T08:30:00Z', arrivalTime: '2026-08-01T12:15:00Z' },
-  { bookingId: '00000000-0000-4000-c000-000000000004', airline: 'Japan Airlines', flightNumber: 'JL44', departureAirport: 'LHR', arrivalAirport: 'NRT', departureTime: '2027-03-20T11:00:00Z', arrivalTime: '2027-03-21T07:30:00Z' },
-  { bookingId: '00000000-0000-4000-c000-000000000006', airline: 'Singapore Airlines', flightNumber: 'SQ325', departureAirport: 'LHR', arrivalAirport: 'DPS', departureTime: '2026-10-10T22:00:00Z', arrivalTime: '2026-10-11T18:30:00Z' },
-  { bookingId: '00000000-0000-4000-c000-000000000007', airline: 'Emirates', flightNumber: 'EK356', departureAirport: 'DXB', arrivalAirport: 'DPS', departureTime: '2026-10-10T14:00:00Z', arrivalTime: '2026-10-11T04:30:00Z' },
-  { bookingId: '00000000-0000-4000-c000-000000000008', airline: 'Qatar Airways', flightNumber: 'QR960', departureAirport: 'DOH', arrivalAirport: 'DPS', departureTime: '2026-10-10T02:00:00Z', arrivalTime: '2026-10-10T18:00:00Z' },
+  {
+    bookingId: '00000000-0000-4000-c000-000000000001', airline: 'British Airways', flightNumber: 'BA560',
+    departureAirport: 'LHR', arrivalAirport: 'FCO', departureTime: '2026-08-01T08:30:00Z', arrivalTime: '2026-08-01T12:15:00Z',
+    confirmationNumber: 'BAWX7K', seat: '14A', terminal: 'T5', gate: 'B32', baggageAllowance: '1 × 23kg checked + 1 cabin',
+    cabinClass: 'Economy', travellerNames: JSON.stringify(['Alice Johnson', 'Bob Smith']), price: 489.00, currency: 'GBP',
+  },
+  {
+    bookingId: '00000000-0000-4000-c000-000000000004', airline: 'Japan Airlines', flightNumber: 'JL44',
+    departureAirport: 'LHR', arrivalAirport: 'NRT', departureTime: '2027-03-20T11:00:00Z', arrivalTime: '2027-03-21T07:30:00Z',
+    confirmationNumber: 'JALM3P', seat: '22K', terminal: 'T3', gate: null, baggageAllowance: '2 × 23kg checked',
+    cabinClass: 'Premium Economy', travellerNames: JSON.stringify(['Bob Smith']), price: 1250.00, currency: 'GBP',
+  },
+  {
+    bookingId: '00000000-0000-4000-c000-000000000006', airline: 'Singapore Airlines', flightNumber: 'SQ325',
+    departureAirport: 'LHR', arrivalAirport: 'DPS', departureTime: '2026-10-10T22:00:00Z', arrivalTime: '2026-10-11T18:30:00Z',
+    confirmationNumber: 'SIA9R2', seat: '35C', terminal: 'T2', gate: 'A14', baggageAllowance: '1 × 30kg checked',
+    cabinClass: 'Economy', travellerNames: JSON.stringify(['Alice Johnson']), price: 780.00, currency: 'GBP',
+  },
+  {
+    bookingId: '00000000-0000-4000-c000-000000000007', airline: 'Emirates', flightNumber: 'EK356',
+    departureAirport: 'DXB', arrivalAirport: 'DPS', departureTime: '2026-10-10T14:00:00Z', arrivalTime: '2026-10-11T04:30:00Z',
+    confirmationNumber: 'EK8W4T', seat: '28A', terminal: 'T3', gate: 'D45', baggageAllowance: '1 × 30kg + 1 × 7kg cabin',
+    cabinClass: 'Economy', travellerNames: JSON.stringify(['Bob Smith']), price: 620.00, currency: 'USD',
+  },
+  {
+    bookingId: '00000000-0000-4000-c000-000000000008', airline: 'Qatar Airways', flightNumber: 'QR960',
+    departureAirport: 'DOH', arrivalAirport: 'DPS', departureTime: '2026-10-10T02:00:00Z', arrivalTime: '2026-10-10T18:00:00Z',
+    confirmationNumber: 'QR5N8L', seat: '19F', terminal: null, gate: null, baggageAllowance: '2 × 23kg checked',
+    cabinClass: 'Business', travellerNames: JSON.stringify(['Charlie Davis']), price: 2400.00, currency: 'USD',
+  },
 ];
 
 // ─── Mock Hotel Details ──────────────────────────────────────────────────────
 
 const HOTEL_DETAILS = [
-  { bookingId: '00000000-0000-4000-c000-000000000002', hotelName: 'Hotel Artemide', address: 'Via Nazionale 22, Rome', checkinDate: '2026-08-01', checkoutDate: '2026-08-15' },
-  { bookingId: '00000000-0000-4000-c000-000000000005', hotelName: 'Park Hyatt Tokyo', address: '3-7-1-2 Nishi Shinjuku, Tokyo', checkinDate: '2027-03-21', checkoutDate: '2027-04-05' },
+  {
+    bookingId: '00000000-0000-4000-c000-000000000002', hotelName: 'Hotel Artemide', address: 'Via Nazionale 22, Rome',
+    checkinDate: '2026-08-01', checkoutDate: '2026-08-15',
+    confirmationNumber: 'ART-294817', roomType: 'Superior Double', numberOfGuests: 2, contactPhone: '+39 06 489 911',
+    travellerNames: JSON.stringify(['Alice Johnson', 'Bob Smith']), pricePerNight: 185.00, totalPrice: 2590.00, currency: 'EUR',
+    latitude: 41.9009, longitude: 12.4942, notes: 'Late check-in arranged (arriving 13:00)',
+  },
+  {
+    bookingId: '00000000-0000-4000-c000-000000000005', hotelName: 'Park Hyatt Tokyo', address: '3-7-1-2 Nishi Shinjuku, Tokyo',
+    checkinDate: '2027-03-21', checkoutDate: '2027-04-05',
+    confirmationNumber: 'PHT-881234', roomType: 'Deluxe King', numberOfGuests: 1, contactPhone: '+81 3-5322-1234',
+    travellerNames: JSON.stringify(['Bob Smith']), pricePerNight: 450.00, totalPrice: 6750.00, currency: 'USD',
+    latitude: 35.6896, longitude: 139.6921, notes: 'Club Lounge access included',
+  },
 ];
 
 // ─── Mock Car Rental Details ─────────────────────────────────────────────────
 
 const CAR_RENTAL_DETAILS = [
-  { bookingId: '00000000-0000-4000-c000-000000000003', company: 'Europcar', pickupTime: '2026-08-01T14:00:00Z', returnTime: '2026-08-15T10:00:00Z', pickupLocation: 'Rome Fiumicino Airport', returnLocation: 'Rome Fiumicino Airport' },
+  {
+    bookingId: '00000000-0000-4000-c000-000000000003', company: 'Europcar', pickupTime: '2026-08-01T14:00:00Z', returnTime: '2026-08-15T10:00:00Z',
+    pickupLocation: 'Rome Fiumicino Airport, Terminal 3', returnLocation: 'Rome Fiumicino Airport, Terminal 3',
+    confirmationNumber: 'EU-7829341', vehicleClass: 'Compact SUV (Fiat 500X or similar)',
+    driverNames: JSON.stringify(['Alice Johnson']), insurance: 'Full Coverage + Theft Protection',
+    fuelPolicy: 'Full-to-full', extras: JSON.stringify(['GPS Navigation', 'Child Seat']),
+    totalPrice: 840.00, currency: 'EUR', notes: 'Pickup desk is in Terminal 3 arrivals hall',
+    pickupLatitude: 41.8003, pickupLongitude: 12.2389,
+  },
 ];
 
 // ─── Mock Expenses ───────────────────────────────────────────────────────────
@@ -155,6 +200,15 @@ async function seed() {
       arrival_airport: flight.arrivalAirport,
       departure_time: new Date(flight.departureTime),
       arrival_time: new Date(flight.arrivalTime),
+      confirmation_number: flight.confirmationNumber,
+      seat: flight.seat,
+      terminal: flight.terminal,
+      gate: flight.gate ?? null,
+      baggage_allowance: flight.baggageAllowance,
+      cabin_class: flight.cabinClass,
+      traveller_names: flight.travellerNames,
+      price: String(flight.price),
+      currency: flight.currency,
     }).onConflict((oc) => oc.column('booking_id').doNothing()).execute();
   }
   console.log(`  ✅ ${FLIGHT_DETAILS.length} flight details`);
@@ -167,6 +221,17 @@ async function seed() {
       address: hotel.address,
       checkin_date: hotel.checkinDate,
       checkout_date: hotel.checkoutDate,
+      confirmation_number: hotel.confirmationNumber,
+      room_type: hotel.roomType,
+      number_of_guests: hotel.numberOfGuests,
+      contact_phone: hotel.contactPhone,
+      traveller_names: hotel.travellerNames,
+      price_per_night: String(hotel.pricePerNight),
+      total_price: String(hotel.totalPrice),
+      currency: hotel.currency,
+      latitude: String(hotel.latitude),
+      longitude: String(hotel.longitude),
+      notes: hotel.notes ?? null,
     }).onConflict((oc) => oc.column('booking_id').doNothing()).execute();
   }
   console.log(`  ✅ ${HOTEL_DETAILS.length} hotel details`);
@@ -180,6 +245,17 @@ async function seed() {
       return_time: new Date(car.returnTime),
       pickup_location: car.pickupLocation,
       return_location: car.returnLocation,
+      confirmation_number: car.confirmationNumber,
+      vehicle_class: car.vehicleClass,
+      driver_names: car.driverNames,
+      insurance: car.insurance,
+      fuel_policy: car.fuelPolicy,
+      extras: car.extras,
+      total_price: String(car.totalPrice),
+      currency: car.currency,
+      notes: car.notes ?? null,
+      pickup_latitude: String(car.pickupLatitude),
+      pickup_longitude: String(car.pickupLongitude),
     }).onConflict((oc) => oc.column('booking_id').doNothing()).execute();
   }
   console.log(`  ✅ ${CAR_RENTAL_DETAILS.length} car rental details`);

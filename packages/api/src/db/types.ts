@@ -135,6 +135,16 @@ export interface FlightDetailsTable {
   arrival_lng: ColumnType<string | null, string | null, string | null>;
   checkin_window_opens: Date | null;
   checkin_window_closes: Date | null;
+  confirmation_number: string | null;
+  seat: string | null;
+  terminal: string | null;
+  gate: string | null;
+  baggage_allowance: string | null;
+  cabin_class: string | null;
+  traveller_names: string | null; // JSON array
+  notes: string | null;
+  price: ColumnType<string | null, string | null, string | null>;
+  currency: string | null;
 }
 
 export type FlightDetail = Selectable<FlightDetailsTable>;
@@ -152,6 +162,14 @@ export interface HotelDetailsTable {
   latitude: ColumnType<string | null, string | null, string | null>;
   longitude: ColumnType<string | null, string | null, string | null>;
   confirmation_number: string | null;
+  room_type: string | null;
+  number_of_guests: number | null;
+  contact_phone: string | null;
+  traveller_names: string | null; // JSON array
+  notes: string | null;
+  price_per_night: ColumnType<string | null, string | null, string | null>;
+  total_price: ColumnType<string | null, string | null, string | null>;
+  currency: string | null;
 }
 
 export type HotelDetail = Selectable<HotelDetailsTable>;
@@ -173,6 +191,16 @@ export interface CarRentalDetailsTable {
   return_lat: ColumnType<string | null, string | null, string | null>;
   return_lng: ColumnType<string | null, string | null, string | null>;
   confirmation_number: string | null;
+  vehicle_class: string | null;
+  driver_names: string | null; // JSON array
+  insurance: string | null;
+  fuel_policy: string | null;
+  extras: string | null; // JSON array
+  notes: string | null;
+  total_price: ColumnType<string | null, string | null, string | null>;
+  currency: string | null;
+  pickup_latitude: ColumnType<string | null, string | null, string | null>;
+  pickup_longitude: ColumnType<string | null, string | null, string | null>;
 }
 
 export type CarRentalDetail = Selectable<CarRentalDetailsTable>;
