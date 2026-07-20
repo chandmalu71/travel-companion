@@ -652,7 +652,7 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 6. THE Application SHALL perform **privacy sanitization** on stored emails: strip credit card numbers, CVVs, billing addresses, and payment details — but KEEP traveller names, dates, confirmation numbers, and booking details
 7. THE UI SHALL display a source indicator on each booking/expense card with a "View Original" link: `📧 Source: email` / `📷 Source: receipt photo` / `📄 Source: PDF` / `✍️ Manually entered`
 8. CLICKING "View Original" SHALL open a modal/page showing: the original email (rendered HTML), receipt image (full-size), or PDF viewer
-9. THE Application SHALL allow users to configure **source data retention** in their settings with options: a) Keep forever (default for paid plans), b) Delete after 1 year, c) Delete after 6 months, d) Delete after 30 days (minimum for GDPR right of access period)
+9. THE Application SHALL allow users to configure **source data retention** in their settings with options: a) Keep forever (default for paid plans), b) Delete after 5 years, c) Delete after 2 years, d) Delete after 1 year, e) Delete after 6 months
 10. THE default retention period SHALL be compliant with GDPR: stored for as long as the user has an active account, deleted within 30 days of account deletion
 11. WHEN a user deletes their account, ALL source attachments SHALL be permanently deleted from S3 within 30 days
 12. THE source attachment SHALL be accessible offline (cached locally when user selects trip for offline access)

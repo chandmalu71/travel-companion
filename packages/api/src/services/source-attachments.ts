@@ -17,7 +17,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 export type SourceType = 'email' | 'receipt_scan' | 'pdf' | 'manual' | 'forwarded';
 export type EntityType = 'booking' | 'expense';
-export type RetentionPolicy = 'account_lifetime' | '1year' | '6months' | '30days';
+export type RetentionPolicy = 'account_lifetime' | '5years' | '2years' | '1year' | '6months';
 
 export interface SourceAttachment {
   id: string;
