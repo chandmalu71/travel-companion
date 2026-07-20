@@ -484,9 +484,10 @@ function LanguageRegionSection({ preferences, onChange }: { preferences: any; on
           {languages.length > 0 ? (
             languages.map(l => <option key={l.code} value={l.code}>{l.native_name} ({l.name})</option>)
           ) : (
-            <option value="en">English</option>
+            <option value="">Loading languages...</option>
           )}
         </select>
+        <p className="text-xs text-gray-400 mt-1">Configured by admin — {languages.length} languages available</p>
       </div>
 
       {/* Locale/Region selector */}
@@ -500,6 +501,7 @@ function LanguageRegionSection({ preferences, onChange }: { preferences: any; on
           <option value="">Select a region...</option>
           {locales.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
         </select>
+        <p className="text-xs text-gray-400 mt-1">Configured by admin — {locales.length} regions available</p>
       </div>
 
       {/* Preview current format settings */}
