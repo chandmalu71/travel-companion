@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { SourceIndicator } from '@/components/source-indicator';
 import { QuickActions } from '@/components/quick-actions';
+import { SettlementView } from '@/components/settlement-view';
 
 interface TripDetail {
   id: string;
@@ -377,6 +378,7 @@ function MapTab({ tripId }: { tripId: string }) {
 function ExpensesTab({ tripId }: { tripId: string }) {
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [subTab, setSubTab] = useState<'expenses' | 'settlements'>('expenses');
 
   useEffect(() => {
     api.get<{ data: any }>(`/api/trips/${tripId}/expenses/summary`)
@@ -388,36 +390,50 @@ function ExpensesTab({ tripId }: { tripId: string }) {
   if (loading) return <div className="animate-pulse h-32 bg-gray-200 rounded-lg" />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Sub-tab toggle */}
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-gray-900">Expenses</h3>
-        <div className="flex gap-2">
-          <button className="rounded-md border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50">
-            Export CSV
+        <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+          <button onClick={() => setSubTab('expenses')}
+            className={`px-4 py-1.5 text-xs font-medium transition-all ${subTab === 'expenses' ? 'bg-primary-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+            💰 Expenses
           </button>
-          <button className="rounded-md bg-primary-600 px-3 py-1.5 text-xs text-white hover:bg-primary-500">
-            + Add Expense
+          <button onClick={() => setSubTab('settlements')}
+            className={`px-4 py-1.5 text-xs font-medium transition-all ${subTab === 'settlements' ? 'bg-primary-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+            🤝 Settlements
           </button>
         </div>
+        {subTab === 'expenses' && (
+          <div className="flex gap-2">
+            <button className="rounded-md border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50">Export CSV</button>
+            <button className="rounded-md bg-primary-600 px-3 py-1.5 text-xs text-white hover:bg-primary-500">+ Add Expense</button>
+          </div>
+        )}
       </div>
 
-      {summary ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-lg bg-white p-4 border border-gray-200">
-            <p className="text-sm text-gray-500">Total Spent</p>
-            <p className="text-xl font-bold">${summary.grandTotal?.toFixed(2) ?? '0.00'}</p>
-          </div>
-          <div className="rounded-lg bg-white p-4 border border-gray-200">
-            <p className="text-sm text-gray-500">Expenses</p>
-            <p className="text-xl font-bold">{summary.expenseCount ?? 0}</p>
-          </div>
-          <div className="rounded-lg bg-white p-4 border border-gray-200">
-            <p className="text-sm text-gray-500">Budget Used</p>
-            <p className="text-xl font-bold">{summary.budgetUsedPercent ?? 0}%</p>
-          </div>
-        </div>
+      {subTab === 'expenses' ? (
+        <>
+          {summary ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="rounded-lg bg-white p-4 border border-gray-200">
+                <p className="text-sm text-gray-500">Total Spent</p>
+                <p className="text-xl font-bold">${summary.grandTotal?.toFixed(2) ?? '0.00'}</p>
+              </div>
+              <div className="rounded-lg bg-white p-4 border border-gray-200">
+                <p className="text-sm text-gray-500">Expenses</p>
+                <p className="text-xl font-bold">{summary.expenseCount ?? 0}</p>
+              </div>
+              <div className="rounded-lg bg-white p-4 border border-gray-200">
+                <p className="text-sm text-gray-500">Budget Used</p>
+                <p className="text-xl font-bold">{summary.budgetUsedPercent ?? 0}%</p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">No expenses recorded yet.</p>
+          )}
+        </>
       ) : (
-        <p className="text-sm text-gray-500">No expenses recorded yet.</p>
+        <SettlementView tripId={tripId} />
       )}
     </div>
   );
