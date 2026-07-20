@@ -263,7 +263,7 @@ function AddExpenseModal({ onClose, onCreated }: { onClose: () => void; onCreate
 
     setSubmitting(true);
     try {
-      await api.post('/api/expenses', {
+      const res = await api.post<{ data: { id: string } }>('/api/expenses', {
         amount: amt,
         currency,
         category,
@@ -271,7 +271,29 @@ function AddExpenseModal({ onClose, onCreated }: { onClose: () => void; onCreate
         merchantName: merchantName || undefined,
         notes: notes || undefined,
         isShared,
+        tripId: undefined, // TODO: get from trip context when in trip view
       });
+
+      // If shared, save the split configuration
+      if (isShared && res.data?.id) {
+        const includedMemberList = tripMembers.filter(m => includedMembers[m.id]);
+        if (includedMemberList.length > 0) {
+          const splitMembers = includedMemberList.map(m => {
+            const entry: { memberId: string; percentage?: number; amount?: number; items?: string[] } = { memberId: m.id };
+            if (splitType === 'percentage') entry.percentage = parseFloat(percentages[m.id] ?? '0');
+            if (splitType === 'per_item') entry.amount = parseFloat(itemAmounts[m.id] ?? '0');
+            if (splitType === 'equal') entry.amount = amt / includedMemberList.length;
+            return entry;
+          });
+
+          // Use a default tripId for now (first trip context)
+          await api.post(`/api/trips/00000000-0000-4000-b000-000000000001/expenses/${res.data.id}/split`, {
+            splitType,
+            members: splitMembers,
+          }).catch(() => {}); // Non-critical if split save fails
+        }
+      }
+
       onCreated();
     } catch {
       setError('Failed to create expense. Please try again.');
@@ -610,25 +632,88 @@ function EditExpenseModal({ expense, onClose, onSaved }: { expense: Expense; onC
   const [date, setDate] = useState(expense.date?.slice(0, 10) ?? '');
   const [merchantName, setMerchantName] = useState(expense.merchant_name ?? '');
   const [notes, setNotes] = useState(expense.notes ?? '');
+  const [isShared, setIsShared] = useState(expense.is_shared ?? false);
+  const [splitType, setSplitType] = useState<'equal' | 'percentage' | 'per_item'>(
+    (expense.sharedWith?.[0]?.splitType as any) ?? 'equal'
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Trip members (mock — in production fetch from trip context)
+  const tripMembers = [
+    { id: 'member-1', name: 'Alice Johnson' },
+    { id: 'member-2', name: 'Bob Smith' },
+    { id: 'member-3', name: 'Charlie Davis' },
+  ];
+
+  // Initialize included members from existing split data
+  const [includedMembers, setIncludedMembers] = useState<Record<string, boolean>>(() => {
+    if (expense.sharedWith && expense.sharedWith.length > 0) {
+      const included: Record<string, boolean> = {};
+      tripMembers.forEach(m => { included[m.id] = expense.sharedWith!.some(s => s.memberId === m.id); });
+      return included;
+    }
+    return Object.fromEntries(tripMembers.map(m => [m.id, true]));
+  });
+
+  const [percentages, setPercentages] = useState<Record<string, string>>(() => {
+    if (expense.sharedWith) {
+      const pcts: Record<string, string> = {};
+      expense.sharedWith.forEach(s => { if (s.percentage) pcts[s.memberId] = String(s.percentage); });
+      return pcts;
+    }
+    return {};
+  });
+
+  const [itemAmounts, setItemAmounts] = useState<Record<string, string>>(() => {
+    if (expense.sharedWith) {
+      const amts: Record<string, string> = {};
+      expense.sharedWith.forEach(s => { if (s.amount) amts[s.memberId] = String(s.amount); });
+      return amts;
+    }
+    return {};
+  });
+
+  const amt = parseFloat(amount) || 0;
+  const includedCount = Object.values(includedMembers).filter(Boolean).length;
+  const equalShare = includedCount > 0 ? (amt / includedCount).toFixed(2) : '0.00';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const amt = parseFloat(amount);
     if (!amt || amt <= 0) { setError('Please enter a valid amount'); return; }
+
+    if (isShared && splitType === 'percentage') {
+      const totalPct = Object.entries(percentages).filter(([id]) => includedMembers[id]).reduce((s, [, v]) => s + (parseFloat(v) || 0), 0);
+      if (Math.abs(totalPct - 100) > 0.01) { setError(`Percentages must sum to 100% (currently ${totalPct.toFixed(1)}%)`); return; }
+    }
 
     setSubmitting(true);
     try {
       await api.put(`/api/expenses/${expense.id}`, {
-        amount: amt,
-        currency,
-        category,
-        date,
+        amount: amt, currency, category, date,
         merchantName: merchantName || undefined,
         notes: notes || undefined,
+        isShared,
       });
+
+      // Update split config if shared
+      if (isShared) {
+        const includedMemberList = tripMembers.filter(m => includedMembers[m.id]);
+        if (includedMemberList.length > 0) {
+          const splitMembers = includedMemberList.map(m => {
+            const entry: { memberId: string; percentage?: number; amount?: number } = { memberId: m.id };
+            if (splitType === 'percentage') entry.percentage = parseFloat(percentages[m.id] ?? '0');
+            if (splitType === 'per_item') entry.amount = parseFloat(itemAmounts[m.id] ?? '0');
+            if (splitType === 'equal') entry.amount = amt / includedMemberList.length;
+            return entry;
+          });
+          await api.post(`/api/trips/00000000-0000-4000-b000-000000000001/expenses/${expense.id}/split`, {
+            splitType, members: splitMembers,
+          }).catch(() => {});
+        }
+      }
+
       onSaved();
     } catch {
       setError('Failed to update expense.');
@@ -642,6 +727,18 @@ function EditExpenseModal({ expense, onClose, onSaved }: { expense: Expense; onC
       <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit Expense</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Shared/Personal toggle */}
+          <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+            <button type="button" onClick={() => setIsShared(true)}
+              className={`flex-1 py-2 text-sm font-medium transition-all ${isShared ? 'bg-primary-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+              👥 Shared
+            </button>
+            <button type="button" onClick={() => setIsShared(false)}
+              className={`flex-1 py-2 text-sm font-medium transition-all ${!isShared ? 'bg-gray-700 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+              🔒 Personal
+            </button>
+          </div>
+
           <div className="flex gap-2">
             <div className="flex-1">
               <label className="block text-xs font-medium text-gray-700 mb-1">Amount</label>
@@ -688,6 +785,49 @@ function EditExpenseModal({ expense, onClose, onSaved }: { expense: Expense; onC
             <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
           </div>
+
+          {/* Split config (shared only) */}
+          {isShared && (
+            <div className="border border-gray-200 rounded-lg p-3 space-y-3 bg-gray-50">
+              <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Split Configuration</p>
+              <div className="flex gap-1">
+                {(['equal', 'percentage', 'per_item'] as const).map(type => (
+                  <button key={type} type="button" onClick={() => setSplitType(type)}
+                    className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${splitType === type ? 'bg-white border border-primary-300 text-primary-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                    {type === 'equal' ? '÷ Equal' : type === 'percentage' ? '% Percent' : '🏷️ Per Item'}
+                  </button>
+                ))}
+              </div>
+              <div className="space-y-1.5">
+                {tripMembers.map(member => (
+                  <div key={member.id} className="flex items-center gap-2">
+                    <input type="checkbox" checked={includedMembers[member.id] ?? false}
+                      onChange={(e) => setIncludedMembers(prev => ({ ...prev, [member.id]: e.target.checked }))}
+                      className="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                    <span className="text-sm text-gray-700 flex-1">{member.name}</span>
+                    {splitType === 'equal' && includedMembers[member.id] && (
+                      <span className="text-xs text-gray-500 font-mono">{currency} {equalShare}</span>
+                    )}
+                    {splitType === 'percentage' && includedMembers[member.id] && (
+                      <input type="number" step="0.1" min="0" max="100" placeholder="%" value={percentages[member.id] ?? ''}
+                        onChange={(e) => setPercentages(prev => ({ ...prev, [member.id]: e.target.value }))}
+                        className="w-16 rounded border border-gray-300 px-2 py-1 text-xs text-right" />
+                    )}
+                    {splitType === 'per_item' && includedMembers[member.id] && (
+                      <input type="number" step="0.01" min="0" placeholder="0.00" value={itemAmounts[member.id] ?? ''}
+                        onChange={(e) => setItemAmounts(prev => ({ ...prev, [member.id]: e.target.value }))}
+                        className="w-20 rounded border border-gray-300 px-2 py-1 text-xs text-right" />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="text-[11px] text-gray-500 pt-1 border-t border-gray-200">
+                {splitType === 'equal' && <span>Split equally among {includedCount} = {currency} {equalShare} each</span>}
+                {splitType === 'percentage' && <span>Total: {Object.entries(percentages).filter(([id]) => includedMembers[id]).reduce((s, [, v]) => s + (parseFloat(v) || 0), 0).toFixed(1)}%</span>}
+                {splitType === 'per_item' && <span>Assigned: {currency} {Object.entries(itemAmounts).filter(([id]) => includedMembers[id]).reduce((s, [, v]) => s + (parseFloat(v) || 0), 0).toFixed(2)} of {amt.toFixed(2)}</span>}
+              </div>
+            </div>
+          )}
 
           {error && <p className="text-xs text-red-600">{error}</p>}
 
