@@ -138,15 +138,25 @@ export async function registerSourceAttachmentsRoute(
         return reply.status(404).send({ statusCode: 404, error: 'Attachment not found' });
       }
 
-      // In production, generate a presigned S3 URL and redirect
-      // For now, return metadata indicating where the file would be
+      // In production, generate a presigned S3 URL via AWS SDK
+      // For now, return structured response the preview component can use
+      const previewUrl = attachment.s3_key
+        ? `/api/source-attachments/${attachment.id}/download`
+        : null;
+
       return reply.send({
         statusCode: 200,
         data: {
           id: attachment.id,
           s3Key: attachment.s3_key,
           mimeType: attachment.mime_type,
-          message: 'In production, this would redirect to a presigned S3 URL',
+          sourceType: attachment.source_type,
+          previewUrl,
+          downloadUrl: previewUrl,
+          emailHtml: null, // In production, fetch from S3 for email types
+          emailSubject: attachment.email_subject,
+          emailFrom: attachment.email_from,
+          emailDate: attachment.email_date ? new Date(attachment.email_date).toISOString() : null,
         },
       });
     },
