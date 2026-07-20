@@ -31,13 +31,13 @@ export default function ExpensesPage() {
   const [showScanModal, setShowScanModal] = useState(false);
 
   useEffect(() => {
-    api.get<{ data: Expense[] }>('/api/expenses')
-      .then((res) => setExpenses(res.data))
+    api.get<{ data?: Expense[]; statusCode?: number }>('/api/expenses')
+      .then((res) => setExpenses(Array.isArray(res.data) ? res.data : []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const totalSpent = expenses.reduce((sum, e) => sum + (e.converted_amount ?? e.amount), 0);
+  const totalSpent = expenses.reduce((sum, e) => sum + (Number(e.converted_amount) || Number(e.amount) || 0), 0);
 
   if (loading) {
     return <div className="animate-pulse space-y-4">

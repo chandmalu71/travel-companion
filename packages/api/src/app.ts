@@ -25,6 +25,11 @@ import { registerEmailConnectionRoutes } from './routes/email-connections.js';
 import { registerAdminRoutes } from './routes/admin.js';
 import { registerAdminAuth } from './plugins/admin-auth.js';
 import { registerExpenseRoutes } from './routes/expenses.js';
+import { registerExpenseGroupRoutes } from './routes/expense-groups.js';
+import { registerDocumentRoutes } from './routes/documents.js';
+import { registerHighlightRoutes } from './routes/highlights.js';
+import { registerPreferencesRoutes } from './routes/preferences.js';
+import { registerReceiptScanRoute } from './routes/receipt-scan.js';
 import { registerSharingRoutes } from './routes/sharing.js';
 import { registerSyncRoutes } from './routes/sync.js';
 import { registerActivityFeedRoutes } from './routes/activity-feed.js';
@@ -140,6 +145,34 @@ export async function buildApp(
     const currencyService = new CurrencyService(redis);
     await registerExpenseRoutes(app, { db: options.db, currencyService });
   }
+
+  // Register expense group (splitting) routes
+  if (options.db) {
+    await registerExpenseGroupRoutes(app, { db: options.db });
+  }
+
+  // Register document routes
+  if (options.db) {
+    await registerDocumentRoutes(app, {
+      db: options.db,
+      s3Bucket: process.env['S3_DOCS_BUCKET'] ?? 'nayya-docs-qa',
+      s3Region: process.env['AWS_REGION'] ?? 'eu-west-1',
+      cloudfrontDomain: process.env['CLOUDFRONT_DOCS_DOMAIN'],
+    });
+  }
+
+  // Register highlights (social sharing) routes
+  if (options.db) {
+    await registerHighlightRoutes(app, { db: options.db });
+  }
+
+  // Register user preferences routes
+  if (options.db) {
+    await registerPreferencesRoutes(app, { db: options.db });
+  }
+
+  // Register receipt scanning route
+  await registerReceiptScanRoute(app);
 
   // Register favorites and collections routes (requires DB)
   if (options.db) {
