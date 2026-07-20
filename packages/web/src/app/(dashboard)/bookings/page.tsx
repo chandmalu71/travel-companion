@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { SourceIndicator } from '@/components/source-indicator';
 
 interface Booking {
   id: string;
@@ -9,6 +10,8 @@ interface Booking {
   trip_id: string | null;
   checked_in: boolean;
   created_at: string;
+  source?: string;
+  attachment_url?: string;
 }
 
 const TYPE_ICONS: Record<string, string> = {
@@ -71,6 +74,9 @@ export default function BookingsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {booking.source && (
+                  <SourceBadgeInline source={booking.source} />
+                )}
                 {booking.checked_in && (
                   <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700">
                     Checked In
@@ -83,5 +89,21 @@ export default function BookingsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+const SOURCE_ICONS: Record<string, string> = {
+  email: '📧',
+  scan: '📷',
+  pdf: '📄',
+  manual: '✍️',
+  api: '🔗',
+};
+
+function SourceBadgeInline({ source }: { source: string }) {
+  return (
+    <span className="inline-flex items-center gap-0.5 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600" title={`Source: ${source}`}>
+      {SOURCE_ICONS[source] ?? '📋'}
+    </span>
   );
 }

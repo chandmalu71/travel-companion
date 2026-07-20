@@ -18,6 +18,15 @@ export interface EnrichedTimelineItem {
   source: string;
   checkedIn: boolean;
   createdAt: string;
+  // Source attachment
+  sourceAttachment?: {
+    id: string;
+    sourceType: string;
+    mimeType?: string;
+    emailSubject?: string;
+    emailFrom?: string;
+    emailDate?: string;
+  };
   // Flight-specific
   airline?: string;
   flightNumber?: string;
@@ -74,7 +83,32 @@ export async function registerTripTimelineRoute(
 
       const items: EnrichedTimelineItem[] = [];
 
+      // Fetch source attachments for all bookings in this trip
+      const bookingIds = bookings.map(b => b.id);
+      const sourceAttachments = bookingIds.length > 0
+        ? await db
+            .selectFrom('source_attachments')
+            .selectAll()
+            .where('entity_type', '=', 'booking')
+            .where('entity_id', 'in', bookingIds)
+            .execute()
+            .catch(() => [] as any[])
+        : [];
+      const attachmentByBooking = new Map<string, any>();
+      for (const sa of sourceAttachments) {
+        attachmentByBooking.set(sa.entity_id, sa);
+      }
+
       for (const booking of bookings) {
+        const sa = attachmentByBooking.get(booking.id);
+        const sourceAttachment = sa ? {
+          id: sa.id,
+          sourceType: sa.source_type,
+          mimeType: sa.mime_type ?? undefined,
+          emailSubject: sa.email_subject ?? undefined,
+          emailFrom: sa.email_from ?? undefined,
+          emailDate: sa.email_date ? new Date(sa.email_date).toISOString() : undefined,
+        } : undefined;
         if (booking.type === 'flight') {
           const details = await db
             .selectFrom('flight_details')
@@ -114,6 +148,7 @@ export async function registerTripTimelineRoute(
             id: booking.id,
             type: 'flight',
             source: booking.source,
+            sourceAttachment,
             checkedIn: booking.checked_in ?? false,
             createdAt: new Date(booking.created_at).toISOString(),
             airline: details?.airline ?? undefined,
@@ -152,6 +187,7 @@ export async function registerTripTimelineRoute(
             id: booking.id,
             type: 'hotel',
             source: booking.source,
+            sourceAttachment,
             checkedIn: booking.checked_in ?? false,
             createdAt: new Date(booking.created_at).toISOString(),
             hotelName: details?.hotel_name ?? undefined,
@@ -188,6 +224,7 @@ export async function registerTripTimelineRoute(
             id: booking.id,
             type: 'car_rental',
             source: booking.source,
+            sourceAttachment,
             checkedIn: booking.checked_in ?? false,
             createdAt: new Date(booking.created_at).toISOString(),
             company: details?.company ?? undefined,

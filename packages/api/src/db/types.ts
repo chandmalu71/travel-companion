@@ -30,6 +30,7 @@ export interface Database {
   share_links: ShareLinksTable;
   highlights: HighlightsTable;
   email_connections: EmailConnectionsTable;
+  source_attachments: SourceAttachmentsTable;
 }
 
 // --- Users ---
@@ -493,3 +494,30 @@ export interface EmailConnectionsTable {
 export type EmailConnection = Selectable<EmailConnectionsTable>;
 export type NewEmailConnection = Insertable<EmailConnectionsTable>;
 export type EmailConnectionUpdate = Updateable<EmailConnectionsTable>;
+
+// --- Source Attachments ---
+
+export interface SourceAttachmentsTable {
+  id: Generated<string>;
+  user_id: string;
+  entity_type: string; // 'booking' or 'expense'
+  entity_id: string;
+  source_type: string; // email, receipt_scan, pdf, manual, forwarded
+  s3_key: string | null;
+  s3_bucket: string | null;
+  mime_type: string | null;
+  file_size: number | null;
+  email_provider: string | null;
+  email_message_id: string | null;
+  email_subject: string | null;
+  email_from: string | null;
+  email_date: Date | null;
+  sanitized: Generated<boolean>;
+  retention_policy: Generated<string>;
+  expires_at: Date | null;
+  created_at: Generated<Date>;
+}
+
+export type SourceAttachment = Selectable<SourceAttachmentsTable>;
+export type NewSourceAttachment = Insertable<SourceAttachmentsTable>;
+export type SourceAttachmentUpdate = Updateable<SourceAttachmentsTable>;

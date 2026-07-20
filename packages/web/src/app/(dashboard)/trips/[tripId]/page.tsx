@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
+import { SourceIndicator } from '@/components/source-indicator';
 
 interface TripDetail {
   id: string;
@@ -267,6 +268,7 @@ function FlightCard({ item }: { item: any }) {
           </span>
         )}
       </div>
+      <SourceIndicator source={item.source} sourceAttachment={item.sourceAttachment} bookingId={item.id} />
     </div>
   );
 }
@@ -302,6 +304,7 @@ function HotelCard({ item }: { item: any }) {
           <p className="text-xs text-gray-400">{item.checkoutTime ?? '11:00'}</p>
         </div>
       </div>
+      <SourceIndicator source={item.source} sourceAttachment={item.sourceAttachment} bookingId={item.id} />
     </div>
   );
 }
@@ -338,6 +341,7 @@ function CarRentalCard({ item }: { item: any }) {
           <p className="text-sm font-semibold text-gray-900">{returnTime ? formatDateTime(returnTime) : '—'}</p>
         </div>
       </div>
+      <SourceIndicator source={item.source} sourceAttachment={item.sourceAttachment} bookingId={item.id} />
     </div>
   );
 }
