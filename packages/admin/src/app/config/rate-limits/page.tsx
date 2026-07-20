@@ -29,57 +29,48 @@ export default function RateLimitsPage() {
   }
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 bg-gray-800 border-r border-gray-700 p-4">
-        <div className="flex items-center gap-2 mb-8 px-2">
-          <span className="text-xl">🧭</span>
-          <p className="font-bold text-white text-sm">Nayya Admin</p>
-        </div>
-      </aside>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-white">Rate Limit Configuration</h1>
+      <p className="text-sm text-gray-400">Configure per-endpoint rate limits. Changes apply within 5 seconds.</p>
 
-      <main className="flex-1 p-8 space-y-6">
-        <h1 className="text-2xl font-bold text-white">Rate Limit Configuration</h1>
-        <p className="text-sm text-gray-400">Configure per-endpoint rate limits. Changes apply within 5 seconds.</p>
-
-        <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-700 text-gray-400 text-left">
-                <th className="px-4 py-3">Endpoint</th>
-                <th className="px-4 py-3">Max Requests</th>
-                <th className="px-4 py-3">Window (sec)</th>
-                <th className="px-4 py-3">Enabled</th>
+      <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-700 text-gray-400 text-left">
+              <th className="px-4 py-3">Endpoint</th>
+              <th className="px-4 py-3">Max Requests</th>
+              <th className="px-4 py-3">Window (sec)</th>
+              <th className="px-4 py-3">Enabled</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rules.map((rule) => (
+              <tr key={rule.id} className="border-b border-gray-700/50">
+                <td className="px-4 py-3 text-gray-300 font-mono text-xs">{rule.endpoint}</td>
+                <td className="px-4 py-3">
+                  <input type="number" value={rule.maxRequests}
+                    onChange={(e) => updateRule(rule.id, 'maxRequests', Number(e.target.value))}
+                    className="w-20 rounded bg-gray-700 border border-gray-600 px-2 py-1 text-xs text-white" />
+                </td>
+                <td className="px-4 py-3">
+                  <input type="number" value={rule.windowSeconds}
+                    onChange={(e) => updateRule(rule.id, 'windowSeconds', Number(e.target.value))}
+                    className="w-20 rounded bg-gray-700 border border-gray-600 px-2 py-1 text-xs text-white" />
+                </td>
+                <td className="px-4 py-3">
+                  <input type="checkbox" checked={rule.enabled}
+                    onChange={(e) => updateRule(rule.id, 'enabled', e.target.checked)}
+                    className="rounded" />
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {rules.map((rule) => (
-                <tr key={rule.id} className="border-b border-gray-700/50">
-                  <td className="px-4 py-3 text-gray-300 font-mono text-xs">{rule.endpoint}</td>
-                  <td className="px-4 py-3">
-                    <input type="number" value={rule.maxRequests}
-                      onChange={(e) => updateRule(rule.id, 'maxRequests', Number(e.target.value))}
-                      className="w-20 rounded bg-gray-700 border border-gray-600 px-2 py-1 text-xs text-white" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <input type="number" value={rule.windowSeconds}
-                      onChange={(e) => updateRule(rule.id, 'windowSeconds', Number(e.target.value))}
-                      className="w-20 rounded bg-gray-700 border border-gray-600 px-2 py-1 text-xs text-white" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <input type="checkbox" checked={rule.enabled}
-                      onChange={(e) => updateRule(rule.id, 'enabled', e.target.checked)}
-                      className="rounded" />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-        <button className="rounded-lg bg-primary-600 px-6 py-2 text-sm font-semibold text-white hover:bg-primary-500">
-          Save Configuration
-        </button>
-      </main>
+      <button className="rounded-lg bg-primary-600 px-6 py-2 text-sm font-semibold text-white hover:bg-primary-500">
+        Save Configuration
+      </button>
     </div>
   );
 }

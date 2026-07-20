@@ -40,11 +40,9 @@ export default function AuditPage() {
   );
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
-      <main className="flex-1 p-8 space-y-6">
-        <h1 className="text-2xl font-bold text-white">Audit Log</h1>
-        <p className="text-sm text-gray-400">All admin actions are logged with timestamps, IP addresses, and details.</p>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-white">Audit Log</h1>
+      <p className="text-sm text-gray-400">All admin actions are logged with timestamps, IP addresses, and details.</p>
 
         {/* Filters */}
         <div className="flex gap-4">
@@ -89,7 +87,6 @@ export default function AuditPage() {
             </tbody>
           </table>
         </div>
-      </main>
     </div>
   );
 }
@@ -111,13 +108,4 @@ function ActionBadge({ action }: { action: string }) {
   );
 }
 
-function Sidebar() {
-  return (
-    <aside className="w-64 bg-gray-800 border-r border-gray-700 p-4">
-      <div className="flex items-center gap-2 mb-8 px-2">
-        <span className="text-xl">🧭</span>
-        <p className="font-bold text-white text-sm">Nayya Admin</p>
-      </div>
-    </aside>
-  );
-}
+

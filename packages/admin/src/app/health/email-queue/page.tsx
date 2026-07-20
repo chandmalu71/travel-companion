@@ -31,69 +31,60 @@ export default function EmailQueuePage() {
   };
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 bg-gray-800 border-r border-gray-700 p-4">
-        <div className="flex items-center gap-2 mb-8 px-2">
-          <span className="text-xl">🧭</span>
-          <p className="font-bold text-white text-sm">Nayya Admin</p>
-        </div>
-      </aside>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-white">Email Processing Queue</h1>
 
-      <main className="flex-1 p-8 space-y-6">
-        <h1 className="text-2xl font-bold text-white">Email Processing Queue</h1>
+      {/* Status cards */}
+      <div className="grid grid-cols-4 gap-4">
+        <StatusCard label="Pending" count={counts.pending} color="amber" />
+        <StatusCard label="Processing" count={counts.processing} color="blue" />
+        <StatusCard label="Completed" count={counts.completed} color="green" />
+        <StatusCard label="Failed" count={counts.failed} color="red" />
+      </div>
 
-        {/* Status cards */}
-        <div className="grid grid-cols-4 gap-4">
-          <StatusCard label="Pending" count={counts.pending} color="amber" />
-          <StatusCard label="Processing" count={counts.processing} color="blue" />
-          <StatusCard label="Completed" count={counts.completed} color="green" />
-          <StatusCard label="Failed" count={counts.failed} color="red" />
-        </div>
+      {/* Filter */}
+      <div className="flex gap-2">
+        {(['all', 'pending', 'processing', 'failed'] as const).map((f) => (
+          <button key={f} onClick={() => setFilter(f)}
+            className={`px-3 py-1.5 rounded-lg text-sm ${filter === f ? 'bg-primary-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
+            {f.charAt(0).toUpperCase() + f.slice(1)}
+          </button>
+        ))}
+      </div>
 
-        {/* Filter */}
-        <div className="flex gap-2">
-          {(['all', 'pending', 'processing', 'failed'] as const).map((f) => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-sm ${filter === f ? 'bg-primary-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        {/* Queue table */}
-        <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-700 text-gray-400 text-left">
-                <th className="px-4 py-3">From</th>
-                <th className="px-4 py-3">Subject</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Received</th>
-                <th className="px-4 py-3">Error</th>
-                <th className="px-4 py-3">Actions</th>
+      {/* Queue table */}
+      <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-700 text-gray-400 text-left">
+              <th className="px-4 py-3">From</th>
+              <th className="px-4 py-3">Subject</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Received</th>
+              <th className="px-4 py-3">Error</th>
+              <th className="px-4 py-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((item) => (
+              <tr key={item.id} className="border-b border-gray-700/50 hover:bg-gray-700/30">
+                <td className="px-4 py-3 text-gray-300 text-xs">{item.from}</td>
+                <td className="px-4 py-3 text-gray-200 text-xs max-w-xs truncate">{item.subject}</td>
+                <td className="px-4 py-3"><QueueBadge status={item.status} /></td>
+                <td className="px-4 py-3 text-gray-400 text-xs">{item.receivedAt}</td>
+                <td className="px-4 py-3 text-red-400 text-xs">{item.error ?? '—'}</td>
+                <td className="px-4 py-3">
+                  {item.status === 'failed' && (
+                    <button className="text-xs bg-amber-700/30 text-amber-300 px-2 py-1 rounded hover:bg-amber-700/50">
+                      Retry
+                    </button>
+                  )}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {filtered.map((item) => (
-                <tr key={item.id} className="border-b border-gray-700/50 hover:bg-gray-700/30">
-                  <td className="px-4 py-3 text-gray-300 text-xs">{item.from}</td>
-                  <td className="px-4 py-3 text-gray-200 text-xs max-w-xs truncate">{item.subject}</td>
-                  <td className="px-4 py-3"><QueueBadge status={item.status} /></td>
-                  <td className="px-4 py-3 text-gray-400 text-xs">{item.receivedAt}</td>
-                  <td className="px-4 py-3 text-red-400 text-xs">{item.error ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    {item.status === 'failed' && (
-                      <button className="text-xs bg-amber-700/30 text-amber-300 px-2 py-1 rounded hover:bg-amber-700/50">
-                        Retry
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </main>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

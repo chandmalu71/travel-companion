@@ -14,33 +14,24 @@ export default function ModerationPage() {
   ];
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 bg-gray-800 border-r border-gray-700 p-4">
-        <div className="flex items-center gap-2 mb-8 px-2">
-          <span className="text-xl">🧭</span>
-          <p className="font-bold text-white text-sm">Nayya Admin</p>
-        </div>
-      </aside>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-white">Support & Moderation</h1>
 
-      <main className="flex-1 p-8 space-y-6">
-        <h1 className="text-2xl font-bold text-white">Support & Moderation</h1>
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-800 rounded-lg p-1 border border-gray-700 w-fit">
+        {tabs.map((tab) => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === tab.id ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-gray-200'
+            }`}>
+            {tab.icon} {tab.label}
+          </button>
+        ))}
+      </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1 bg-gray-800 rounded-lg p-1 border border-gray-700 w-fit">
-          {tabs.map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === tab.id ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-gray-200'
-              }`}>
-              {tab.icon} {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {activeTab === 'impersonate' && <ImpersonateSection />}
-        {activeTab === 'announcements' && <AnnouncementsSection />}
-        {activeTab === 'moderation' && <ModerationSection />}
-      </main>
+      {activeTab === 'impersonate' && <ImpersonateSection />}
+      {activeTab === 'announcements' && <AnnouncementsSection />}
+      {activeTab === 'moderation' && <ModerationSection />}
     </div>
   );
 }

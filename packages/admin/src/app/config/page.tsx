@@ -33,90 +33,81 @@ export default function ConfigPage() {
   const [flags, setFlags] = useState(FEATURE_FLAGS);
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 bg-gray-800 border-r border-gray-700 p-4">
-        <div className="flex items-center gap-2 mb-8 px-2">
-          <span className="text-xl">🧭</span>
-          <p className="font-bold text-white text-sm">Nayya Admin</p>
-        </div>
-      </aside>
+    <div className="space-y-8">
+      <h1 className="text-2xl font-bold text-white">Configuration</h1>
 
-      <main className="flex-1 p-8 space-y-8">
-        <h1 className="text-2xl font-bold text-white">Configuration</h1>
-
-        {/* AI Model Config */}
-        <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <h2 className="text-lg font-semibold text-white mb-4">AI Model Configuration</h2>
-          <p className="text-sm text-gray-400 mb-4">Changes take effect within 5 seconds. No redeployment needed.</p>
-          <div className="space-y-4">
-            {AI_FEATURES.map((feature) => (
-              <div key={feature.id} className="grid grid-cols-4 gap-4 items-center">
-                <span className="text-sm text-gray-300">{feature.label}</span>
-                <select className="col-span-1 rounded bg-gray-700 border border-gray-600 px-2 py-1.5 text-xs text-white">
-                  {MODELS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-                </select>
-                <select className="col-span-1 rounded bg-gray-700 border border-gray-600 px-2 py-1.5 text-xs text-white">
-                  {MODELS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-                </select>
-                <label className="flex items-center gap-2 text-xs text-gray-400">
-                  <input type="checkbox" defaultChecked className="rounded bg-gray-700 border-gray-600" />
-                  Auto-escalate
-                </label>
-              </div>
-            ))}
-            <div className="text-xs text-gray-500 mt-2">
-              Column 1: Tier 1 model | Column 2: Tier 2 (fallback) model
-            </div>
-          </div>
-        </section>
-
-        {/* Feature Flags */}
-        <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <h2 className="text-lg font-semibold text-white mb-4">Feature Flags</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {flags.map((flag, idx) => (
-              <label key={flag.id}
-                className={`flex items-center gap-3 rounded-lg p-3 border cursor-pointer transition-colors ${
-                  flag.enabled ? 'bg-green-900/20 border-green-700' : 'bg-gray-700/30 border-gray-600'
-                }`}>
-                <input type="checkbox" checked={flag.enabled}
-                  onChange={() => {
-                    const updated = [...flags];
-                    updated[idx] = { ...flag, enabled: !flag.enabled };
-                    setFlags(updated);
-                  }}
-                  className="rounded" />
-                <span className="text-sm text-gray-200">{flag.label}</span>
+      {/* AI Model Config */}
+      <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <h2 className="text-lg font-semibold text-white mb-4">AI Model Configuration</h2>
+        <p className="text-sm text-gray-400 mb-4">Changes take effect within 5 seconds. No redeployment needed.</p>
+        <div className="space-y-4">
+          {AI_FEATURES.map((feature) => (
+            <div key={feature.id} className="grid grid-cols-4 gap-4 items-center">
+              <span className="text-sm text-gray-300">{feature.label}</span>
+              <select className="col-span-1 rounded bg-gray-700 border border-gray-600 px-2 py-1.5 text-xs text-white">
+                {MODELS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+              </select>
+              <select className="col-span-1 rounded bg-gray-700 border border-gray-600 px-2 py-1.5 text-xs text-white">
+                {MODELS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+              </select>
+              <label className="flex items-center gap-2 text-xs text-gray-400">
+                <input type="checkbox" defaultChecked className="rounded bg-gray-700 border-gray-600" />
+                Auto-escalate
               </label>
-            ))}
+            </div>
+          ))}
+          <div className="text-xs text-gray-500 mt-2">
+            Column 1: Tier 1 model | Column 2: Tier 2 (fallback) model
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Global Controls */}
-        <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <h2 className="text-lg font-semibold text-white mb-4">Global Controls</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-white">Email Scanning (Global)</p>
-                <p className="text-xs text-gray-400">Pause all connected email scanning across all users</p>
-              </div>
-              <button className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500">
-                Pause All
-              </button>
+      {/* Feature Flags */}
+      <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <h2 className="text-lg font-semibold text-white mb-4">Feature Flags</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {flags.map((flag, idx) => (
+            <label key={flag.id}
+              className={`flex items-center gap-3 rounded-lg p-3 border cursor-pointer transition-colors ${
+                flag.enabled ? 'bg-green-900/20 border-green-700' : 'bg-gray-700/30 border-gray-600'
+              }`}>
+              <input type="checkbox" checked={flag.enabled}
+                onChange={() => {
+                  const updated = [...flags];
+                  updated[idx] = { ...flag, enabled: !flag.enabled };
+                  setFlags(updated);
+                }}
+                className="rounded" />
+              <span className="text-sm text-gray-200">{flag.label}</span>
+            </label>
+          ))}
+        </div>
+      </section>
+
+      {/* Global Controls */}
+      <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <h2 className="text-lg font-semibold text-white mb-4">Global Controls</h2>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-white">Email Scanning (Global)</p>
+              <p className="text-xs text-gray-400">Pause all connected email scanning across all users</p>
             </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-white">Misuse Auto-Detection</p>
-                <p className="text-xs text-gray-400">Auto-suspend users exceeding rate limits</p>
-              </div>
-              <button className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-600">
-                Enabled
-              </button>
-            </div>
+            <button className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500">
+              Pause All
+            </button>
           </div>
-        </section>
-      </main>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-white">Misuse Auto-Detection</p>
+              <p className="text-xs text-gray-400">Auto-suspend users exceeding rate limits</p>
+            </div>
+            <button className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-600">
+              Enabled
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
