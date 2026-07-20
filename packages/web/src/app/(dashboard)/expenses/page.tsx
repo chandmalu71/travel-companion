@@ -21,6 +21,7 @@ interface Expense {
   merchant_name: string | null;
   notes: string | null;
   trip_id: string | null;
+  is_shared: boolean;
   sourceAttachment: SourceAttachment | null;
 }
 
@@ -47,6 +48,8 @@ export default function ExpensesPage() {
   const [showScanModal, setShowScanModal] = useState(false);
   const [previewAttachment, setPreviewAttachment] = useState<{ id: string; sourceType: string; mimeType?: string } | null>(null);
   const [attachingExpenseId, setAttachingExpenseId] = useState<string | null>(null);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
 
   const loadExpenses = () => {
     api.get<{ data?: Expense[]; statusCode?: number }>('/api/expenses')
@@ -111,12 +114,14 @@ export default function ExpensesPage() {
       ) : (
         <div className="space-y-2">
           {expenses.map((expense) => (
-            <div key={expense.id} className="flex items-center gap-3 rounded-lg bg-white px-4 py-3 border border-gray-200 shadow-sm hover:border-primary-200 transition-all">
+            <div key={expense.id} className="flex items-center gap-3 rounded-lg bg-white px-4 py-3 border border-gray-200 shadow-sm hover:border-primary-200 transition-all group">
               <span className="text-xl flex-shrink-0">{CATEGORY_ICONS[expense.category] ?? '📦'}</span>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setEditingExpense(expense)}>
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-gray-900 text-sm truncate">{expense.merchant_name ?? expense.category.replace('_', ' ')}</p>
                   <span className="text-[11px] text-gray-400">{expense.date}</span>
+                  {expense.is_shared && <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1">shared</span>}
+                  {!expense.is_shared && <span className="text-[10px] bg-gray-50 text-gray-400 border border-gray-200 rounded px-1">personal</span>}
                 </div>
                 {expense.notes && <p className="text-[11px] text-gray-400 truncate">{expense.notes}</p>}
               </div>
@@ -136,6 +141,14 @@ export default function ExpensesPage() {
                 {expense.converted_amount && expense.currency !== 'USD' && (
                   <p className="text-[10px] text-gray-400">≈ ${Number(expense.converted_amount).toFixed(2)}</p>
                 )}
+              </div>
+              {/* Actions menu */}
+              <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <ExpenseActions
+                  expense={expense}
+                  onEdit={() => setEditingExpense(expense)}
+                  onDelete={() => setDeletingExpense(expense)}
+                />
               </div>
             </div>
           ))}
@@ -165,6 +178,24 @@ export default function ExpensesPage() {
           sourceType={previewAttachment.sourceType}
           mimeType={previewAttachment.mimeType}
           onClose={() => setPreviewAttachment(null)}
+        />
+      )}
+
+      {/* Edit Expense Modal */}
+      {editingExpense && (
+        <EditExpenseModal
+          expense={editingExpense}
+          onClose={() => setEditingExpense(null)}
+          onSaved={() => { setEditingExpense(null); loadExpenses(); }}
+        />
+      )}
+
+      {/* Delete Confirmation */}
+      {deletingExpense && (
+        <DeleteExpenseConfirm
+          expense={deletingExpense}
+          onClose={() => setDeletingExpense(null)}
+          onDeleted={() => { setDeletingExpense(null); loadExpenses(); }}
         />
       )}
     </div>
@@ -524,6 +555,180 @@ function ScanReceiptModal({ onClose, onScanned }: { onClose: () => void; onScann
             </div>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+
+// ─── Expense Actions Menu ────────────────────────────────────────────────────
+
+function ExpenseActions({ expense, onEdit, onDelete }: { expense: Expense; onEdit: () => void; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        className="p-1 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors" title="Actions">
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+        </svg>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-8 z-50 w-32 rounded-md border border-gray-200 bg-white shadow-lg py-1">
+            <button onClick={() => { setOpen(false); onEdit(); }}
+              className="w-full px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+              ✏️ Edit
+            </button>
+            <button onClick={() => { setOpen(false); onDelete(); }}
+              className="w-full px-3 py-1.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+              🗑️ Delete
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Edit Expense Modal ──────────────────────────────────────────────────────
+
+function EditExpenseModal({ expense, onClose, onSaved }: { expense: Expense; onClose: () => void; onSaved: () => void }) {
+  const [amount, setAmount] = useState(String(Number(expense.amount)));
+  const [currency, setCurrency] = useState(expense.currency);
+  const [category, setCategory] = useState(expense.category);
+  const [date, setDate] = useState(expense.date?.slice(0, 10) ?? '');
+  const [merchantName, setMerchantName] = useState(expense.merchant_name ?? '');
+  const [notes, setNotes] = useState(expense.notes ?? '');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) { setError('Please enter a valid amount'); return; }
+
+    setSubmitting(true);
+    try {
+      await api.put(`/api/expenses/${expense.id}`, {
+        amount: amt,
+        currency,
+        category,
+        date,
+        merchantName: merchantName || undefined,
+        notes: notes || undefined,
+      });
+      onSaved();
+    } catch {
+      setError('Failed to update expense.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit Expense</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Amount</label>
+              <input type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" autoFocus />
+            </div>
+            <div className="w-24">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Currency</label>
+              <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-2 text-sm">
+                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Category</label>
+            <div className="grid grid-cols-4 gap-1.5">
+              {CATEGORIES.map(cat => (
+                <button key={cat.value} type="button" onClick={() => setCategory(cat.value)}
+                  className={`flex flex-col items-center gap-0.5 rounded-md border px-2 py-2 text-[10px] transition-all ${
+                    category === cat.value ? 'border-primary-500 bg-primary-50 text-primary-700 font-medium' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                  <span className="text-base">{cat.icon}</span>
+                  <span className="truncate w-full text-center">{cat.label.split(' ')[0]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Merchant</label>
+              <input type="text" value={merchantName} onChange={(e) => setMerchantName(e.target.value)}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
+            <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
+          </div>
+
+          {error && <p className="text-xs text-red-600">{error}</p>}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Cancel</button>
+            <button type="submit" disabled={submitting} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500 disabled:opacity-50">
+              {submitting ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Delete Expense Confirmation ─────────────────────────────────────────────
+
+function DeleteExpenseConfirm({ expense, onClose, onDeleted }: { expense: Expense; onClose: () => void; onDeleted: () => void }) {
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await api.delete(`/api/expenses/${expense.id}`);
+      onDeleted();
+    } catch {
+      alert('Failed to delete expense.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="text-center">
+          <span className="text-4xl">🗑️</span>
+          <h3 className="text-lg font-semibold text-gray-900 mt-3">Delete Expense?</h3>
+          <p className="text-sm text-gray-500 mt-2">
+            Delete <strong>{expense.merchant_name ?? expense.category}</strong> — {expense.currency} {Number(expense.amount).toFixed(2)}?
+          </p>
+          <p className="text-xs text-gray-400 mt-1">This action cannot be undone. Split balances will be recalculated.</p>
+        </div>
+        <div className="flex justify-center gap-3 mt-6">
+          <button onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Cancel</button>
+          <button onClick={handleDelete} disabled={deleting} className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50">
+            {deleting ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
       </div>
     </div>
   );
