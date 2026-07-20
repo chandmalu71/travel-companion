@@ -97,6 +97,8 @@ export default function SettingsPage() {
     setSaved(false);
     try {
       await api.put('/api/users/me/preferences', preferences);
+      // Also save locale preferences
+      await api.put('/api/users/me/locale', { language: preferences.language }).catch(() => {});
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch {
@@ -442,9 +444,14 @@ function LanguageRegionSection({ preferences, onChange }: { preferences: any; on
 
   useEffect(() => {
     api.get<{ data: any[] }>('/api/i18n/languages').then(r => setLanguages(r.data ?? [])).catch(() => {});
-    api.get<{ data: any[] }>('/api/i18n/locales').then(r => {
-      setLocales(r.data ?? []);
-    }).catch(() => {});
+    api.get<{ data: any[] }>('/api/i18n/locales').then(r => setLocales(r.data ?? [])).catch(() => {});
+    // Load user's saved locale
+    api.get<{ data: { locale?: string; language?: string } }>('/api/users/me/locale')
+      .then(r => {
+        if (r.data?.locale) setSelectedLocale(r.data.locale);
+        if (r.data?.language) onChange({ language: r.data.language });
+      })
+      .catch(() => {});
   }, []);
 
   const handleLocaleChange = (code: string) => {
