@@ -48,17 +48,17 @@ export default function I18nPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Internationalization</h1>
-        <div className="text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-white">Internationalization</h1>
+        <div className="text-sm text-gray-400">
           {languages.filter(l => l.enabled).length} languages · {currencies.filter(c => c.enabled).length} currencies · {locales.filter(l => l.enabled).length} locales
         </div>
       </div>
 
       {/* Tab selector */}
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+      <div className="flex gap-1 bg-gray-700 rounded-lg p-1">
         {(['languages', 'currencies', 'locales'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${tab === t ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+            className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${tab === t ? 'bg-gray-800 shadow text-white' : 'text-gray-400 hover:text-gray-200'}`}>
             {t === 'languages' ? '🌐 Languages' : t === 'currencies' ? '💰 Currencies' : '📍 Locales'}
           </button>
         ))}
@@ -66,23 +66,23 @@ export default function I18nPage() {
 
       {/* Languages Tab */}
       {tab === 'languages' && (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-gray-900 border-b">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Language</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Native</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Code</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-600">RTL</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-600">Coverage</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-600">Enabled</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-300">Language</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-300">Native</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-300">Code</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-300">RTL</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-300">Coverage</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-300">Enabled</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-700">
               {languages.map(lang => (
-                <tr key={lang.code} className="hover:bg-gray-50">
+                <tr key={lang.code} className="hover:bg-gray-900">
                   <td className="px-4 py-3 font-medium">{lang.name}</td>
-                  <td className="px-4 py-3 text-gray-500">{lang.native_name}</td>
+                  <td className="px-4 py-3 text-gray-400">{lang.native_name}</td>
                   <td className="px-4 py-3 font-mono text-xs text-gray-400">{lang.code}</td>
                   <td className="px-4 py-3 text-center">{lang.rtl ? '↙️' : '—'}</td>
                   <td className="px-4 py-3 text-center">
@@ -96,7 +96,7 @@ export default function I18nPage() {
                   <td className="px-4 py-3 text-center">
                     <button onClick={() => toggleLanguage(lang.code, !lang.enabled)}
                       className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${lang.enabled ? 'bg-green-500' : 'bg-gray-300'}`}>
-                      <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${lang.enabled ? 'translate-x-4.5' : 'translate-x-0.5'}`} style={{ transform: lang.enabled ? 'translateX(18px)' : 'translateX(2px)' }} />
+                      <span className={`inline-block h-3.5 w-3.5 rounded-full bg-gray-800 transition-transform ${lang.enabled ? 'translate-x-4.5' : 'translate-x-0.5'}`} style={{ transform: lang.enabled ? 'translateX(18px)' : 'translateX(2px)' }} />
                     </button>
                   </td>
                 </tr>
@@ -113,21 +113,21 @@ export default function I18nPage() {
             <input type="text" placeholder="Search currencies..." value={searchCurrency} onChange={e => setSearchCurrency(e.target.value)}
               className="w-full max-w-xs rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
           </div>
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-gray-900 border-b">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Code</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Name</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-600">Symbol</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-600">Decimals</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-600">Order</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-600">Enabled</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-300">Code</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-300">Name</th>
+                  <th className="px-4 py-3 text-center font-medium text-gray-300">Symbol</th>
+                  <th className="px-4 py-3 text-center font-medium text-gray-300">Decimals</th>
+                  <th className="px-4 py-3 text-center font-medium text-gray-300">Order</th>
+                  <th className="px-4 py-3 text-center font-medium text-gray-300">Enabled</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-700">
                 {filteredCurrencies.map(curr => (
-                  <tr key={curr.code} className="hover:bg-gray-50">
+                  <tr key={curr.code} className="hover:bg-gray-900">
                     <td className="px-4 py-3 font-mono font-bold text-xs">{curr.code}</td>
                     <td className="px-4 py-3">{curr.name}</td>
                     <td className="px-4 py-3 text-center text-lg">{curr.symbol}</td>
@@ -136,7 +136,7 @@ export default function I18nPage() {
                     <td className="px-4 py-3 text-center">
                       <button onClick={() => toggleCurrency(curr.code, !curr.enabled)}
                         className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${curr.enabled ? 'bg-green-500' : 'bg-gray-300'}`}>
-                        <span className="inline-block h-3.5 w-3.5 rounded-full bg-white" style={{ transform: curr.enabled ? 'translateX(18px)' : 'translateX(2px)' }} />
+                        <span className="inline-block h-3.5 w-3.5 rounded-full bg-gray-800" style={{ transform: curr.enabled ? 'translateX(18px)' : 'translateX(2px)' }} />
                       </button>
                     </td>
                   </tr>
@@ -149,37 +149,37 @@ export default function I18nPage() {
 
       {/* Locales Tab */}
       {tab === 'locales' && (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-gray-900 border-b">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Locale</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Language</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Time</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Numbers</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Currency</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-600">Units</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-600">Enabled</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-300">Locale</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-300">Language</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-300">Date</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-300">Time</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-300">Numbers</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-300">Currency</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-300">Units</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-300">Enabled</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-700">
               {locales.map(loc => (
-                <tr key={loc.code} className="hover:bg-gray-50">
+                <tr key={loc.code} className="hover:bg-gray-900">
                   <td className="px-4 py-3">
                     <div><span className="font-medium">{loc.name}</span></div>
                     <div className="text-xs text-gray-400 font-mono">{loc.code}</div>
                   </td>
                   <td className="px-4 py-3 font-mono text-xs">{loc.language_code}</td>
-                  <td className="px-4 py-3 text-xs text-gray-600">{loc.date_format}</td>
-                  <td className="px-4 py-3 text-xs text-gray-600">{loc.time_format}</td>
-                  <td className="px-4 py-3 text-xs text-gray-600">{loc.number_format}</td>
+                  <td className="px-4 py-3 text-xs text-gray-300">{loc.date_format}</td>
+                  <td className="px-4 py-3 text-xs text-gray-300">{loc.time_format}</td>
+                  <td className="px-4 py-3 text-xs text-gray-300">{loc.number_format}</td>
                   <td className="px-4 py-3 font-mono text-xs">{loc.default_currency}</td>
                   <td className="px-4 py-3 text-center text-xs">{loc.units}</td>
                   <td className="px-4 py-3 text-center">
                     <button onClick={() => toggleLocale(loc.code, !loc.enabled)}
                       className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${loc.enabled ? 'bg-green-500' : 'bg-gray-300'}`}>
-                      <span className="inline-block h-3.5 w-3.5 rounded-full bg-white" style={{ transform: loc.enabled ? 'translateX(18px)' : 'translateX(2px)' }} />
+                      <span className="inline-block h-3.5 w-3.5 rounded-full bg-gray-800" style={{ transform: loc.enabled ? 'translateX(18px)' : 'translateX(2px)' }} />
                     </button>
                   </td>
                 </tr>

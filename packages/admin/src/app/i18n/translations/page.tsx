@@ -66,7 +66,7 @@ export default function TranslationsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Translation Editor</h1>
+        <h1 className="text-2xl font-bold text-white">Translation Editor</h1>
       </div>
 
       {/* Language selector + actions */}
@@ -82,7 +82,7 @@ export default function TranslationsPage() {
               className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:opacity-50">
               {translating ? '🔄 Translating...' : '🤖 Auto-Translate All'}
             </button>
-            <span className="text-sm text-gray-500">{translated}/{entries.length} translated ({coverage}%)</span>
+            <span className="text-sm text-gray-400">{translated}/{entries.length} translated ({coverage}%)</span>
           </>
         )}
       </div>
@@ -103,25 +103,25 @@ export default function TranslationsPage() {
       {loading ? (
         <div className="animate-pulse space-y-2">{[1,2,3,4,5].map(i => <div key={i} className="h-12 bg-gray-200 rounded" />)}</div>
       ) : selectedLang && filtered.length > 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-gray-900 border-b">
               <tr>
-                <th className="px-3 py-2 text-left font-medium text-gray-600 w-48">Key</th>
-                <th className="px-3 py-2 text-left font-medium text-gray-600">English</th>
-                <th className="px-3 py-2 text-left font-medium text-gray-600">Translation</th>
-                <th className="px-3 py-2 text-center font-medium text-gray-600 w-20">Status</th>
+                <th className="px-3 py-2 text-left font-medium text-gray-300 w-48">Key</th>
+                <th className="px-3 py-2 text-left font-medium text-gray-300">English</th>
+                <th className="px-3 py-2 text-left font-medium text-gray-300">Translation</th>
+                <th className="px-3 py-2 text-center font-medium text-gray-300 w-20">Status</th>
                 <th className="px-3 py-2 w-16"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-700">
               {filtered.map(entry => (
-                <tr key={entry.id} className="hover:bg-gray-50">
+                <tr key={entry.id} className="hover:bg-gray-900">
                   <td className="px-3 py-2">
-                    <span className="font-mono text-[10px] text-gray-500 block truncate">{entry.key}</span>
+                    <span className="font-mono text-[10px] text-gray-400 block truncate">{entry.key}</span>
                     <span className="text-[10px] text-gray-300">{entry.namespace}</span>
                   </td>
-                  <td className="px-3 py-2 text-gray-700 text-xs">{entry.englishText}</td>
+                  <td className="px-3 py-2 text-gray-200 text-xs">{entry.englishText}</td>
                   <td className="px-3 py-2">
                     {editingId === entry.id ? (
                       <div className="flex gap-1">
@@ -131,7 +131,7 @@ export default function TranslationsPage() {
                         <button onClick={() => setEditingId(null)} className="text-xs text-gray-400 px-1">✕</button>
                       </div>
                     ) : (
-                      <span className={`text-xs ${entry.translation ? (entry.isAuto ? 'text-purple-600 italic' : 'text-gray-900') : 'text-red-400'}`}>
+                      <span className={`text-xs ${entry.translation ? (entry.isAuto ? 'text-purple-600 italic' : 'text-white') : 'text-red-400'}`}>
                         {entry.translation ?? '— not translated —'}
                       </span>
                     )}
@@ -151,11 +151,11 @@ export default function TranslationsPage() {
           </table>
         </div>
       ) : selectedLang ? (
-        <p className="text-gray-500 text-sm">No matching keys found.</p>
+        <p className="text-gray-400 text-sm">No matching keys found.</p>
       ) : (
         <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
           <p className="text-2xl mb-2">🌐</p>
-          <p className="text-gray-500">Select a language to view and edit translations.</p>
+          <p className="text-gray-400">Select a language to view and edit translations.</p>
         </div>
       )}
     </div>
