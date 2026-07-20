@@ -9,7 +9,7 @@ async function loginAs(page: Page) {
   await page.goto('/login');
   await page.getByLabel(/email/i).fill('test@example.com');
   await page.getByLabel(/password/i).fill('TestPass1234');
-  await page.getByRole('button', { name: /sign in/i }).click();
+  await page.getByRole('button', { name: /log in/i }).click();
   await expect(page).toHaveURL(/dashboard/, { timeout: 10000 });
 }
 
