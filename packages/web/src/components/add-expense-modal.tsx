@@ -12,7 +12,7 @@ const CATEGORIES = [
   { value: 'entertainment', label: 'Entertainment', icon: '🎬' },
   { value: 'other', label: 'Other', icon: '📦' },
 ];
-const CURRENCIES = ['EUR', 'USD', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'INR', 'SGD', 'THB', 'IDR', 'MXN', 'BRL'];
+const CURRENCIES_FALLBACK = ['EUR', 'USD', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'INR', 'SGD', 'THB', 'IDR', 'MXN', 'BRL'];
 
 interface Props { onClose: () => void; onCreated: () => void; tripId?: string; }
 
@@ -33,6 +33,14 @@ export function AddExpenseModal({ onClose, onCreated, tripId: initialTripId }: P
   const [itemAmounts, setItemAmounts] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [currencies, setCurrencies] = useState<Array<{ code: string; symbol: string }>>([]);
+
+  // Fetch enabled currencies from API
+  useEffect(() => {
+    api.get<{ data: Array<{ code: string; symbol: string }> }>('/api/i18n/currencies')
+      .then(r => { if (r.data?.length) setCurrencies(r.data); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => { if (!initialTripId) { api.get<{ data?: any[]; trips?: any[] }>('/api/trips').then(r => setTrips(r.data ?? r.trips ?? [])).catch(() => {}); } }, [initialTripId]);
 
@@ -83,7 +91,7 @@ export function AddExpenseModal({ onClose, onCreated, tripId: initialTripId }: P
           {!initialTripId && <div><label className="block text-xs font-medium text-gray-700 mb-1">Trip</label><select value={selectedTripId} onChange={e => setSelectedTripId(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"><option value="">No trip</option>{trips.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>}
           <div className="flex gap-2">
             <div className="flex-1"><label className="block text-xs font-medium text-gray-700 mb-1">Amount</label><input type="number" step="0.01" min="0.01" placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" autoFocus /></div>
-            <div className="w-24"><label className="block text-xs font-medium text-gray-700 mb-1">Currency</label><select value={currency} onChange={e => setCurrency(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-2 text-sm">{CURRENCIES.map(c => <option key={c}>{c}</option>)}</select></div>
+            <div className="w-24"><label className="block text-xs font-medium text-gray-700 mb-1">Currency</label><select value={currency} onChange={e => setCurrency(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-2 text-sm">{(currencies.length > 0 ? currencies.map(c => <option key={c.code} value={c.code}>{c.code}</option>) : CURRENCIES_FALLBACK.map(c => <option key={c}>{c}</option>))}</select></div>
           </div>
           <div><label className="block text-xs font-medium text-gray-700 mb-1">Category</label>
             <div className="grid grid-cols-4 gap-1.5">{CATEGORIES.map(cat => (<button key={cat.value} type="button" onClick={() => setCategory(cat.value)} className={`flex flex-col items-center gap-0.5 rounded-md border px-2 py-2 text-[10px] ${category === cat.value ? 'border-primary-500 bg-primary-50 text-primary-700 font-medium' : 'border-gray-200 text-gray-600'}`}><span className="text-base">{cat.icon}</span><span className="truncate w-full text-center">{cat.label.split(' ')[0]}</span></button>))}</div>

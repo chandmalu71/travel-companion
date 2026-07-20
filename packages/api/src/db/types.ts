@@ -33,6 +33,11 @@ export interface Database {
   highlights: HighlightsTable;
   email_connections: EmailConnectionsTable;
   source_attachments: SourceAttachmentsTable;
+  supported_languages: SupportedLanguagesTable;
+  supported_currencies: SupportedCurrenciesTable;
+  locale_configs: LocaleConfigsTable;
+  translation_keys: TranslationKeysTable;
+  translations: TranslationsTable;
 }
 
 // --- Users ---
@@ -61,6 +66,11 @@ export interface UserPreferencesTable {
   allergies: Generated<string[]>;
   language: Generated<string>;
   display_currencies: Generated<string[]>;
+  locale_code: string | null;
+  date_format_override: string | null;
+  time_format_override: string | null;
+  number_format_override: string | null;
+  units: string | null;
   updated_at: Generated<Date>;
 }
 
@@ -588,3 +598,82 @@ export interface SourceAttachmentsTable {
 export type SourceAttachment = Selectable<SourceAttachmentsTable>;
 export type NewSourceAttachment = Insertable<SourceAttachmentsTable>;
 export type SourceAttachmentUpdate = Updateable<SourceAttachmentsTable>;
+
+// --- Supported Languages ---
+
+export interface SupportedLanguagesTable {
+  id: Generated<string>;
+  code: string;
+  name: string;
+  native_name: string;
+  enabled: Generated<boolean>;
+  rtl: Generated<boolean>;
+  translation_coverage: Generated<number>;
+  auto_translated: Generated<boolean>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export type SupportedLanguage = Selectable<SupportedLanguagesTable>;
+
+// --- Supported Currencies ---
+
+export interface SupportedCurrenciesTable {
+  id: Generated<string>;
+  code: string;
+  name: string;
+  symbol: string;
+  decimal_places: Generated<number>;
+  enabled: Generated<boolean>;
+  display_order: Generated<number>;
+  created_at: Generated<Date>;
+}
+
+export type SupportedCurrency = Selectable<SupportedCurrenciesTable>;
+
+// --- Locale Configs ---
+
+export interface LocaleConfigsTable {
+  id: Generated<string>;
+  code: string;
+  name: string;
+  language_code: string;
+  date_format: string;
+  time_format: string;
+  number_format: string;
+  default_currency: string;
+  units: Generated<string>;
+  enabled: Generated<boolean>;
+  created_at: Generated<Date>;
+}
+
+export type LocaleConfig = Selectable<LocaleConfigsTable>;
+
+// --- Translation Keys ---
+
+export interface TranslationKeysTable {
+  id: Generated<string>;
+  key: string;
+  namespace: string;
+  english_text: string;
+  context: string | null;
+  created_at: Generated<Date>;
+}
+
+export type TranslationKey = Selectable<TranslationKeysTable>;
+
+// --- Translations ---
+
+export interface TranslationsTable {
+  id: Generated<string>;
+  key_id: string;
+  language_code: string;
+  text: string;
+  is_auto: Generated<boolean>;
+  is_reviewed: Generated<boolean>;
+  last_edited_by: string | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export type Translation = Selectable<TranslationsTable>;
