@@ -218,6 +218,13 @@ export async function registerExpenseRoutes(
         : [];
       const memberMap = new Map(members.map(m => [m.id, m]));
 
+      // Fetch trip names for expenses linked to trips
+      const tripIds = [...new Set(expenses.filter(e => e.trip_id).map(e => e.trip_id!))];
+      const tripNames = tripIds.length > 0
+        ? await db.selectFrom('trips').select(['id', 'name']).where('id', 'in', tripIds).execute().catch(() => [] as any[])
+        : [];
+      const tripNameMap = new Map(tripNames.map((t: any) => [t.id, t.name]));
+
       const enrichedExpenses = expenses.map(exp => {
         const sa = attachmentMap.get(exp.id);
         const splits = splitMembers.filter(sm => sm.expense_id === exp.id);
@@ -242,6 +249,7 @@ export async function registerExpenseRoutes(
             createdAt: new Date(sa.created_at).toISOString(),
           } : null,
           sharedWith: exp.is_shared && sharedWith.length > 0 ? sharedWith : null,
+          tripName: exp.trip_id ? tripNameMap.get(exp.trip_id) ?? null : null,
         };
       });
 
