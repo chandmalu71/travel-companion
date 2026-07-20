@@ -25,7 +25,7 @@ interface Booking {
   checked_in: boolean;
 }
 
-type TabId = 'overview' | 'timeline' | 'map' | 'expenses' | 'documents';
+type TabId = 'overview' | 'timeline' | 'map' | 'expenses' | 'members' | 'documents';
 
 const CATEGORY_ICONS: Record<string, string> = {
   food_dining: '🍕', transportation: '🚗', accommodation: '🏨',
@@ -68,6 +68,7 @@ export default function TripDetailPage() {
     { id: 'timeline', label: 'Timeline', icon: '📅' },
     { id: 'map', label: 'Map', icon: '🗺️' },
     { id: 'expenses', label: 'Expenses', icon: '💰' },
+    { id: 'members', label: 'Members', icon: '👥' },
     { id: 'documents', label: 'Documents', icon: '📄' },
   ];
 
@@ -115,6 +116,7 @@ export default function TripDetailPage() {
       {activeTab === 'timeline' && <TimelineTab tripId={tripId} />}
       {activeTab === 'map' && <MapTab tripId={tripId} />}
       {activeTab === 'expenses' && <ExpensesTab tripId={tripId} />}
+      {activeTab === 'members' && <MembersTab tripId={tripId} />}
       {activeTab === 'documents' && <DocumentsTab tripId={tripId} />}
     </div>
   );
@@ -477,6 +479,172 @@ function ExpensesTab({ tripId }: { tripId: string }) {
           onClose={() => setShowAddExpense(false)}
           onCreated={() => { setShowAddExpense(false); loadExpenses(); }}
         />
+      )}
+    </div>
+  );
+}
+
+
+function MembersTab({ tripId }: { tripId: string }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newType, setNewType] = useState('adult');
+  const [newGroupId, setNewGroupId] = useState('');
+  const [showGroupForm, setShowGroupForm] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+
+  const loadMembers = () => {
+    api.get<{ data: any }>(`/api/trips/${tripId}/travellers`)
+      .then(r => setData(r.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadMembers(); }, [tripId]);
+
+  const handleAddTraveller = async () => {
+    if (!newName.trim()) return;
+    await api.post(`/api/trips/${tripId}/travellers`, {
+      displayName: newName, email: newEmail || undefined, travellerType: newType, groupId: newGroupId || undefined,
+    });
+    setNewName(''); setNewEmail(''); setNewType('adult'); setShowAddForm(false);
+    loadMembers();
+  };
+
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim()) return;
+    await api.post(`/api/trips/${tripId}/groups`, { name: newGroupName });
+    setNewGroupName(''); setShowGroupForm(false);
+    loadMembers();
+  };
+
+  const handleRemove = async (id: string) => {
+    if (!confirm('Remove this traveller from the trip?')) return;
+    await api.delete(`/api/trips/${tripId}/travellers/${id}`);
+    loadMembers();
+  };
+
+  if (loading) return <div className="animate-pulse h-32 bg-gray-200 rounded-lg" />;
+
+  const typeIcon = (t: string) => t === 'infant' ? '👶' : t === 'child' ? '👦' : '👤';
+  const roleColor = (r: string) => r === 'owner' ? 'text-amber-600' : r === 'editor' ? 'text-blue-600' : 'text-gray-400';
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-gray-900">Members ({data?.totalCount ?? 0})</h3>
+        <div className="flex gap-2">
+          <button onClick={() => setShowGroupForm(true)} className="rounded-md border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50">+ Group</button>
+          <button onClick={() => setShowAddForm(true)} className="rounded-md bg-primary-600 px-3 py-1.5 text-xs text-white hover:bg-primary-500">+ Add Member</button>
+        </div>
+      </div>
+
+      {/* Groups */}
+      {data?.groups?.map((group: any) => (
+        <div key={group.id} className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: group.color || '#6B7280' }} />
+              <span className="font-medium text-sm text-gray-900">{group.name}</span>
+              <span className="text-[10px] text-gray-400">{group.group_type} · {group.expense_split_mode}</span>
+            </div>
+            <span className="text-xs text-gray-400">{group.travellers?.length ?? 0} members</span>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {group.travellers?.map((t: any) => (
+              <div key={t.id} className="flex items-center justify-between px-4 py-2 hover:bg-gray-50">
+                <div className="flex items-center gap-2">
+                  <span>{typeIcon(t.traveller_type)}</span>
+                  <span className="text-sm font-medium text-gray-900">{t.display_name}</span>
+                  {t.email && <span className="text-[10px] text-gray-400">{t.email}</span>}
+                  {t.user_id && <span className="text-[10px] bg-green-50 text-green-600 border border-green-200 rounded px-1">account</span>}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-medium ${roleColor(t.role)}`}>{t.role}</span>
+                  <button onClick={() => handleRemove(t.id)} className="text-[10px] text-red-400 hover:text-red-600">✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      {/* Ungrouped */}
+      {data?.ungrouped?.length > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+          <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
+            <span className="font-medium text-sm text-gray-500">Ungrouped</span>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {data.ungrouped.map((t: any) => (
+              <div key={t.id} className="flex items-center justify-between px-4 py-2 hover:bg-gray-50">
+                <div className="flex items-center gap-2">
+                  <span>{typeIcon(t.traveller_type)}</span>
+                  <span className="text-sm font-medium text-gray-900">{t.display_name}</span>
+                  {t.email && <span className="text-[10px] text-gray-400">{t.email}</span>}
+                  {t.user_id && <span className="text-[10px] bg-green-50 text-green-600 border border-green-200 rounded px-1">account</span>}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-medium ${roleColor(t.role)}`}>{t.role}</span>
+                  <button onClick={() => handleRemove(t.id)} className="text-[10px] text-red-400 hover:text-red-600">✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {data?.totalCount === 0 && (
+        <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
+          <p className="text-gray-500">No members yet. Add travellers to this trip.</p>
+        </div>
+      )}
+
+      {/* Add Member Form */}
+      {showAddForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddForm(false)}>
+          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4">Add Traveller</h3>
+            <div className="space-y-3">
+              <div><label className="block text-xs font-medium text-gray-700 mb-1">Name *</label><input type="text" value={newName} onChange={e => setNewName(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" autoFocus /></div>
+              <div><label className="block text-xs font-medium text-gray-700 mb-1">Email</label><input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="Optional" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+              <div><label className="block text-xs font-medium text-gray-700 mb-1">Type</label>
+                <select value={newType} onChange={e => setNewType(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                  <option value="adult">👤 Adult</option><option value="child">👦 Child (2-17)</option><option value="infant">👶 Infant (0-2)</option>
+                </select>
+              </div>
+              {data?.groups?.length > 0 && (
+                <div><label className="block text-xs font-medium text-gray-700 mb-1">Group</label>
+                  <select value={newGroupId} onChange={e => setNewGroupId(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                    <option value="">No group</option>
+                    {data.groups.map((g: any) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                  </select>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setShowAddForm(false)} className="rounded-md border border-gray-300 px-4 py-2 text-sm">Cancel</button>
+              <button onClick={handleAddTraveller} className="rounded-md bg-primary-600 px-4 py-2 text-sm text-white font-medium">Add</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Group Form */}
+      {showGroupForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowGroupForm(false)}>
+          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4">Create Group</h3>
+            <div><label className="block text-xs font-medium text-gray-700 mb-1">Group Name</label><input type="text" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="e.g. Smith Family" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" autoFocus /></div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setShowGroupForm(false)} className="rounded-md border border-gray-300 px-4 py-2 text-sm">Cancel</button>
+              <button onClick={handleCreateGroup} className="rounded-md bg-primary-600 px-4 py-2 text-sm text-white font-medium">Create</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
