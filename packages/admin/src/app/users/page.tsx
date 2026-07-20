@@ -20,10 +20,14 @@ const MOCK_USERS: User[] = [
 export default function UsersPage() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'active' | 'suspended'>('all');
+  const [showCreate, setShowCreate] = useState(false);
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-white mb-6">User Management</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-white">User Management</h1>
+        <button onClick={() => setShowCreate(true)} className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500">+ Create User</button>
+      </div>
 
       {/* Search + Filter */}
       <div className="flex gap-4 mb-6">
@@ -76,6 +80,94 @@ export default function UsersPage() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Create User Modal */}
+      {showCreate && <CreateUserModal onClose={() => setShowCreate(false)} />}
+    </div>
+  );
+}
+
+function CreateUserModal({ onClose }: { onClose: () => void }) {
+  const [email, setEmail] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState('');
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+  const handleCreate = async () => {
+    setError('');
+    if (!email || !displayName || !password) { setError('All fields are required'); return; }
+    if (password.length < 8) { setError('Password must be at least 8 characters'); return; }
+
+    setCreating(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/users/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, displayName, password, role: role || null }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResult(data.message ?? 'User created');
+      } else {
+        setError(data.error ?? 'Failed to create user');
+      }
+    } catch { setError('Network error'); }
+    finally { setCreating(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div className="w-full max-w-md rounded-lg bg-gray-800 border border-gray-700 p-6 shadow-xl" onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-semibold text-white mb-4">Create New User</h3>
+
+        {result ? (
+          <div className="space-y-3">
+            <p className="text-sm text-green-400">✅ {result}</p>
+            <button onClick={onClose} className="w-full rounded-md bg-gray-700 py-2 text-sm text-white">Close</button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Email *</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                className="w-full rounded-md border border-gray-600 bg-gray-700 text-white px-3 py-2 text-sm" autoFocus />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Display Name *</label>
+              <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
+                className="w-full rounded-md border border-gray-600 bg-gray-700 text-white px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Password *</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                className="w-full rounded-md border border-gray-600 bg-gray-700 text-white px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Role</label>
+              <select value={role} onChange={e => setRole(e.target.value)}
+                className="w-full rounded-md border border-gray-600 bg-gray-700 text-white px-3 py-2 text-sm">
+                <option value="">Regular User (no admin access)</option>
+                <option value="super-admin">Super Admin</option>
+                <option value="admin">Admin</option>
+                <option value="support">Support</option>
+                <option value="ops">Ops</option>
+              </select>
+            </div>
+            {error && <p className="text-xs text-red-400">{error}</p>}
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={onClose} className="rounded-md border border-gray-600 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Cancel</button>
+              <button onClick={handleCreate} disabled={creating} className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50">
+                {creating ? 'Creating...' : 'Create User'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

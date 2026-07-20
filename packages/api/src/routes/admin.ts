@@ -384,3 +384,51 @@ export async function registerAdminTripsRoute(app: any, options: { db: any }): P
     return reply.send({ statusCode: 200, data: result });
   });
 }
+
+// ─── Admin Create User ───────────────────────────────────────────────────────
+
+export async function registerAdminCreateUserRoute(app: any, options: { db: any }): Promise<void> {
+  const { db } = options;
+  const crypto = await import('crypto');
+
+  function hashPassword(password: string): string {
+    return crypto.createHash('sha256').update(password).digest('hex');
+  }
+
+  // POST /api/admin/users/create — create a new user with role
+  app.post('/api/admin/users/create', async (request: any, reply: any) => {
+    const { email, displayName, password, role } = request.body;
+
+    if (!email || !displayName || !password) {
+      return reply.status(400).send({ statusCode: 400, error: 'email, displayName, and password are required' });
+    }
+
+    // Check if user already exists
+    const existing = await db.selectFrom('users').select('id').where('email', '=', email).executeTakeFirst();
+    if (existing) {
+      return reply.status(409).send({ statusCode: 409, error: 'A user with this email already exists' });
+    }
+
+    const validRoles = ['super-admin', 'admin', 'support', 'ops', null];
+    const adminRole = validRoles.includes(role) ? role : null;
+
+    // Create user
+    const { sql } = await import('kysely');
+    const user = await sql`INSERT INTO users (email, display_name, cognito_sub, email_verified, password_hash, admin_role)
+      VALUES (${email}, ${displayName}, ${'admin-created-' + email}, true, ${hashPassword(password)}, ${adminRole})
+      RETURNING id, email, display_name, admin_role, created_at`.execute(db);
+
+    const created = (user as any).rows?.[0];
+
+    // Create user preferences
+    if (created?.id) {
+      await sql`INSERT INTO user_preferences (user_id, language, locale_code) VALUES (${created.id}, 'en', 'en-GB') ON CONFLICT DO NOTHING`.execute(db);
+    }
+
+    return reply.status(201).send({
+      statusCode: 201,
+      data: created,
+      message: `User created: ${email} (${adminRole ?? 'regular user'})`,
+    });
+  });
+}
