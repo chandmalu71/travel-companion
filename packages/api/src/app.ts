@@ -22,7 +22,7 @@ import { registerEmailWebhookRoutes } from './routes/email-webhooks.js';
 import { registerSearchRoutes } from './routes/search.js';
 import { registerBookingForwardRoutes } from './routes/booking-forward.js';
 import { registerEmailConnectionRoutes } from './routes/email-connections.js';
-import { registerAdminRoutes, registerAdminRoleRoutes } from './routes/admin.js';
+import { registerAdminRoutes, registerAdminRoleRoutes, registerAdminTripsRoute } from './routes/admin.js';
 import { registerAdminAuth } from './plugins/admin-auth.js';
 import { registerExpenseRoutes } from './routes/expenses.js';
 import { registerExpenseGroupRoutes } from './routes/expense-groups.js';
@@ -277,6 +277,7 @@ export async function buildApp(
     await app.register(registerAdminAuth, { db: options.db });
     await registerAdminRoutes(app, { db: options.db });
     await registerAdminRoleRoutes(app, { db: options.db });
+    await registerAdminTripsRoute(app, { db: options.db });
   }
 
   return app;
