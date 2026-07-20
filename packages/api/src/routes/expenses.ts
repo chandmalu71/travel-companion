@@ -44,6 +44,7 @@ interface CreateExpenseBody {
   notes?: string; // max 500 chars
   tripId?: string;
   bookingId?: string;
+  isShared?: boolean;
 }
 
 interface UpdateExpenseBody {
@@ -115,6 +116,7 @@ export async function registerExpenseRoutes(
           .insertInto('expenses')
           .values({
             user_id: userId,
+            payer_id: userId,
             trip_id: body.tripId ?? null,
             booking_id: body.bookingId ?? null,
             amount: body.amount,
@@ -125,8 +127,9 @@ export async function registerExpenseRoutes(
             date: body.date,
             merchant_name: body.merchantName ?? null,
             notes: body.notes ?? null,
+            is_shared: body.isShared ?? false,
           })
-          .returning(['id', 'amount', 'currency', 'converted_amount', 'home_currency', 'category', 'date', 'merchant_name', 'notes', 'trip_id', 'created_at'])
+          .returning(['id', 'amount', 'currency', 'converted_amount', 'home_currency', 'category', 'date', 'merchant_name', 'notes', 'trip_id', 'is_shared', 'created_at'])
           .executeTakeFirstOrThrow();
 
         // Check budget thresholds if expense is linked to a trip
@@ -192,8 +195,43 @@ export async function registerExpenseRoutes(
         : [];
       const attachmentMap = new Map(attachments.map(a => [a.entity_id, a]));
 
+      // Fetch split members for shared expenses
+      const sharedExpenseIds = expenses.filter(e => e.is_shared).map(e => e.id);
+      const splitMembers = sharedExpenseIds.length > 0
+        ? await db
+            .selectFrom('expense_split_members')
+            .selectAll()
+            .where('expense_id', 'in', sharedExpenseIds)
+            .execute()
+            .catch(() => [] as any[])
+        : [];
+
+      // Get member names
+      const memberIds = [...new Set(splitMembers.map(sm => sm.member_id))];
+      const members = memberIds.length > 0
+        ? await db
+            .selectFrom('group_members')
+            .selectAll()
+            .where('id', 'in', memberIds)
+            .execute()
+            .catch(() => [] as any[])
+        : [];
+      const memberMap = new Map(members.map(m => [m.id, m]));
+
       const enrichedExpenses = expenses.map(exp => {
         const sa = attachmentMap.get(exp.id);
+        const splits = splitMembers.filter(sm => sm.expense_id === exp.id);
+        const sharedWith = splits.map(s => {
+          const member = memberMap.get(s.member_id);
+          return {
+            memberId: s.member_id,
+            name: member?.name ?? 'Unknown',
+            amount: s.amount ? Number(s.amount) : null,
+            percentage: s.percentage ? Number(s.percentage) : null,
+            splitType: s.split_type,
+          };
+        });
+
         return {
           ...exp,
           sourceAttachment: sa ? {
@@ -203,6 +241,7 @@ export async function registerExpenseRoutes(
             emailSubject: sa.email_subject,
             createdAt: new Date(sa.created_at).toISOString(),
           } : null,
+          sharedWith: exp.is_shared && sharedWith.length > 0 ? sharedWith : null,
         };
       });
 

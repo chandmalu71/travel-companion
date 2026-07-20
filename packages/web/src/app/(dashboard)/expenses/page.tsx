@@ -23,6 +23,7 @@ interface Expense {
   trip_id: string | null;
   is_shared: boolean;
   sourceAttachment: SourceAttachment | null;
+  sharedWith: Array<{ memberId: string; name: string; amount: number | null; percentage: number | null; splitType: string }> | null;
 }
 
 const CATEGORIES = [
@@ -124,6 +125,13 @@ export default function ExpensesPage() {
                   {!expense.is_shared && <span className="text-[10px] bg-gray-50 text-gray-400 border border-gray-200 rounded px-1">personal</span>}
                 </div>
                 {expense.notes && <p className="text-[11px] text-gray-400 truncate">{expense.notes}</p>}
+                {expense.is_shared && expense.sharedWith && expense.sharedWith.length > 0 && (
+                  <p className="text-[10px] text-blue-500 truncate">
+                    👥 Shared with: {expense.sharedWith.map(s => s.name).join(', ')}
+                    {expense.sharedWith[0]?.splitType === 'equal' && ` (equal split)`}
+                    {expense.sharedWith[0]?.splitType === 'percentage' && ` (% split)`}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 {expense.sourceAttachment ? (
