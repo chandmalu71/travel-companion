@@ -275,3 +275,61 @@ async function logAdminAction(
     console.error('[Admin] Audit log write failed');
   }
 }
+
+// ─── Admin Role Management ───────────────────────────────────────────────────
+
+export async function registerAdminRoleRoutes(app: any, options: { db: any }): Promise<void> {
+  const { db } = options;
+
+  // GET /api/admin/roles — list all users with admin roles
+  app.get('/api/admin/roles', async (_request: any, reply: any) => {
+    const admins = await db
+      .selectFrom('users')
+      .select(['id', 'email', 'display_name', 'admin_role', 'created_at'])
+      .where('admin_role', 'is not', null)
+      .orderBy('admin_role', 'asc')
+      .orderBy('display_name', 'asc')
+      .execute();
+    return reply.send({ statusCode: 200, data: admins });
+  });
+
+  // PUT /api/admin/roles/:userId — set a user's admin role
+  app.put('/api/admin/roles/:userId', async (request: any, reply: any) => {
+    const { userId } = request.params;
+    const { role } = request.body; // 'super-admin', 'admin', 'support', 'ops', or null to remove
+
+    const validRoles = ['super-admin', 'admin', 'support', 'ops', null];
+    if (!validRoles.includes(role)) {
+      return reply.status(400).send({ statusCode: 400, error: 'Invalid role. Must be: super-admin, admin, support, ops, or null' });
+    }
+
+    // Prevent removing the last super-admin
+    if (role !== 'super-admin') {
+      const superAdmins = await db.selectFrom('users').select('id').where('admin_role', '=', 'super-admin').execute();
+      const target = await db.selectFrom('users').select(['id', 'admin_role']).where('id', '=', userId).executeTakeFirst();
+      if (target?.admin_role === 'super-admin' && superAdmins.length <= 1) {
+        return reply.status(400).send({ statusCode: 400, error: 'Cannot remove the last super-admin' });
+      }
+    }
+
+    await db.updateTable('users').set({ admin_role: role }).where('id', '=', userId).execute();
+    return reply.send({ statusCode: 200, message: `User role updated to: ${role ?? 'none'}` });
+  });
+
+  // POST /api/admin/roles/search — search users by email to promote
+  app.post('/api/admin/roles/search', async (request: any, reply: any) => {
+    const { email } = request.body;
+    if (!email || email.length < 3) {
+      return reply.status(400).send({ statusCode: 400, error: 'Provide at least 3 characters of email' });
+    }
+
+    const users = await db
+      .selectFrom('users')
+      .select(['id', 'email', 'display_name', 'admin_role'])
+      .where('email', 'ilike', `%${email}%`)
+      .limit(10)
+      .execute();
+
+    return reply.send({ statusCode: 200, data: users });
+  });
+}

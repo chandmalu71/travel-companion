@@ -207,22 +207,41 @@ export async function registerTripRoutes(
     { preHandler: [app.requireAuth] },
     async (request: FastifyRequest<{ Params: TripParams }>, reply: FastifyReply) => {
       const { tripId } = request.params;
-      const userId = request.user!.userId;
 
       const trip = await db.selectFrom('trips').select(['id', 'owner_id']).where('id', '=', tripId).executeTakeFirst();
       if (!trip) return reply.status(404).send({ statusCode: 404, error: 'Trip not found' });
 
-      // Get trip owner details
+      // Try trip_travellers first (new system)
+      const travellers = await db
+        .selectFrom('trip_travellers')
+        .selectAll()
+        .where('trip_id', '=', tripId)
+        .where('status', '=', 'active')
+        .orderBy('display_name', 'asc')
+        .execute()
+        .catch(() => [] as any[]);
+
+      if (travellers.length > 0) {
+        const result = travellers.map(t => ({
+          id: t.id,
+          userId: t.user_id,
+          name: t.display_name,
+          email: t.email,
+          role: t.role,
+          travellerType: t.traveller_type,
+        }));
+        return reply.send({ statusCode: 200, data: result });
+      }
+
+      // Fallback: old trip_members system + owner
       const owner = await db.selectFrom('users').select(['id', 'display_name', 'email']).where('id', '=', trip.owner_id).executeTakeFirst();
 
-      // Get trip members
       const members = await db
         .selectFrom('trip_members')
         .selectAll()
         .where('trip_id', '=', tripId)
         .execute();
 
-      // Get user details for members with user_id
       const memberUserIds = members.filter(m => m.user_id).map(m => m.user_id!);
       const memberUsers = memberUserIds.length > 0
         ? await db.selectFrom('users').select(['id', 'display_name', 'email']).where('id', 'in', memberUserIds).execute()
@@ -230,9 +249,7 @@ export async function registerTripRoutes(
       const userMap = new Map(memberUsers.map(u => [u.id, u]));
 
       const result = [
-        // Owner is always a member
         { id: `owner-${trip.owner_id}`, userId: trip.owner_id, name: owner?.display_name ?? 'Trip Owner', email: owner?.email, role: 'owner' },
-        // Other members
         ...members.map(m => {
           const user = m.user_id ? userMap.get(m.user_id) : null;
           return {

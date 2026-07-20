@@ -495,6 +495,22 @@ function MembersTab({ tripId }: { tripId: string }) {
   const [newGroupId, setNewGroupId] = useState('');
   const [showGroupForm, setShowGroupForm] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
+  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [invitations, setInvitations] = useState<any[]>([]);
+
+  const loadInvitations = () => {
+    api.get<{ data: any[] }>(`/api/trips/${tripId}/invitations`).then(r => setInvitations(r.data ?? [])).catch(() => {});
+  };
+
+  const resendInvitation = async (id: string) => {
+    await api.post(`/api/trips/${tripId}/invitations/${id}/resend`, {});
+    loadInvitations();
+  };
+
+  const cancelInvitation = async (id: string) => {
+    await api.delete(`/api/trips/${tripId}/invitations/${id}`);
+    loadInvitations();
+  };
 
   const loadMembers = () => {
     api.get<{ data: any }>(`/api/trips/${tripId}/travellers`)
@@ -503,7 +519,7 @@ function MembersTab({ tripId }: { tripId: string }) {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadMembers(); }, [tripId]);
+  useEffect(() => { loadMembers(); loadInvitations(); }, [tripId]);
 
   const handleAddTraveller = async () => {
     if (!newName.trim()) return;
@@ -537,6 +553,7 @@ function MembersTab({ tripId }: { tripId: string }) {
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-gray-900">Members ({data?.totalCount ?? 0})</h3>
         <div className="flex gap-2">
+          <button onClick={() => setShowInviteForm(true)} className="rounded-md border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50">✉️ Invite</button>
           <button onClick={() => setShowGroupForm(true)} className="rounded-md border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50">+ Group</button>
           <button onClick={() => setShowAddForm(true)} className="rounded-md bg-primary-600 px-3 py-1.5 text-xs text-white hover:bg-primary-500">+ Add Member</button>
         </div>
@@ -646,6 +663,151 @@ function MembersTab({ tripId }: { tripId: string }) {
           </div>
         </div>
       )}
+
+      {/* Invite Modal */}
+      {showInviteForm && (
+        <InviteModal tripId={tripId} groups={data?.groups ?? []} onClose={() => setShowInviteForm(false)} onInvited={() => { setShowInviteForm(false); loadInvitations(); }} />
+      )}
+
+      {/* Pending Invitations */}
+      {invitations.filter(i => i.status === 'pending').length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-medium text-amber-800 mb-2">Pending Invitations ({invitations.filter(i => i.status === 'pending').length})</p>
+          <div className="space-y-2">
+            {invitations.filter(i => i.status === 'pending').map((inv: any) => (
+              <div key={inv.id} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span>{inv.channel === 'email' ? '📧' : inv.channel === 'phone' ? '📱' : inv.channel === 'whatsapp' ? '💬' : '🔗'}</span>
+                  <span className="text-gray-700">{inv.recipient ?? 'Link invite'}</span>
+                  <span className="text-xs text-gray-400">· {inv.role}</span>
+                  {inv.expires_at && <span className="text-xs text-amber-600">· expires {new Date(inv.expires_at).toLocaleDateString()}</span>}
+                </div>
+                <div className="flex gap-1">
+                  <button onClick={() => resendInvitation(inv.id)} className="text-xs text-blue-600 hover:underline">Resend</button>
+                  <button onClick={() => cancelInvitation(inv.id)} className="text-xs text-red-500 hover:underline">Cancel</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Invite Modal ────────────────────────────────────────────────────────────
+
+function InviteModal({ tripId, groups, onClose, onInvited }: { tripId: string; groups: any[]; onClose: () => void; onInvited: () => void }) {
+  const [channel, setChannel] = useState<'email' | 'phone' | 'whatsapp' | 'link'>('email');
+  const [recipient, setRecipient] = useState('');
+  const [role, setRole] = useState('editor');
+  const [groupId, setGroupId] = useState('');
+  const [message, setMessage] = useState('');
+  const [expiresInDays, setExpiresInDays] = useState(7);
+  const [sending, setSending] = useState(false);
+  const [generatedLink, setGeneratedLink] = useState('');
+
+  const handleSend = async () => {
+    setSending(true);
+    try {
+      const res = await api.post<{ data: { acceptUrl: string } }>(`/api/trips/${tripId}/invitations`, {
+        channel, recipient: channel === 'link' ? undefined : recipient,
+        role, groupId: groupId || undefined, message: message || undefined, expiresInDays,
+      });
+      if (channel === 'link' && res.data?.acceptUrl) {
+        setGeneratedLink(res.data.acceptUrl);
+      } else {
+        onInvited();
+      }
+    } catch { alert('Failed to send invitation'); }
+    finally { setSending(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Invite to Trip</h3>
+
+        {generatedLink ? (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600">Share this link:</p>
+            <div className="flex gap-2">
+              <input type="text" readOnly value={generatedLink} className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-xs font-mono bg-gray-50" />
+              <button onClick={() => { navigator.clipboard.writeText(generatedLink); }} className="rounded-md bg-primary-600 px-3 py-2 text-xs text-white">Copy</button>
+            </div>
+            <button onClick={onInvited} className="w-full rounded-md border border-gray-300 py-2 text-sm mt-2">Done</button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Channel selector */}
+            <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+              {([['email', '📧 Email'], ['phone', '📱 Phone'], ['whatsapp', '💬 WhatsApp'], ['link', '🔗 Link']] as const).map(([ch, label]) => (
+                <button key={ch} onClick={() => setChannel(ch as any)}
+                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${channel === ch ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Recipient */}
+            {channel !== 'link' && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">{channel === 'email' ? 'Email address' : 'Phone number'}</label>
+                <input type={channel === 'email' ? 'email' : 'tel'} value={recipient} onChange={e => setRecipient(e.target.value)}
+                  placeholder={channel === 'email' ? 'friend@example.com' : '+1234567890'}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              </div>
+            )}
+
+            {/* Role */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Role</label>
+                <select value={role} onChange={e => setRole(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                  <option value="editor">Editor</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Expires</label>
+                <select value={expiresInDays} onChange={e => setExpiresInDays(Number(e.target.value))} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                  <option value={1}>1 day</option>
+                  <option value={3}>3 days</option>
+                  <option value={7}>7 days</option>
+                  <option value={30}>30 days</option>
+                  <option value={0}>Never</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Group */}
+            {groups.length > 0 && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Add to group</label>
+                <select value={groupId} onChange={e => setGroupId(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                  <option value="">No group</option>
+                  {groups.map((g: any) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                </select>
+              </div>
+            )}
+
+            {/* Message */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Personal message (optional)</label>
+              <input type="text" value={message} onChange={e => setMessage(e.target.value)} placeholder="Join us on our trip!"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm">Cancel</button>
+              <button onClick={handleSend} disabled={sending || (channel !== 'link' && !recipient)}
+                className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                {sending ? 'Sending...' : channel === 'link' ? 'Generate Link' : 'Send Invitation'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
