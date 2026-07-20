@@ -161,4 +161,75 @@ export async function registerSourceAttachmentsRoute(
       });
     },
   );
+
+  // POST /api/expenses/:expenseId/receipt — attach a receipt to an expense
+  app.post(
+    '/api/expenses/:expenseId/receipt',
+    async (request: FastifyRequest<{ Params: { expenseId: string }; Body: { mimeType?: string; fileName?: string } }>, reply: FastifyReply) => {
+      const { expenseId } = request.params;
+      const userId = (request as any).userId as string;
+      const { mimeType, fileName } = (request.body as any) ?? {};
+
+      // Verify ownership
+      const expense = await db
+        .selectFrom('expenses')
+        .select(['id', 'user_id'])
+        .where('id', '=', expenseId)
+        .executeTakeFirst();
+
+      if (!expense || expense.user_id !== userId) {
+        return reply.status(404).send({ statusCode: 404, error: 'Expense not found' });
+      }
+
+      // Create source attachment record
+      const attachment = await db
+        .insertInto('source_attachments')
+        .values({
+          user_id: userId,
+          entity_type: 'expense',
+          entity_id: expenseId,
+          source_type: 'receipt_scan',
+          mime_type: mimeType ?? 'image/jpeg',
+          s3_key: `receipts/${userId}/${expenseId}/${fileName ?? 'receipt.jpg'}`,
+          s3_bucket: 'nayya-attachments',
+        })
+        .returning(['id', 'source_type', 'mime_type', 's3_key', 'created_at'])
+        .executeTakeFirstOrThrow();
+
+      // In production, generate a presigned upload URL for S3
+      const uploadUrl = `/api/source-attachments/${attachment.id}/upload`;
+
+      return reply.status(201).send({
+        statusCode: 201,
+        data: {
+          id: attachment.id,
+          sourceType: attachment.source_type,
+          mimeType: attachment.mime_type,
+          uploadUrl,
+          message: 'Receipt attached. In production, upload file to the presigned S3 URL.',
+        },
+      });
+    },
+  );
+
+  // DELETE /api/source-attachments/:attachmentId — remove an attachment
+  app.delete(
+    '/api/source-attachments/:attachmentId',
+    async (request: FastifyRequest<{ Params: { attachmentId: string } }>, reply: FastifyReply) => {
+      const { attachmentId } = request.params;
+      const userId = (request as any).userId as string;
+
+      const deleted = await db
+        .deleteFrom('source_attachments')
+        .where('id', '=', attachmentId)
+        .where('user_id', '=', userId)
+        .executeTakeFirst();
+
+      if (!deleted || Number(deleted.numDeletedRows) === 0) {
+        return reply.status(404).send({ statusCode: 404, error: 'Attachment not found' });
+      }
+
+      return reply.send({ statusCode: 200, message: 'Attachment removed' });
+    },
+  );
 }
