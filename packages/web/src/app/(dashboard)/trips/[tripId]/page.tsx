@@ -33,12 +33,14 @@ export default function TripDetailPage() {
 
   useEffect(() => {
     Promise.all([
-      api.get<{ data: TripDetail }>(`/api/trips/${tripId}`),
-      api.get<{ data: Booking[] }>(`/api/bookings?tripId=${tripId}`),
+      api.get<TripDetail & { data?: TripDetail }>(`/api/trips/${tripId}`),
+      api.get<{ data?: Booking[]; bookings?: Booking[] }>(`/api/bookings?tripId=${tripId}`),
     ])
       .then(([tripRes, bookingsRes]) => {
-        setTrip(tripRes.data);
-        setBookings(bookingsRes.data);
+        // API may return trip directly or wrapped in .data
+        const tripData = (tripRes as any).data ?? tripRes;
+        setTrip(tripData?.id ? tripData : null);
+        setBookings(bookingsRes.data ?? bookingsRes.bookings ?? []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
