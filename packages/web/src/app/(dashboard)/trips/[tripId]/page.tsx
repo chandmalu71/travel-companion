@@ -27,6 +27,11 @@ interface Booking {
 
 type TabId = 'overview' | 'timeline' | 'map' | 'expenses' | 'documents';
 
+const CATEGORY_ICONS: Record<string, string> = {
+  food_dining: '🍕', transportation: '🚗', accommodation: '🏨',
+  tours_activities: '🎭', shopping: '🛍️', entertainment: '🎬', other: '📦',
+};
+
 export default function TripDetailPage() {
   const params = useParams();
   const tripId = params.tripId as string;
@@ -377,19 +382,21 @@ function MapTab({ tripId }: { tripId: string }) {
 }
 
 function ExpensesTab({ tripId }: { tripId: string }) {
-  const [summary, setSummary] = useState<any>(null);
+  const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [subTab, setSubTab] = useState<'expenses' | 'settlements'>('expenses');
   const [showAddExpense, setShowAddExpense] = useState(false);
 
-  const loadSummary = () => {
-    api.get<{ data: any }>(`/api/trips/${tripId}/expenses/summary`)
-      .then((res) => setSummary(res.data))
+  const loadExpenses = () => {
+    api.get<{ data?: any[]; statusCode?: number }>(`/api/expenses?tripId=${tripId}`)
+      .then((res) => setExpenses(Array.isArray(res.data) ? res.data : []))
       .catch(() => {})
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadSummary(); }, [tripId]);
+  useEffect(() => { loadExpenses(); }, [tripId]);
+
+  const totalSpent = expenses.reduce((sum, e) => sum + (Number(e.converted_amount) || Number(e.amount) || 0), 0);
 
   if (loading) return <div className="animate-pulse h-32 bg-gray-200 rounded-lg" />;
 
@@ -417,23 +424,46 @@ function ExpensesTab({ tripId }: { tripId: string }) {
 
       {subTab === 'expenses' ? (
         <>
-          {summary ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="rounded-lg bg-white p-4 border border-gray-200">
-                <p className="text-sm text-gray-500">Total Spent</p>
-                <p className="text-xl font-bold">${summary.grandTotal?.toFixed(2) ?? '0.00'}</p>
-              </div>
-              <div className="rounded-lg bg-white p-4 border border-gray-200">
-                <p className="text-sm text-gray-500">Expenses</p>
-                <p className="text-xl font-bold">{summary.expenseCount ?? 0}</p>
-              </div>
-              <div className="rounded-lg bg-white p-4 border border-gray-200">
-                <p className="text-sm text-gray-500">Budget Used</p>
-                <p className="text-xl font-bold">{summary.budgetUsedPercent ?? 0}%</p>
-              </div>
+          {/* Summary cards */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-lg bg-white p-4 border border-gray-200">
+              <p className="text-xs text-gray-500">Total Spent</p>
+              <p className="text-xl font-bold">${totalSpent.toFixed(2)}</p>
+            </div>
+            <div className="rounded-lg bg-white p-4 border border-gray-200">
+              <p className="text-xs text-gray-500">Expenses</p>
+              <p className="text-xl font-bold">{expenses.length}</p>
+            </div>
+            <div className="rounded-lg bg-white p-4 border border-gray-200">
+              <p className="text-xs text-gray-500">Shared / Personal</p>
+              <p className="text-xl font-bold">{expenses.filter(e => e.is_shared).length} / {expenses.filter(e => !e.is_shared).length}</p>
+            </div>
+          </div>
+
+          {/* Expense list */}
+          {expenses.length === 0 ? (
+            <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
+              <p className="text-gray-500">No expenses for this trip yet.</p>
             </div>
           ) : (
-            <p className="text-sm text-gray-500">No expenses recorded yet.</p>
+            <div className="space-y-2">
+              {expenses.map((expense: any) => (
+                <div key={expense.id} className="flex items-center gap-3 rounded-lg bg-white px-4 py-3 border border-gray-200 shadow-sm">
+                  <span className="text-lg flex-shrink-0">{CATEGORY_ICONS[expense.category] ?? '📦'}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-gray-900 text-sm truncate">{expense.merchant_name ?? expense.category?.replace('_', ' ')}</p>
+                      <span className="text-[11px] text-gray-400">{expense.date?.slice(0, 10)}</span>
+                      {expense.is_shared && <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1">shared</span>}
+                    </div>
+                    {expense.notes && <p className="text-[11px] text-gray-400 truncate">{expense.notes}</p>}
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-semibold text-gray-900 text-sm">{expense.currency} {Number(expense.amount).toFixed(2)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </>
       ) : (
@@ -445,7 +475,7 @@ function ExpensesTab({ tripId }: { tripId: string }) {
         <AddExpenseModal
           tripId={tripId}
           onClose={() => setShowAddExpense(false)}
-          onCreated={() => { setShowAddExpense(false); loadSummary(); }}
+          onCreated={() => { setShowAddExpense(false); loadExpenses(); }}
         />
       )}
     </div>
