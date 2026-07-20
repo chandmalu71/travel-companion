@@ -258,3 +258,103 @@ All bugs MUST be recorded as GitHub Issues:
 gh issue create --title "Bug: [description]" --label "bug"
 ```
 Reference issues in fix commits: `fix: resolve X (closes #N)`
+
+
+## 13. Admin Panel Implications
+
+When adding any new feature, ALWAYS consider and implement admin panel support:
+
+### Automatic Admin Requirements
+
+Every new feature MUST include the following admin-side work (without needing explicit user request):
+
+1. **Configuration** — If the feature has configurable settings, add an admin page/section to manage them
+2. **Visibility** — If the feature produces data, add admin views to monitor/search/filter it
+3. **Moderation** — If the feature involves user-generated content, add moderation controls
+4. **Metrics** — If the feature has usage patterns, add counters/charts to the admin dashboard
+5. **Toggle** — Every feature should have a global enable/disable toggle in admin config
+
+### Checklist for New Features
+
+When implementing any feature, verify:
+
+- [ ] Does this need an admin toggle? (feature flags)
+- [ ] Does this need admin CRUD? (manage entities)
+- [ ] Does this produce data that admins need to see? (monitoring)
+- [ ] Does this have rate-limiting or abuse potential? (thresholds)
+- [ ] Does this need localization? (translation keys)
+- [ ] Does this affect costs? (track in cost dashboard)
+- [ ] Does this have audit-worthy actions? (log in audit trail)
+- [ ] Does the admin sidebar need a new link?
+
+### Admin Panel Architecture
+
+- **Location**: `packages/admin/` — separate Next.js app on port 3002
+- **Theme**: Dark (bg-gray-900, text-gray-100, tables: bg-gray-800/border-gray-700)
+- **Layout**: Persistent sidebar (AdminSidebar in layout.tsx) + main content area
+- **API**: Same backend at localhost:3000, admin endpoints at `/api/admin/*`
+- **Auth**: Admin role required (super-admin or support from users.admin_role)
+
+### Admin Pages by Feature Area
+
+| Feature | Admin Page | What it manages |
+|---------|-----------|-----------------|
+| Users | `/users` | List, suspend, delete, impersonate |
+| i18n/Locale | `/i18n` | Languages, currencies, locales enable/disable |
+| Translations | `/i18n/translations` | Translation editor with auto-translate |
+| Configuration | `/config` | Rate limits, feature flags |
+| Costs | `/costs` | AWS cost breakdown, per-user attribution |
+| Health | `/health` | API metrics, email queue, LLM usage |
+| Moderation | `/moderation` | Content review, impersonation, announcements |
+| Audit | `/audit` | Admin action log with search/filter |
+
+## 14. Internationalization (i18n)
+
+### When Adding UI Text
+
+- **NEVER hardcode user-facing text** directly in JSX (for new features going forward)
+- Use `t('namespace.key')` from the `useTranslation()` hook
+- Add the English text to `packages/web/src/i18n/en.json`
+- Use the naming convention: `{namespace}.{page_or_component}.{element}`
+- Namespaces: `common`, `nav`, `auth`, `trips`, `bookings`, `expenses`, `settings`, `admin`, `errors`
+
+### When Adding Date/Number/Currency Display
+
+- Use formatting utilities from `packages/web/src/i18n/format.ts`
+- `formatDate(date, config)` — respects user's date format preference
+- `formatTime(date, config)` — respects 12h/24h preference
+- `formatNumber(num, config)` — respects number notation (1,000.00 vs 1.000,00)
+- `formatCurrency(amount, currency, config)` — locale-aware currency display
+- `formatDistance(km, config)` — km or miles based on units preference
+- `formatTemperature(celsius, config)` — °C or °F based on units
+
+### When Adding Currency Dropdowns
+
+- Fetch enabled currencies from `GET /api/i18n/currencies`
+- Fall back to hardcoded list if API unavailable
+- Admin controls which currencies are available via admin panel
+
+### Admin Translation Workflow
+
+When significant new UI text is added:
+1. Add keys to `en.json`
+2. Admin can auto-translate via `/admin/i18n/translations`
+3. Admin can manually review/edit translations
+
+## 15. Dark Theme Consistency (Admin Panel)
+
+When creating admin panel pages, use these color classes:
+
+| Element | Class |
+|---------|-------|
+| Page background | (inherited from layout: `bg-gray-900`) |
+| Card/table background | `bg-gray-800` |
+| Borders | `border-gray-700` |
+| Primary text | `text-white` |
+| Secondary text | `text-gray-300` |
+| Muted text | `text-gray-400` |
+| Table dividers | `divide-gray-700` |
+| Hover state | `hover:bg-gray-700` |
+| Active/selected | `bg-gray-700 text-white` |
+| Input fields | `bg-gray-700 border-gray-600 text-white` |
+| Buttons (primary) | Same as web app (`bg-primary-600`) |
