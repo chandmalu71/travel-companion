@@ -415,36 +415,8 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* ─── Language ───────────────────────────────────────────────── */}
-      <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Language</h2>
-        <select
-          value={preferences.language}
-          onChange={(e) => setPreferences({ ...preferences, language: e.target.value })}
-          className="w-full max-w-xs rounded-md border border-gray-300 px-3 py-2 text-sm"
-        >
-          <option value="en">English</option>
-          <option value="es">Español</option>
-          <option value="fr">Français</option>
-          <option value="de">Deutsch</option>
-          <option value="it">Italiano</option>
-          <option value="pt">Português</option>
-          <option value="ja">日本語</option>
-          <option value="ko">한국어</option>
-          <option value="zh">中文</option>
-          <option value="ar">العربية</option>
-          <option value="hi">हिन्दी</option>
-          <option value="ru">Русский</option>
-          <option value="nl">Nederlands</option>
-          <option value="sv">Svenska</option>
-          <option value="no">Norsk</option>
-          <option value="da">Dansk</option>
-          <option value="fi">Suomi</option>
-          <option value="pl">Polski</option>
-          <option value="tr">Türkçe</option>
-          <option value="th">ไทย</option>
-        </select>
-      </section>
+      {/* ─── Language & Region ──────────────────────────────────────── */}
+      <LanguageRegionSection preferences={preferences} onChange={(updates) => setPreferences({ ...preferences, ...updates })} />
 
       {/* ─── Save ───────────────────────────────────────────────────── */}
       <div className="flex items-center gap-4 pb-8">
@@ -458,5 +430,99 @@ export default function SettingsPage() {
         {saved && <span className="text-sm text-green-600">Saved successfully!</span>}
       </div>
     </div>
+  );
+}
+
+// ─── Language & Region Section ───────────────────────────────────────────────
+
+function LanguageRegionSection({ preferences, onChange }: { preferences: any; onChange: (updates: any) => void }) {
+  const [languages, setLanguages] = useState<Array<{ code: string; name: string; native_name: string }>>([]);
+  const [locales, setLocales] = useState<Array<{ code: string; name: string; date_format: string; time_format: string; number_format: string; default_currency: string; units: string }>>([]);
+  const [selectedLocale, setSelectedLocale] = useState('');
+
+  useEffect(() => {
+    api.get<{ data: any[] }>('/api/i18n/languages').then(r => setLanguages(r.data ?? [])).catch(() => {});
+    api.get<{ data: any[] }>('/api/i18n/locales').then(r => {
+      setLocales(r.data ?? []);
+    }).catch(() => {});
+  }, []);
+
+  const handleLocaleChange = (code: string) => {
+    setSelectedLocale(code);
+    const loc = locales.find(l => l.code === code);
+    if (loc) {
+      onChange({ language: loc.code.split('-')[0] });
+    }
+    // Also save to user locale preferences
+    api.put('/api/users/me/locale', { locale: code, language: loc?.code.split('-')[0] ?? 'en' }).catch(() => {});
+  };
+
+  const currentLocale = locales.find(l => l.code === selectedLocale);
+
+  return (
+    <section className="space-y-4">
+      <h2 className="text-lg font-semibold text-gray-900">Language & Region</h2>
+
+      {/* Language selector */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Display Language</label>
+        <select
+          value={preferences.language}
+          onChange={(e) => {
+            onChange({ language: e.target.value });
+            api.put('/api/users/me/locale', { language: e.target.value }).catch(() => {});
+          }}
+          className="w-full max-w-xs rounded-md border border-gray-300 px-3 py-2 text-sm"
+        >
+          {languages.length > 0 ? (
+            languages.map(l => <option key={l.code} value={l.code}>{l.native_name} ({l.name})</option>)
+          ) : (
+            <option value="en">English</option>
+          )}
+        </select>
+      </div>
+
+      {/* Locale/Region selector */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Region & Formatting</label>
+        <select
+          value={selectedLocale}
+          onChange={(e) => handleLocaleChange(e.target.value)}
+          className="w-full max-w-xs rounded-md border border-gray-300 px-3 py-2 text-sm"
+        >
+          <option value="">Select a region...</option>
+          {locales.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
+        </select>
+      </div>
+
+      {/* Preview current format settings */}
+      {currentLocale && (
+        <div className="rounded-md bg-gray-50 border border-gray-200 p-4 max-w-xs">
+          <p className="text-xs font-semibold text-gray-600 uppercase mb-2">Format Preview</p>
+          <div className="space-y-1 text-sm text-gray-700">
+            <div className="flex justify-between"><span className="text-gray-500">Date:</span><span>{currentLocale.date_format}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Time:</span><span>{currentLocale.time_format}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Numbers:</span><span>{currentLocale.number_format}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Currency:</span><span>{currentLocale.default_currency}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Units:</span><span>{currentLocale.units}</span></div>
+          </div>
+        </div>
+      )}
+
+      {/* Units override */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Measurement Units</label>
+        <div className="flex gap-3">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="units" value="metric" checked={preferences.temperatureUnit === 'celsius'} onChange={() => onChange({ temperatureUnit: 'celsius' })} className="text-primary-600" />
+            <span className="text-sm">Metric (km, °C, kg)</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="units" value="imperial" checked={preferences.temperatureUnit === 'fahrenheit'} onChange={() => onChange({ temperatureUnit: 'fahrenheit' })} className="text-primary-600" />
+            <span className="text-sm">Imperial (mi, °F, lb)</span>
+          </label>
+        </div>
+      </div>
+    </section>
   );
 }

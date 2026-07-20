@@ -41,3 +41,4 @@ android/.gradle/
 android/app/build/
 *.jks
 *.keystore
+packages/web/tsconfig.tsbuildinfo
