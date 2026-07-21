@@ -50,9 +50,12 @@ export default function DashboardPage() {
         </button>
       </div>
 
+      {/* Quick Actions — always at the top */}
+      {activeWidgets.includes('quick_actions') && <QuickActionsWidget />}
+
       {/* Widget Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {activeWidgets.map(widgetId => {
+        {activeWidgets.filter(w => w !== 'quick_actions').map(widgetId => {
           const Widget = WIDGET_COMPONENTS[widgetId];
           if (!Widget) return null;
           return <Widget key={widgetId} />;
