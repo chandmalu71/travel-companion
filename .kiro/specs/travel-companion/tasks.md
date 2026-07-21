@@ -768,3 +768,28 @@ This implementation plan builds the Travel Companion application incrementally, 
 - [x] 37.5 Update trip autocomplete to include connected family
   - Shows as "Their family" badge with "via OwnerName" subtitle
   - Auto-detects child type on selection
+
+
+## Phase 8: AI Trip Tips (Req 38)
+
+- [x] 38.1 Create DB migration 017: trip_tips + trip_tip_chats tables
+  - trip_tips: trip_id, user_id, category, title, content, checklist (JSONB), is_favorited, is_dismissed, source, ai_model, generated_at, expires_at
+  - trip_tip_chats: trip_id, user_id, role (user/assistant), message, ai_model
+  - 8 categories: activities, packing, precautions, culture, food, transport, budget, documents
+- [x] 38.2 Create API routes for trip tips
+  - GET /api/trips/:tripId/tips — list non-dismissed tips
+  - POST /api/trips/:tripId/tips/generate — generate tips with trip context + user preferences + family
+  - PUT /api/trips/:tripId/tips/:id — favorite, dismiss, update checklist
+  - POST /api/trips/:tripId/tips/chat — ask follow-up question (contextual AI response)
+  - GET /api/trips/:tripId/tips/chat — get chat history
+- [x] 38.3 Create Tips tab UI in trip detail page
+  - "AI Tips" tab with generate/regenerate button
+  - Expandable category cards with icon, title, content, checklist
+  - Checkable items with persist
+  - Favorite (star) and dismiss (x) buttons
+  - Progress indicator (X/Y done)
+- [x] 38.4 Add chat follow-up section
+  - Chat bubbles (user right, assistant left)
+  - Text input with Enter-to-send
+  - Loading state ("Thinking...")
+  - Contextual responses based on destination
