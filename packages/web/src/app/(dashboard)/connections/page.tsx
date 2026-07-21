@@ -349,8 +349,8 @@ function AddFamilyMemberModal({ onClose, onAdded }: { onClose: () => void; onAdd
   const [relationship, setRelationship] = useState('child');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [gender, setGender] = useState('');
-  const [allergies, setAllergies] = useState('');
-  const [dietaryPreferences, setDietaryPreferences] = useState('');
+  const [allergies, setAllergies] = useState<string[]>([]);
+  const [dietaryPreferences, setDietaryPreferences] = useState<string[]>([]);
   const [seatPreference, setSeatPreference] = useState('');
   const [mealPreference, setMealPreference] = useState('');
   const [passportName, setPassportName] = useState('');
@@ -361,6 +361,22 @@ function AddFamilyMemberModal({ onClose, onAdded }: { onClose: () => void; onAdd
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  // Fetch admin-managed options (same as Settings page)
+  const [DIETARY_OPTIONS, setDietaryOptions] = useState<Array<{ key: string; name: string; icon: string }>>([]);
+  const [ALLERGY_OPTIONS, setAllergyOptions] = useState<Array<{ key: string; name: string; icon: string }>>([]);
+
+  useEffect(() => {
+    api.get<{ data: any[] }>('/api/preferences/dietary').then(r => setDietaryOptions(r.data ?? [])).catch(() => {});
+    api.get<{ data: any[] }>('/api/preferences/allergies').then(r => setAllergyOptions(r.data ?? [])).catch(() => {});
+  }, []);
+
+  const toggleDietary = (key: string) => {
+    setDietaryPreferences(prev => prev.includes(key) ? prev.filter(d => d !== key) : [...prev, key]);
+  };
+  const toggleAllergy = (key: string) => {
+    setAllergies(prev => prev.includes(key) ? prev.filter(a => a !== key) : [...prev, key]);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!firstName || !relationship) { setError('Name and relationship are required'); return; }
@@ -369,8 +385,8 @@ function AddFamilyMemberModal({ onClose, onAdded }: { onClose: () => void; onAdd
       await api.post('/api/family-members', {
         firstName, lastName: lastName || undefined, relationship, dateOfBirth: dateOfBirth || undefined,
         gender: gender || undefined,
-        allergies: allergies ? allergies.split(',').map(s => s.trim()) : [],
-        dietaryPreferences: dietaryPreferences ? dietaryPreferences.split(',').map(s => s.trim()) : [],
+        allergies,
+        dietaryPreferences,
         seatPreference: seatPreference || undefined, mealPreference: mealPreference || undefined,
         passport: (passportName || passportNumber) ? {
           fullName: passportName || undefined, number: passportNumber || undefined,
@@ -420,11 +436,39 @@ function AddFamilyMemberModal({ onClose, onAdded }: { onClose: () => void; onAdd
               </select></div>
           </div>
 
-          {/* Dietary / Allergies */}
-          <div><label className="block text-xs font-medium text-gray-700 mb-1">Allergies <span className="text-gray-400">(comma-separated)</span></label>
-            <input type="text" value={allergies} onChange={e => setAllergies(e.target.value)} placeholder="e.g. peanuts, dairy" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
-          <div><label className="block text-xs font-medium text-gray-700 mb-1">Dietary Preferences <span className="text-gray-400">(comma-separated)</span></label>
-            <input type="text" value={dietaryPreferences} onChange={e => setDietaryPreferences(e.target.value)} placeholder="e.g. vegetarian, gluten_free" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+          {/* Dietary Preferences — chip selector (same as Settings) */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">Dietary Preferences</label>
+            <div className="flex flex-wrap gap-1.5">
+              {DIETARY_OPTIONS.map((pref) => (
+                <button key={pref.key} type="button" onClick={() => toggleDietary(pref.key)}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                    dietaryPreferences.includes(pref.key)
+                      ? 'bg-green-100 text-green-700 border border-green-300'
+                      : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+                  }`}>
+                  {pref.icon} {pref.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Allergies — chip selector (same as Settings) */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">Allergies</label>
+            <div className="flex flex-wrap gap-1.5">
+              {ALLERGY_OPTIONS.map((allergy) => (
+                <button key={allergy.key} type="button" onClick={() => toggleAllergy(allergy.key)}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                    allergies.includes(allergy.key)
+                      ? 'bg-red-100 text-red-700 border border-red-300'
+                      : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+                  }`}>
+                  {allergy.icon} {allergy.name}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div><label className="block text-xs font-medium text-gray-700 mb-1">Meal Preference (flights)</label>
             <select value={mealPreference} onChange={e => setMealPreference(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
@@ -476,20 +520,36 @@ function EditFamilyMemberModal({ member, onClose, onSaved }: { member: FamilyMem
   const [firstName, setFirstName] = useState(member.firstName);
   const [lastName, setLastName] = useState(member.lastName ?? '');
   const [relationship, setRelationship] = useState(member.relationship);
-  const [allergies, setAllergies] = useState(member.allergies.join(', '));
-  const [dietaryPreferences, setDietaryPreferences] = useState(member.dietaryPreferences.join(', '));
+  const [allergies, setAllergies] = useState<string[]>(member.allergies);
+  const [dietaryPreferences, setDietaryPreferences] = useState<string[]>(member.dietaryPreferences);
   const [seatPreference, setSeatPreference] = useState(member.seatPreference ?? '');
   const [mealPreference, setMealPreference] = useState(member.mealPreference ?? '');
   const [sharingScope, setSharingScope] = useState(member.sharingScope);
   const [saving, setSaving] = useState(false);
+
+  // Fetch admin-managed options
+  const [DIETARY_OPTIONS, setDietaryOptions] = useState<Array<{ key: string; name: string; icon: string }>>([]);
+  const [ALLERGY_OPTIONS, setAllergyOptions] = useState<Array<{ key: string; name: string; icon: string }>>([]);
+
+  useEffect(() => {
+    api.get<{ data: any[] }>('/api/preferences/dietary').then(r => setDietaryOptions(r.data ?? [])).catch(() => {});
+    api.get<{ data: any[] }>('/api/preferences/allergies').then(r => setAllergyOptions(r.data ?? [])).catch(() => {});
+  }, []);
+
+  const toggleDietary = (key: string) => {
+    setDietaryPreferences(prev => prev.includes(key) ? prev.filter(d => d !== key) : [...prev, key]);
+  };
+  const toggleAllergy = (key: string) => {
+    setAllergies(prev => prev.includes(key) ? prev.filter(a => a !== key) : [...prev, key]);
+  };
 
   const handleSave = async () => {
     setSaving(true);
     try {
       await api.put(`/api/family-members/${member.id}`, {
         firstName, lastName: lastName || null, relationship,
-        allergies: allergies ? allergies.split(',').map(s => s.trim()) : [],
-        dietaryPreferences: dietaryPreferences ? dietaryPreferences.split(',').map(s => s.trim()) : [],
+        allergies,
+        dietaryPreferences,
         seatPreference: seatPreference || null, mealPreference: mealPreference || null,
         sharingScope,
       });
@@ -520,10 +580,39 @@ function EditFamilyMemberModal({ member, onClose, onSaved }: { member: FamilyMem
               <option value="other">Other</option>
             </select></div>
 
-          <div><label className="block text-xs font-medium text-gray-700 mb-1">Allergies (comma-separated)</label>
-            <input type="text" value={allergies} onChange={e => setAllergies(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
-          <div><label className="block text-xs font-medium text-gray-700 mb-1">Dietary Preferences (comma-separated)</label>
-            <input type="text" value={dietaryPreferences} onChange={e => setDietaryPreferences(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+          {/* Dietary Preferences — chip selector */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">Dietary Preferences</label>
+            <div className="flex flex-wrap gap-1.5">
+              {DIETARY_OPTIONS.map((pref) => (
+                <button key={pref.key} type="button" onClick={() => toggleDietary(pref.key)}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                    dietaryPreferences.includes(pref.key)
+                      ? 'bg-green-100 text-green-700 border border-green-300'
+                      : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+                  }`}>
+                  {pref.icon} {pref.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Allergies — chip selector */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">Allergies</label>
+            <div className="flex flex-wrap gap-1.5">
+              {ALLERGY_OPTIONS.map((allergy) => (
+                <button key={allergy.key} type="button" onClick={() => toggleAllergy(allergy.key)}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                    allergies.includes(allergy.key)
+                      ? 'bg-red-100 text-red-700 border border-red-300'
+                      : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+                  }`}>
+                  {allergy.icon} {allergy.name}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div><label className="block text-xs font-medium text-gray-700 mb-1">Seat Preference</label>
