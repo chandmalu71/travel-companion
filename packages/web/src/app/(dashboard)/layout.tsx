@@ -10,6 +10,7 @@ const navItems = [
   { href: '/trips', label: 'Trips', icon: '✈️' },
   { href: '/bookings', label: 'Bookings', icon: '📋' },
   { href: '/expenses', label: 'Expenses', icon: '💰' },
+  { href: '/connections', label: 'Companions', icon: '👥' },
   { href: '/search', label: 'Search', icon: '🔍' },
   { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];

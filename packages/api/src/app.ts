@@ -32,6 +32,7 @@ import { registerTripMembersRoutes, registerTripInvitationRoutes, registerAdminT
 import { registerDocumentRoutes } from './routes/documents.js';
 import { registerHighlightRoutes } from './routes/highlights.js';
 import { registerPreferencesRoutes } from './routes/preferences.js';
+import { registerConnectionRoutes } from './routes/connections.js';
 import { registerReceiptScanRoute } from './routes/receipt-scan.js';
 import { registerTripTimelineRoute } from './routes/trip-timeline.js';
 import { registerHomeLocationRoutes } from './routes/home-location.js';
@@ -181,6 +182,11 @@ export async function buildApp(
   // Register user preferences routes
   if (options.db) {
     await registerPreferencesRoutes(app, { db: options.db });
+  }
+
+  // Register user connections routes
+  if (options.db) {
+    await registerConnectionRoutes(app, { db: options.db });
   }
 
   // Register receipt scanning route

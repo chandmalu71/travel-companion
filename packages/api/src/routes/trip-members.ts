@@ -325,6 +325,12 @@ export async function registerTripInvitationRoutes(app: any, options: { db: any 
     // Mark invitation as accepted
     await db.updateTable('trip_invitations').set({ status: 'accepted', accepted_at: new Date() }).where('id', '=', invitation.id).execute();
 
+    // Auto-connect inviter and accepter as travel companions
+    try {
+      const { autoConnectUsers } = await import('./connections.js');
+      await autoConnectUsers(db, invitation.invited_by, userId, invitation.trip_id);
+    } catch { /* non-critical — don't block acceptance */ }
+
     return reply.send({ statusCode: 200, message: 'Invitation accepted', data: { tripId: invitation.trip_id } });
   });
 
