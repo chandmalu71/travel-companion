@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // Plans data (in production: fetched from API)
 const PLANS = [
@@ -42,24 +42,67 @@ export default function SubscriptionsPage() {
 }
 
 function PlansTab() {
+  const [plans, setPlans] = useState<any[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<any>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('http://localhost:3000/api/plans').then(r => r.json())
+      .then(d => setPlans(d.data ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   const startEdit = (plan: any) => {
     setEditing(plan.slug);
-    setEditValues({ ...plan });
+    setEditValues({
+      monthlyEur: plan.price_monthly_eur, annualEur: plan.price_annual_eur,
+      maxTrips: plan.max_active_trips, maxStorage: plan.max_storage_mb,
+      maxNetwork: plan.max_network_connections, maxFamily: plan.max_family_members,
+      maxAliases: plan.max_email_aliases, weather: plan.weather_days,
+      maxExpenses: plan.max_expenses_per_month, maxMessages: plan.max_messages_per_day,
+      maxAiTips: plan.max_ai_tips_per_trip, maxAiChat: plan.max_ai_chat_per_day,
+    });
   };
+
+  const saveEdit = async (slug: string) => {
+    await fetch(`http://localhost:3000/api/admin/plans/${slug}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        priceMonthlyEur: parseFloat(editValues.monthlyEur) || 0,
+        priceAnnualEur: parseFloat(editValues.annualEur) || 0,
+        maxActiveTrips: parseInt(editValues.maxTrips) || null,
+        maxStorageMb: parseInt(editValues.maxStorage) || null,
+        maxNetworkConnections: parseInt(editValues.maxNetwork) || null,
+        maxFamilyMembers: parseInt(editValues.maxFamily) || null,
+        maxEmailAliases: parseInt(editValues.maxAliases) || null,
+        weatherDays: parseInt(editValues.weather) || 3,
+        maxExpensesPerMonth: parseInt(editValues.maxExpenses) || null,
+        maxMessagesPerDay: parseInt(editValues.maxMessages) || null,
+        maxAiTipsPerTrip: parseInt(editValues.maxAiTips) || null,
+        maxAiChatPerDay: parseInt(editValues.maxAiChat) || null,
+      }),
+    });
+    // Refresh plans
+    const res = await fetch('http://localhost:3000/api/plans');
+    const d = await res.json();
+    setPlans(d.data ?? []);
+    setEditing(null);
+  };
+
+  if (loading) return <div className="animate-pulse h-40 bg-gray-700 rounded-lg" />;
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-gray-400">Configure plan pricing and feature limits. Changes apply immediately to new subscriptions.</p>
+      <p className="text-sm text-gray-400">Configure plan pricing and feature limits. Changes apply immediately.</p>
 
       <div className="grid grid-cols-3 gap-4">
-        {PLANS.map(plan => (
+        {plans.map((plan: any) => (
           <div key={plan.slug} className="bg-gray-800 rounded-lg p-5 border border-gray-700">
             <h3 className="text-lg font-bold text-white mb-1">{plan.name}</h3>
             <p className="text-2xl font-bold text-primary-400 mb-4">
-              {plan.monthlyEur === 0 ? 'Free' : `€${plan.monthlyEur}/mo`}
+              {Number(plan.price_monthly_eur) === 0 ? 'Free' : `€${Number(plan.price_monthly_eur).toFixed(2)}/mo`}
             </p>
 
             {editing === plan.slug ? (
@@ -77,24 +120,26 @@ function PlansTab() {
                 <div><label className="text-gray-400">Max AI Tips/trip</label><input type="number" value={editValues.maxAiTips ?? ''} onChange={e => setEditValues({...editValues, maxAiTips: e.target.value})} placeholder="∞" className="w-full mt-0.5 rounded bg-gray-700 border border-gray-600 px-2 py-1 text-white" /></div>
                 <div><label className="text-gray-400">Max AI Chat/day</label><input type="number" value={editValues.maxAiChat ?? ''} onChange={e => setEditValues({...editValues, maxAiChat: e.target.value})} placeholder="∞" className="w-full mt-0.5 rounded bg-gray-700 border border-gray-600 px-2 py-1 text-white" /></div>
                 <div className="flex gap-2 pt-2">
-                  <button onClick={() => { alert('Saved! (In production: calls PUT /api/admin/plans/' + plan.slug); setEditing(null); }} className="flex-1 rounded bg-primary-600 px-2 py-1 text-white hover:bg-primary-500">Save</button>
+                  <button onClick={() => saveEdit(plan.slug)} className="flex-1 rounded bg-primary-600 px-2 py-1 text-white hover:bg-primary-500">Save</button>
                   <button onClick={() => setEditing(null)} className="flex-1 rounded bg-gray-700 px-2 py-1 text-white hover:bg-gray-600">Cancel</button>
                 </div>
               </div>
             ) : (
               <>
                 <div className="space-y-2 text-xs">
-                  <div className="flex justify-between"><span className="text-gray-400">Annual</span><span className="text-white">€{plan.annualEur}/yr</span></div>
-                  {plan.familyMonthly && <div className="flex justify-between"><span className="text-gray-400">Family (monthly)</span><span className="text-white">€{plan.familyMonthly}/mo</span></div>}
-                  {plan.familyAnnual && <div className="flex justify-between"><span className="text-gray-400">Family (annual)</span><span className="text-white">€{plan.familyAnnual}/yr</span></div>}
+                  <div className="flex justify-between"><span className="text-gray-400">Annual</span><span className="text-white">€{Number(plan.price_annual_eur).toFixed(2)}/yr</span></div>
+                  {plan.price_monthly_family_eur && <div className="flex justify-between"><span className="text-gray-400">Family (monthly)</span><span className="text-white">€{Number(plan.price_monthly_family_eur).toFixed(2)}/mo</span></div>}
+                  {plan.price_annual_family_eur && <div className="flex justify-between"><span className="text-gray-400">Family (annual)</span><span className="text-white">€{Number(plan.price_annual_family_eur).toFixed(2)}/yr</span></div>}
                   <hr className="border-gray-700 my-2" />
-                  <div className="flex justify-between"><span className="text-gray-400">Active Trips</span><span className="text-white">{plan.maxTrips ?? '∞'}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-400">Expenses/mo</span><span className="text-white">{plan.maxExpenses ?? '∞'}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-400">Storage</span><span className="text-white">{plan.maxStorage >= 1024 ? `${(plan.maxStorage / 1024).toFixed(0)}GB` : `${plan.maxStorage}MB`}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-400">Network</span><span className="text-white">{plan.maxNetwork}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-400">Family</span><span className="text-white">{plan.maxFamily}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-400">Aliases</span><span className="text-white">{plan.maxAliases}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-400">Weather</span><span className="text-white">{plan.weather}-day</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Active Trips</span><span className="text-white">{plan.max_active_trips ?? '∞'}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Expenses/mo</span><span className="text-white">{plan.max_expenses_per_month ?? '∞'}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Storage</span><span className="text-white">{plan.max_storage_mb >= 1024 ? `${(plan.max_storage_mb / 1024).toFixed(0)}GB` : `${plan.max_storage_mb}MB`}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Network</span><span className="text-white">{plan.max_network_connections ?? '∞'}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Family</span><span className="text-white">{plan.max_family_members ?? '∞'}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Aliases</span><span className="text-white">{plan.max_email_aliases ?? '∞'}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Weather</span><span className="text-white">{plan.weather_days}-day</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Messages/day</span><span className="text-white">{plan.max_messages_per_day ?? '∞'}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">AI Tips/trip</span><span className="text-white">{plan.max_ai_tips_per_trip ?? '∞'}</span></div>
                 </div>
 
                 <button onClick={() => startEdit(plan)} className="mt-4 w-full rounded-md bg-gray-700 px-3 py-1.5 text-xs text-white hover:bg-gray-600">

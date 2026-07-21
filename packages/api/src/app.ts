@@ -38,7 +38,7 @@ import { registerTripTipsRoutes } from './routes/trip-tips.js';
 import { registerWeatherRoutes } from './routes/weather.js';
 import { registerMessagingRoutes } from './routes/messaging.js';
 import { registerEmailAliasRoutes } from './routes/email-aliases.js';
-import { registerSubscriptionRoutes } from './routes/subscriptions.js';
+import { registerSubscriptionRoutes, registerAdminPlanRoutes } from './routes/subscriptions.js';
 import { registerReceiptScanRoute } from './routes/receipt-scan.js';
 import { registerTripTimelineRoute } from './routes/trip-timeline.js';
 import { registerHomeLocationRoutes } from './routes/home-location.js';
@@ -224,6 +224,7 @@ export async function buildApp(
   // Register subscription routes
   if (options.db) {
     await registerSubscriptionRoutes(app, { db: options.db });
+    await registerAdminPlanRoutes(app, { db: options.db });
   }
 
   // Register receipt scanning route

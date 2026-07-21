@@ -280,3 +280,44 @@ export async function registerSubscriptionRoutes(
     return reply.send({ statusCode: 200, received: true });
   });
 }
+
+
+// ─── Admin Plan Management ───────────────────────────────────────────────────
+
+export async function registerAdminPlanRoutes(
+  app: FastifyInstance,
+  options: SubscriptionOptions,
+): Promise<void> {
+  const { db } = options;
+
+  // PUT /api/admin/plans/:slug — update plan pricing and limits
+  app.put('/api/admin/plans/:slug', async (request: FastifyRequest<{ Params: { slug: string }; Body: any }>, reply: FastifyReply) => {
+    const { slug } = request.params;
+    const body = request.body as any;
+
+    const existing = await db.selectFrom('subscription_plans' as any).select('id').where('slug', '=', slug).executeTakeFirst();
+    if (!existing) return reply.status(404).send({ statusCode: 404, error: 'Plan not found' });
+
+    const updates: Record<string, unknown> = { updated_at: new Date() };
+    if (body.priceMonthlyEur !== undefined) updates.price_monthly_eur = body.priceMonthlyEur;
+    if (body.priceAnnualEur !== undefined) updates.price_annual_eur = body.priceAnnualEur;
+    if (body.priceMonthlyFamilyEur !== undefined) updates.price_monthly_family_eur = body.priceMonthlyFamilyEur;
+    if (body.priceAnnualFamilyEur !== undefined) updates.price_annual_family_eur = body.priceAnnualFamilyEur;
+    if (body.maxActiveTrips !== undefined) updates.max_active_trips = body.maxActiveTrips || null;
+    if (body.maxBookings !== undefined) updates.max_bookings = body.maxBookings || null;
+    if (body.maxExpensesPerMonth !== undefined) updates.max_expenses_per_month = body.maxExpensesPerMonth || null;
+    if (body.maxAiTipsPerTrip !== undefined) updates.max_ai_tips_per_trip = body.maxAiTipsPerTrip || null;
+    if (body.maxAiChatPerDay !== undefined) updates.max_ai_chat_per_day = body.maxAiChatPerDay || null;
+    if (body.maxEmailConnections !== undefined) updates.max_email_connections = body.maxEmailConnections || null;
+    if (body.maxNetworkConnections !== undefined) updates.max_network_connections = body.maxNetworkConnections || null;
+    if (body.maxFamilyMembers !== undefined) updates.max_family_members = body.maxFamilyMembers || null;
+    if (body.maxStorageMb !== undefined) updates.max_storage_mb = body.maxStorageMb || null;
+    if (body.maxMessagesPerDay !== undefined) updates.max_messages_per_day = body.maxMessagesPerDay || null;
+    if (body.maxEmailAliases !== undefined) updates.max_email_aliases = body.maxEmailAliases || null;
+    if (body.weatherDays !== undefined) updates.weather_days = body.weatherDays;
+
+    await db.updateTable('subscription_plans' as any).set(updates as any).where('slug', '=', slug).execute();
+
+    return reply.send({ statusCode: 200, message: `Plan "${slug}" updated` });
+  });
+}
