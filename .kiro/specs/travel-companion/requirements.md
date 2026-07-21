@@ -779,3 +779,21 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 4. THE Admin Translation Editor SHALL display all translation keys grouped by namespace
 5. THE Application SHALL wrap all dashboard pages with I18nProvider for locale-aware formatting
 6. THE Application SHALL disable browser caching for dev assets (Cache-Control: no-store) to prevent stale 404 errors
+
+
+## Requirement 37: Shared Family Visibility
+
+**User Story:** As a user, when I'm connected to someone, I want to see their family members (if they allow it) so I can easily add them to shared trips without asking for details each time.
+
+### Acceptance Criteria
+
+1. THE family_members table SHALL include a `visibility_to_connections` field with values: `private` (default), `connections`, `specific`
+2. WHEN visibility is set to `connections`, ALL connected users SHALL be able to see that family member's name, relationship, and shared preferences
+3. THE Application SHALL never expose passport/ID details to connections (owner-only access)
+4. THE Application SHALL provide `GET /api/connections/:userId/family` to fetch visible family members of a connected user (verifies connection status first)
+5. THE `/api/family-members/for-trip` endpoint SHALL return both own family AND connected users' visible family (marked with `source: 'connection'` and `ownerName`)
+6. THE Network tab SHALL show a "Family" toggle button on connected users that expands an inline read-only list of their shared family members
+7. THE trip Add Member autocomplete SHALL include connected users' visible family members, displayed as "Name — via OwnerName" with badge "Their family"
+8. WHEN a connected user's family member is added to a trip, their allergies and dietary preferences SHALL auto-apply to trip recommendation filters
+9. Connections SHALL NOT be able to edit another user's family member details (read-only access)
+10. THE owner SHALL be able to change visibility at any time via the Edit Family Member modal

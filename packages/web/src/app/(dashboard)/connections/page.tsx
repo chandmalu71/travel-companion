@@ -75,6 +75,8 @@ function NetworkTab() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingConnection, setEditingConnection] = useState<Connection | null>(null);
   const [filter, setFilter] = useState<'all' | 'connected' | 'invited' | 'declined'>('all');
+  const [expandedFamily, setExpandedFamily] = useState<Record<string, Array<{ firstName: string; lastName: string | null; relationship: string; allergies: string[]; dietaryPreferences: string[] }>>>({});
+  const [loadingFamily, setLoadingFamily] = useState<string | null>(null);
 
   const loadConnections = () => {
     api.get<{ data: Connection[] }>('/api/connections')
@@ -93,6 +95,23 @@ function NetworkTab() {
       await api.delete(`/api/connections/${id}`);
       setConnections((prev) => prev.filter((c) => c.id !== id));
     } catch { /* toast */ }
+  };
+
+  const toggleFamily = async (connectedUserId: string) => {
+    if (expandedFamily[connectedUserId]) {
+      // Collapse
+      const updated = { ...expandedFamily };
+      delete updated[connectedUserId];
+      setExpandedFamily(updated);
+    } else {
+      // Expand — fetch family
+      setLoadingFamily(connectedUserId);
+      try {
+        const res = await api.get<{ data: Array<{ firstName: string; lastName: string | null; relationship: string; allergies: string[]; dietaryPreferences: string[] }> }>(`/api/connections/${connectedUserId}/family`);
+        setExpandedFamily(prev => ({ ...prev, [connectedUserId]: res.data ?? [] }));
+      } catch { /* no family or not connected */ }
+      setLoadingFamily(null);
+    }
   };
 
   if (loading) {
@@ -176,7 +195,34 @@ function NetworkTab() {
                   {connection.email && <p className="text-[11px] text-gray-400 truncate">{connection.email}</p>}
                   {connection.source === 'trip_accept' && <span className="text-[10px] text-gray-400">via trip invite</span>}
                   {connection.source === 'manual' && <span className="text-[10px] text-gray-400">added manually</span>}
+                  {/* Family toggle for connected users */}
+                  {connection.status === 'connected' && connection.connectedUserId && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleFamily(connection.connectedUserId!); }}
+                      className="text-[10px] text-amber-600 hover:text-amber-700 font-medium ml-1"
+                    >
+                      {expandedFamily[connection.connectedUserId!] ? '👨‍👩‍👧 Hide family' : '👨‍👩‍👧 Family'}
+                      {loadingFamily === connection.connectedUserId && ' ...'}
+                    </button>
+                  )}
                 </div>
+                {/* Expanded family members (read-only) */}
+                {connection.connectedUserId && expandedFamily[connection.connectedUserId] && (
+                  <div className="mt-1.5 ml-1 space-y-1">
+                    {expandedFamily[connection.connectedUserId].length === 0 ? (
+                      <p className="text-[10px] text-gray-400 italic">No shared family members</p>
+                    ) : (
+                      expandedFamily[connection.connectedUserId].map((fm, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-[11px] text-gray-600 bg-amber-50/50 rounded px-2 py-1">
+                          <span className="text-amber-500">👤</span>
+                          <span className="font-medium">{fm.firstName} {fm.lastName ?? ''}</span>
+                          <span className="text-[9px] text-amber-600 bg-amber-100 rounded px-1">{fm.relationship}</span>
+                          {fm.allergies.length > 0 && <span className="text-[9px] text-red-500">⚠️ {fm.allergies.join(', ')}</span>}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Actions */}

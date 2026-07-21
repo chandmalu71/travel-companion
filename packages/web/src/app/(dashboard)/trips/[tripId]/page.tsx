@@ -761,23 +761,24 @@ function AddMemberWithAutocomplete({ groups, onClose, onAdd, newName, setNewName
   newType: string; setNewType: (v: string) => void;
   newGroupId: string; setNewGroupId: (v: string) => void;
 }) {
-  const [suggestions, setSuggestions] = useState<Array<{ name: string; email: string | null; source: string; relationship?: string }>>([]);
+  const [suggestions, setSuggestions] = useState<Array<{ name: string; email: string | null; source: string; relationship?: string; ownerName?: string }>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [allContacts, setAllContacts] = useState<Array<{ name: string; email: string | null; source: string; relationship?: string }>>([]);
-  const [selectedContact, setSelectedContact] = useState<{ name: string; email: string | null; source: string; relationship?: string } | null>(null);
+  const [allContacts, setAllContacts] = useState<Array<{ name: string; email: string | null; source: string; relationship?: string; ownerName?: string }>>([]);
+  const [selectedContact, setSelectedContact] = useState<{ name: string; email: string | null; source: string; relationship?: string; ownerName?: string } | null>(null);
 
   // Fetch network + family on mount
   useEffect(() => {
     Promise.all([
       api.get<{ data: Array<{ name: string; email: string | null; label: string | null }> }>('/api/connections/suggest').catch(() => ({ data: [] })),
-      api.get<{ data: Array<{ firstName: string; lastName: string | null; relationship: string }> }>('/api/family-members/for-trip').catch(() => ({ data: [] })),
+      api.get<{ data: Array<{ firstName: string; lastName: string | null; relationship: string; source: string; ownerName: string | null }> }>('/api/family-members/for-trip').catch(() => ({ data: [] })),
     ]).then(([connRes, famRes]) => {
-      const contacts: Array<{ name: string; email: string | null; source: string; relationship?: string }> = [];
+      const contacts: Array<{ name: string; email: string | null; source: string; relationship?: string; ownerName?: string }> = [];
       for (const c of (connRes as any).data ?? []) {
         contacts.push({ name: c.name, email: c.email, source: 'network' });
       }
       for (const f of (famRes as any).data ?? []) {
-        contacts.push({ name: `${f.firstName} ${f.lastName ?? ''}`.trim(), email: null, source: 'family', relationship: f.relationship });
+        const label = f.source === 'connection' ? 'connected_family' : 'family';
+        contacts.push({ name: `${f.firstName} ${f.lastName ?? ''}`.trim(), email: null, source: label, relationship: f.relationship, ownerName: f.ownerName });
       }
       setAllContacts(contacts);
     });
@@ -856,15 +857,17 @@ function AddMemberWithAutocomplete({ groups, onClose, onAdd, newName, setNewName
                       onClick={() => selectSuggestion(s)}
                       className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-primary-50 transition-colors border-b border-gray-50 last:border-0"
                     >
-                      <span className="text-sm flex-shrink-0">{s.source === 'family' ? '👨‍👩‍👧' : '👥'}</span>
+                      <span className="text-sm flex-shrink-0">
+                        {s.source === 'connected_family' ? '👨‍👩‍👧' : s.source === 'family' ? '👨‍👩‍👧' : '👥'}
+                      </span>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-gray-900 truncate">{s.name}</p>
                         <p className="text-[10px] text-gray-400 truncate">
-                          {s.email ?? (s.relationship ? `Family: ${s.relationship}` : 'No email')}
+                          {s.source === 'connected_family' ? `via ${s.ownerName} · ${s.relationship}` : s.email ?? (s.relationship ? `Family: ${s.relationship}` : 'No email')}
                         </p>
                       </div>
                       <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 flex-shrink-0">
-                        {s.source === 'family' ? 'Family' : 'Network'}
+                        {s.source === 'connected_family' ? 'Their family' : s.source === 'family' ? 'Family' : 'Network'}
                       </span>
                     </button>
                   ))}

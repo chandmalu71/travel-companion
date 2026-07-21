@@ -112,6 +112,7 @@ export async function registerFamilyMemberRoutes(
         shareDietary: m.share_dietary,
         shareAllergies: m.share_allergies,
         shareTravelPrefs: m.share_travel_prefs,
+        visibilityToConnections: m.visibility_to_connections,
         linkedUserId: m.linked_user_id,
         notes: m.notes,
         createdAt: m.created_at,
@@ -164,6 +165,7 @@ export async function registerFamilyMemberRoutes(
         shareDietary: member.share_dietary,
         shareAllergies: member.share_allergies,
         shareTravelPrefs: member.share_travel_prefs,
+        visibilityToConnections: member.visibility_to_connections,
         linkedUserId: member.linked_user_id,
         notes: member.notes,
         createdAt: member.created_at,
@@ -249,6 +251,7 @@ export async function registerFamilyMemberRoutes(
           share_dietary: body.shareDietary ?? true,
           share_allergies: body.shareAllergies ?? true,
           share_travel_prefs: body.shareTravelPrefs ?? false,
+          visibility_to_connections: body.visibilityToConnections ?? 'private',
           notes: body.notes ?? null,
         })
         .returningAll()
@@ -297,6 +300,7 @@ export async function registerFamilyMemberRoutes(
       if (body.shareDietary !== undefined) updates.share_dietary = body.shareDietary;
       if (body.shareAllergies !== undefined) updates.share_allergies = body.shareAllergies;
       if (body.shareTravelPrefs !== undefined) updates.share_travel_prefs = body.shareTravelPrefs;
+      if (body.visibilityToConnections !== undefined) updates.visibility_to_connections = body.visibilityToConnections;
       if (body.notes !== undefined) updates.notes = body.notes;
 
       // Update passport if provided
@@ -351,10 +355,108 @@ export async function registerFamilyMemberRoutes(
       const userId = (request as any).userId as string;
       if (!userId) return reply.status(401).send({ statusCode: 401, error: 'UNAUTHORIZED', message: 'Not authenticated' });
 
-      const members = await db
+      // Get own family members
+      const ownMembers = await db
         .selectFrom('family_members')
         .selectAll()
         .where('user_id', '=', userId)
+        .orderBy('relationship', 'asc')
+        .execute();
+
+      // Get family members from connected users who have visibility set to 'connections'
+      const connectedFamilyMembers = await db
+        .selectFrom('family_members')
+        .innerJoin('user_connections', (join) =>
+          join
+            .onRef('user_connections.connected_user_id', '=', 'family_members.user_id')
+            .on('user_connections.user_id', '=', userId)
+            .on('user_connections.status', '=', 'connected')
+        )
+        .innerJoin('users', 'users.id', 'family_members.user_id')
+        .select([
+          'family_members.id',
+          'family_members.first_name',
+          'family_members.last_name',
+          'family_members.relationship',
+          'family_members.mode',
+          'family_members.dietary_preferences',
+          'family_members.allergies',
+          'family_members.seat_preference',
+          'family_members.meal_preference',
+          'family_members.sharing_scope',
+          'family_members.share_dietary',
+          'family_members.share_allergies',
+          'family_members.share_travel_prefs',
+          'family_members.visibility_to_connections',
+          'family_members.user_id',
+          'users.display_name as owner_name',
+        ])
+        .where('family_members.visibility_to_connections', '=', 'connections')
+        .execute();
+
+      const ownData = ownMembers.map((m) => ({
+        id: m.id,
+        firstName: m.first_name,
+        lastName: m.last_name,
+        relationship: m.relationship,
+        mode: m.mode,
+        dietaryPreferences: m.share_dietary ? m.dietary_preferences : [],
+        allergies: m.share_allergies ? m.allergies : [],
+        seatPreference: m.share_travel_prefs ? m.seat_preference : null,
+        mealPreference: m.share_travel_prefs ? m.meal_preference : null,
+        sharingScope: m.sharing_scope,
+        source: 'own' as const,
+        ownerName: null,
+      }));
+
+      const connectedData = connectedFamilyMembers.map((m) => ({
+        id: m.id,
+        firstName: m.first_name,
+        lastName: m.last_name,
+        relationship: m.relationship,
+        mode: m.mode,
+        dietaryPreferences: m.share_dietary ? m.dietary_preferences : [],
+        allergies: m.share_allergies ? m.allergies : [],
+        seatPreference: m.share_travel_prefs ? m.seat_preference : null,
+        mealPreference: m.share_travel_prefs ? m.meal_preference : null,
+        sharingScope: m.sharing_scope,
+        source: 'connection' as const,
+        ownerName: (m as any).owner_name,
+      }));
+
+      return reply.send({ statusCode: 200, data: [...ownData, ...connectedData] });
+    },
+  );
+
+  // ─── GET /api/connections/:userId/family ───────────────────────────────────
+  // Returns visible family members of a specific connected user
+  app.get(
+    '/api/connections/:userId/family',
+    async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
+      const authenticatedUserId = (request as any).userId as string;
+      if (!authenticatedUserId) return reply.status(401).send({ statusCode: 401, error: 'UNAUTHORIZED', message: 'Not authenticated' });
+
+      const { userId: targetUserId } = request.params;
+
+      // Verify the requesting user is connected to the target user
+      const connection = await db
+        .selectFrom('user_connections')
+        .select('id')
+        .where('user_id', '=', authenticatedUserId)
+        .where('connected_user_id', '=', targetUserId)
+        .where('status', '=', 'connected')
+        .executeTakeFirst();
+
+      if (!connection) {
+        return reply.status(403).send({ statusCode: 403, error: 'FORBIDDEN', message: 'You are not connected to this user' });
+      }
+
+      // Get family members with visibility set to 'connections'
+      const members = await db
+        .selectFrom('family_members')
+        .selectAll()
+        .where('user_id', '=', targetUserId)
+        .where('visibility_to_connections', '=', 'connections')
         .orderBy('relationship', 'asc')
         .execute();
 
@@ -363,13 +465,11 @@ export async function registerFamilyMemberRoutes(
         firstName: m.first_name,
         lastName: m.last_name,
         relationship: m.relationship,
-        mode: m.mode,
-        // Only include preferences if sharing is enabled
         dietaryPreferences: m.share_dietary ? m.dietary_preferences : [],
         allergies: m.share_allergies ? m.allergies : [],
         seatPreference: m.share_travel_prefs ? m.seat_preference : null,
         mealPreference: m.share_travel_prefs ? m.meal_preference : null,
-        sharingScope: m.sharing_scope,
+        // Never expose passport to connections
       }));
 
       return reply.send({ statusCode: 200, data });
