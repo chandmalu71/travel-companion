@@ -841,3 +841,83 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 10. THE Application SHALL provide GET /api/trips/:tripId/weather, GET /api/weather/location, GET /api/weather/alerts/:tripId endpoints
 11. Weather alerts SHALL trigger notifications when significant changes are detected (rain, heat waves)
 12. THE Application SHALL show multi-location weather when trip covers multiple destinations
+
+
+## Requirement 40: Messaging & Communications
+
+**User Story:** As a user, I want to message my travel network, trip groups, and family so we can plan trips collaboratively, make decisions together, and get AI-powered suggestions in chat.
+
+### Conversation Types
+
+1. **Direct Message (DM)**: 1-to-1 with any connection from My Network
+2. **Group Chat**: multiple selected people (custom groups, not trip-specific)
+3. **Family Chat**: with family members who have accounts
+4. **Trip Chat**: attached to a specific trip — all trip members can see/reply
+5. **Broadcast**: one-way announcement from trip owner/co-owner to all trip members (no replies)
+
+### Core Messaging (Phase 1)
+
+1. THE Application SHALL provide a "Messages" page in the sidebar for DM, group, and family conversations
+2. THE Application SHALL provide a "Chat" tab within each trip detail page for trip-specific messaging
+3. All messages SHALL support threaded replies (reply to a specific message creates a thread)
+4. Threads SHALL be expandable/collapsible inline
+5. THE Application SHALL show unread message count as a badge on the notification icon and sidebar "Messages" link
+6. Users SHALL be able to create group conversations by selecting multiple contacts from My Network
+7. Messages SHALL support text content with basic formatting (bold, italic, links)
+8. Messages SHALL support URL unfurling (link previews with title, description, image)
+9. Messages SHALL support multimedia attachments (images, max 10MB)
+10. Users SHALL be able to delete their own messages
+11. Messages SHALL show read receipts (seen by X people in groups/trips)
+12. Messages SHALL be archived (not deleted) when a trip completes — accessible for future reference
+
+### AI Integration (Phase 2)
+
+13. Users SHALL be able to invoke AI via `@AI` mention in any chat message
+14. AI SHALL respond with context-aware suggestions (trip destination, dates, member preferences)
+15. Other participants SHALL be able to react/vote on AI suggestions before marking for trip
+16. THE Application SHALL support emoji reactions on any message (👍❤️😂🎉👎 + custom)
+17. THE Application SHALL support formal polls: question + multiple options, members vote, results visible
+18. A thread or message SHALL be "promotable" to a Trip Decision (moved to Trip Decisions list)
+
+### Trip Decisions (Phase 2)
+
+19. THE Application SHALL maintain a "Trip Decisions" list per trip (items promoted from chat)
+20. Trip Decisions SHALL have status: proposed, voting, approved, rejected
+21. Approved decisions SHALL be promotable to: AI Tips (user-contributed), Favorites, or Timeline events
+22. Each decision SHALL show who proposed it and vote tally
+
+### Real-Time & Notifications (Phase 3)
+
+23. Messages SHALL appear in real-time without page refresh (WebSocket via Socket.io)
+24. THE Application SHALL show typing indicators ("Alice is typing...")
+25. THE Application SHALL show online/offline presence indicators
+26. THE Application SHALL send in-app notification badges for new messages
+27. THE Application SHALL support email notifications for unread messages (configurable: immediate/hourly digest/off)
+28. THE Application SHALL support push notifications for mobile (future: React Native)
+29. THE Application SHALL support WhatsApp/SMS notifications via external API integration (Twilio, configurable)
+
+### Broadcast Messages
+
+30. Trip owners and co-owners SHALL be able to send broadcast announcements to all trip members
+31. Broadcasts SHALL be visually distinct (announcement banner style, not regular chat bubble)
+32. Broadcasts SHALL NOT allow replies (one-way communication)
+
+### Admin Configuration
+
+33. Admin SHALL be able to enable/disable messaging globally
+34. Admin SHALL be able to enable/disable trip chat separately from sidebar messages
+35. Admin SHALL configure max message length (default: 5000 chars)
+36. Admin SHALL configure max participants per group chat (default: 50)
+37. Admin SHALL toggle AI assistant availability in chats
+38. Admin SHALL configure broadcast permissions (owner-only vs owner+co-owners)
+39. Admin SHALL configure message retention policy (keep forever / archive after trip / auto-delete after X days)
+40. Admin SHALL configure notification channels (in-app, email, WhatsApp, SMS toggles)
+
+### Acceptance Criteria Summary
+
+- 40 acceptance criteria covering all 3 phases
+- DB: conversations, messages, reactions, polls, trip_decisions tables
+- API: full CRUD for conversations, messages, threads, reactions, polls, decisions
+- WebSocket: real-time delivery, typing indicators, presence
+- UI: Messages page (sidebar) + Trip Chat tab + notification badges
+- E2E tests covering core messaging flows

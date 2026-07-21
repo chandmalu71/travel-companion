@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { SourceIndicator } from '@/components/source-indicator';
@@ -27,7 +27,7 @@ interface Booking {
   checked_in: boolean;
 }
 
-type TabId = 'overview' | 'timeline' | 'map' | 'expenses' | 'members' | 'tips' | 'weather' | 'documents';
+type TabId = 'overview' | 'timeline' | 'map' | 'expenses' | 'members' | 'tips' | 'weather' | 'chat' | 'documents';
 
 const CATEGORY_ICONS: Record<string, string> = {
   food_dining: '🍕', transportation: '🚗', accommodation: '🏨',
@@ -73,6 +73,7 @@ export default function TripDetailPage() {
     { id: 'members', label: 'Members', icon: '👥' },
     { id: 'tips', label: 'AI Tips', icon: '💡' },
     { id: 'weather', label: 'Weather', icon: '🌤️' },
+    { id: 'chat', label: 'Chat', icon: '💬' },
     { id: 'documents', label: 'Documents', icon: '📄' },
   ];
 
@@ -123,6 +124,7 @@ export default function TripDetailPage() {
       {activeTab === 'members' && <MembersTab tripId={tripId} />}
       {activeTab === 'tips' && <TipsTab tripId={tripId} />}
       {activeTab === 'weather' && <WeatherTab tripId={tripId} />}
+      {activeTab === 'chat' && <TripChatTab tripId={tripId} />}
       {activeTab === 'documents' && <DocumentsTab tripId={tripId} />}
     </div>
   );
@@ -1414,6 +1416,200 @@ function TipsTab({ tripId }: { tripId: string }) {
             className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-500 disabled:opacity-50">
             Send
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Trip Chat Tab ───────────────────────────────────────────────────────────
+
+function TripChatTab({ tripId }: { tripId: string }) {
+  const [convId, setConvId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [decisions, setDecisions] = useState<any[]>([]);
+  const [showPollForm, setShowPollForm] = useState(false);
+  const [showDecisions, setShowDecisions] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Find or create trip conversation
+  useEffect(() => {
+    api.get<{ data: any[] }>('/api/conversations')
+      .then(res => {
+        const tripConv = (res.data ?? []).find((c: any) => c.tripId === tripId && c.type === 'trip');
+        if (tripConv) { setConvId(tripConv.id); loadMessages(tripConv.id); }
+        else {
+          // Auto-create trip conversation
+          api.post<{ data: { id: string } }>('/api/conversations', { type: 'trip', tripId, name: 'Trip Chat' })
+            .then(r => { setConvId(r.data.id); })
+            .catch(() => {});
+        }
+      }).catch(() => {});
+    // Load decisions
+    api.get<{ data: any[] }>(`/api/trips/${tripId}/decisions`).then(r => setDecisions(r.data ?? [])).catch(() => {});
+  }, [tripId]);
+
+  const loadMessages = async (id: string) => {
+    const res = await api.get<{ data: any[] }>(`/api/conversations/${id}/messages`);
+    setMessages(res.data ?? []);
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+  };
+
+  const handleSend = async () => {
+    if (!newMessage.trim() || !convId) return;
+    setSending(true);
+    try {
+      await api.post(`/api/conversations/${convId}/messages`, { content: newMessage });
+      setNewMessage('');
+      await loadMessages(convId);
+    } catch {} finally { setSending(false); }
+  };
+
+  const handlePromoteToDecision = async (msg: any) => {
+    await api.post(`/api/trips/${tripId}/decisions`, { title: msg.content.slice(0, 200), sourceMessageId: msg.id });
+    const res = await api.get<{ data: any[] }>(`/api/trips/${tripId}/decisions`);
+    setDecisions(res.data ?? []);
+  };
+
+  const handleVoteDecision = async (id: string, voteFor: boolean) => {
+    await api.put(`/api/trips/${tripId}/decisions/${id}`, voteFor ? { voteFor: true } : { voteAgainst: true });
+    const res = await api.get<{ data: any[] }>(`/api/trips/${tripId}/decisions`);
+    setDecisions(res.data ?? []);
+  };
+
+  const handleCreatePoll = async (question: string, options: string[]) => {
+    if (!convId) return;
+    await api.post(`/api/conversations/${convId}/polls`, { question, options });
+    setShowPollForm(false);
+    await loadMessages(convId);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header with actions */}
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-gray-900">Trip Chat</h3>
+        <div className="flex gap-2">
+          <button onClick={() => setShowDecisions(!showDecisions)}
+            className={`rounded-md border px-3 py-1.5 text-xs ${showDecisions ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}>
+            ✅ Decisions ({decisions.length})
+          </button>
+          <button onClick={() => setShowPollForm(true)} className="rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50">
+            📊 Create Poll
+          </button>
+        </div>
+      </div>
+
+      {/* Trip Decisions panel */}
+      {showDecisions && decisions.length > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-2">
+          <p className="text-xs font-semibold text-gray-700 uppercase">Trip Decisions</p>
+          {decisions.map((d: any) => (
+            <div key={d.id} className="flex items-center justify-between rounded-md border border-gray-100 bg-gray-50 px-3 py-2">
+              <div>
+                <p className="text-sm text-gray-900">{d.title}</p>
+                <p className="text-[10px] text-gray-400">by {d.proposed_by_name} • {d.status}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-green-600">👍 {d.votes_for}</span>
+                <span className="text-xs text-red-500">👎 {d.votes_against}</span>
+                {d.status === 'proposed' && (
+                  <>
+                    <button onClick={() => handleVoteDecision(d.id, true)} className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded hover:bg-green-200">Vote Yes</button>
+                    <button onClick={() => handleVoteDecision(d.id, false)} className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded hover:bg-red-200">Vote No</button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Chat messages */}
+      <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+        <div className="h-80 overflow-y-auto px-4 py-3 space-y-3">
+          {messages.length === 0 && (
+            <div className="text-center text-gray-400 text-sm py-8">
+              <p className="text-2xl mb-2">💬</p>
+              <p>No messages yet. Start chatting with your trip group!</p>
+              <p className="text-[10px] mt-1">Use @AI for AI suggestions. Promote messages to Trip Decisions.</p>
+            </div>
+          )}
+          {messages.map((msg: any) => (
+            <div key={msg.id} className="group flex gap-2">
+              <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 ${
+                msg.contentType === 'ai_response' ? 'bg-purple-100 text-purple-600' : 'bg-primary-100 text-primary-600'
+              }`}>
+                {msg.contentType === 'ai_response' ? '🤖' : msg.senderName?.charAt(0) ?? '?'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-medium text-gray-900">{msg.contentType === 'ai_response' ? 'AI' : msg.senderName}</span>
+                  <span className="text-[9px] text-gray-400">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <p className={`text-xs mt-0.5 ${msg.contentType === 'ai_response' ? 'text-purple-700 bg-purple-50 rounded px-2 py-1' : 'text-gray-700'}`}>
+                  {msg.content}
+                </p>
+                {/* Actions on hover */}
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 mt-0.5">
+                  <button onClick={() => handlePromoteToDecision(msg)} className="text-[9px] text-primary-600 hover:underline">→ Trip Decision</button>
+                  {msg.reactions?.map((r: any) => <span key={r.emoji} className="text-[9px] bg-gray-100 px-1 rounded">{r.emoji}{r.count}</span>)}
+                </div>
+              </div>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="border-t border-gray-200 px-4 py-2 flex gap-2">
+          <input type="text" value={newMessage} onChange={e => setNewMessage(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
+            placeholder="Message your trip group... (@AI for help)"
+            className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
+          <button onClick={handleSend} disabled={sending || !newMessage.trim()}
+            className="rounded-md bg-primary-600 px-3 py-1.5 text-xs text-white disabled:opacity-50">Send</button>
+        </div>
+      </div>
+
+      {/* Poll Form Modal */}
+      {showPollForm && <PollFormModal onClose={() => setShowPollForm(false)} onCreate={handleCreatePoll} />}
+    </div>
+  );
+}
+
+function PollFormModal({ onClose, onCreate }: { onClose: () => void; onCreate: (q: string, opts: string[]) => void }) {
+  const [question, setQuestion] = useState('');
+  const [options, setOptions] = useState(['', '']);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 Create Poll</h3>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Question</label>
+            <input type="text" value={question} onChange={e => setQuestion(e.target.value)} placeholder="Where should we eat on Day 2?"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" autoFocus />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Options</label>
+            {options.map((opt, idx) => (
+              <div key={idx} className="flex gap-2 mb-1.5">
+                <input type="text" value={opt} onChange={e => { const u = [...options]; u[idx] = e.target.value; setOptions(u); }}
+                  placeholder={`Option ${idx + 1}`} className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
+                {options.length > 2 && <button onClick={() => setOptions(options.filter((_, i) => i !== idx))} className="text-red-400 text-xs">✕</button>}
+              </div>
+            ))}
+            <button onClick={() => setOptions([...options, ''])} className="text-xs text-primary-600 hover:underline mt-1">+ Add option</button>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 mt-4">
+          <button onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm">Cancel</button>
+          <button onClick={() => onCreate(question, options.filter(Boolean))} disabled={!question || options.filter(Boolean).length < 2}
+            className="rounded-md bg-primary-600 px-4 py-2 text-sm text-white disabled:opacity-50">Create Poll</button>
         </div>
       </div>
     </div>

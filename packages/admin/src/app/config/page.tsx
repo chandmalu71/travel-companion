@@ -11,6 +11,7 @@ const AI_FEATURES = [
   { id: 'trip_naming', label: 'Trip Naming' },
   { id: 'trip_tips', label: 'Trip Tips Generation' },
   { id: 'trip_tips_chat', label: 'Trip Tips Chat' },
+  { id: 'messaging_ai', label: 'Messaging @AI' },
 ];
 
 const MODELS = [
@@ -170,6 +171,100 @@ export default function ConfigPage() {
                 <option value="14">14 days</option>
                 <option value="30">30 days</option>
               </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Messaging Configuration */}
+      <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <h2 className="text-lg font-semibold text-white mb-4">Messaging & Communications</h2>
+        <p className="text-sm text-gray-400 mb-4">Control messaging features across the platform.</p>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-white">Sidebar Messages</p>
+                <p className="text-xs text-gray-400">Enable Messages page in sidebar (DM, group, family)</p>
+              </div>
+              <button className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600">Enabled</button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-white">Trip Chat</p>
+                <p className="text-xs text-gray-400">Enable Chat tab within trip detail pages</p>
+              </div>
+              <button className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600">Enabled</button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-white">AI in Chat (@AI)</p>
+                <p className="text-xs text-gray-400">Allow @AI mentions for AI suggestions in chats</p>
+              </div>
+              <button className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600">Enabled</button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-white">Polls</p>
+                <p className="text-xs text-gray-400">Allow creating polls in conversations</p>
+              </div>
+              <button className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600">Enabled</button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-white">Trip Decisions</p>
+                <p className="text-xs text-gray-400">Allow promoting messages to Trip Decisions</p>
+              </div>
+              <button className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600">Enabled</button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-white">Broadcast</p>
+                <p className="text-xs text-gray-400">Who can send broadcast announcements</p>
+              </div>
+              <select defaultValue="owner" className="rounded-lg bg-gray-700 border border-gray-600 px-3 py-1.5 text-xs text-white">
+                <option value="owner">Owner only</option>
+                <option value="owner_coowner">Owner + Co-owners</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <p className="text-xs font-medium text-gray-300 mb-1">Max Message Length</p>
+              <select defaultValue="5000" className="w-full rounded-lg bg-gray-700 border border-gray-600 px-3 py-1.5 text-xs text-white">
+                <option value="1000">1,000 chars</option>
+                <option value="2000">2,000 chars</option>
+                <option value="5000">5,000 chars</option>
+                <option value="10000">10,000 chars</option>
+              </select>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-300 mb-1">Max Group Size</p>
+              <select defaultValue="50" className="w-full rounded-lg bg-gray-700 border border-gray-600 px-3 py-1.5 text-xs text-white">
+                <option value="20">20 participants</option>
+                <option value="50">50 participants</option>
+                <option value="100">100 participants</option>
+              </select>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-300 mb-1">Retention Policy</p>
+              <select defaultValue="forever" className="w-full rounded-lg bg-gray-700 border border-gray-600 px-3 py-1.5 text-xs text-white">
+                <option value="forever">Keep forever</option>
+                <option value="archive_trip">Archive after trip</option>
+                <option value="90days">Delete after 90 days</option>
+                <option value="365days">Delete after 1 year</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-300 mb-2">Notification Channels</p>
+            <div className="flex gap-3">
+              {['In-App', 'Email', 'WhatsApp', 'SMS'].map(ch => (
+                <label key={ch} className="flex items-center gap-2 rounded-md p-2 border border-gray-600 bg-green-900/20 cursor-pointer">
+                  <input type="checkbox" defaultChecked={ch !== 'SMS'} className="rounded border-gray-600" />
+                  <span className="text-xs text-gray-200">{ch}</span>
+                </label>
+              ))}
             </div>
           </div>
         </div>
