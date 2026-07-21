@@ -472,19 +472,31 @@ function ExpensesTab({ tripId }: { tripId: string }) {
 
       {subTab === 'expenses' ? (
         <>
-          {/* Summary cards */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {/* Summary cards — own vs shared breakdown */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
             <div className="rounded-lg bg-white p-4 border border-gray-200">
               <p className="text-xs text-gray-500">Total Spent</p>
               <p className="text-xl font-bold">{formatCurrency(totalSpent, primaryCurrency)}</p>
+              <p className="text-[10px] text-gray-400 mt-1">{expenses.length} expenses</p>
+            </div>
+            <div className="rounded-lg bg-white p-4 border border-primary-200 bg-primary-50/30">
+              <p className="text-xs text-gray-500">👥 Shared Costs</p>
+              <p className="text-xl font-bold text-primary-700">
+                {formatCurrency(expenses.filter((e: any) => e.is_shared).reduce((s: number, e: any) => s + convert(Number(e.amount) || 0, e.currency ?? 'USD'), 0), primaryCurrency)}
+              </p>
+              <p className="text-[10px] text-gray-400 mt-1">{expenses.filter((e: any) => e.is_shared).length} shared</p>
             </div>
             <div className="rounded-lg bg-white p-4 border border-gray-200">
-              <p className="text-xs text-gray-500">Expenses</p>
-              <p className="text-xl font-bold">{expenses.length}</p>
+              <p className="text-xs text-gray-500">🔒 Personal Costs</p>
+              <p className="text-xl font-bold">
+                {formatCurrency(expenses.filter((e: any) => !e.is_shared).reduce((s: number, e: any) => s + convert(Number(e.amount) || 0, e.currency ?? 'USD'), 0), primaryCurrency)}
+              </p>
+              <p className="text-[10px] text-gray-400 mt-1">{expenses.filter((e: any) => !e.is_shared).length} personal</p>
             </div>
-            <div className="rounded-lg bg-white p-4 border border-gray-200">
-              <p className="text-xs text-gray-500">Shared / Personal</p>
-              <p className="text-xl font-bold">{expenses.filter(e => e.is_shared).length} / {expenses.filter(e => !e.is_shared).length}</p>
+            <div className="rounded-lg bg-white p-4 border border-amber-200 bg-amber-50/30">
+              <p className="text-xs text-gray-500">⏳ Settlement</p>
+              <p className="text-xl font-bold text-amber-700">Pending</p>
+              <p className="text-[10px] text-gray-400 mt-1">Switch to Settlements tab →</p>
             </div>
           </div>
 
