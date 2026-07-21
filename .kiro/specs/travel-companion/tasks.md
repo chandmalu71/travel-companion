@@ -748,3 +748,23 @@ This implementation plan builds the Travel Companion application incrementally, 
   - 74 keys in landing.* namespace, 33 keys in flight.meal.*, 10 in network.*
   - All inserted into translation_keys DB table for Admin Translation Editor
   - Total: 265 keys across 12 namespaces
+
+
+## Phase 7b: Shared Family Visibility (Req 37)
+
+- [x] 37.1 Add visibility_to_connections column to family_members table
+  - Values: private (default), connections, specific
+  - Updated DB types, POST/PUT API to accept and store it
+- [x] 37.2 Create GET /api/connections/:userId/family endpoint
+  - Verifies connection status (must be 'connected')
+  - Only returns members with visibility = 'connections'
+  - Never exposes passport data
+- [x] 37.3 Update /api/family-members/for-trip to include connected users' visible family
+  - Returns combined list: own (source='own') + connected (source='connection', ownerName)
+  - Uses JOIN on user_connections + family_members tables
+- [x] 37.4 Update Network UI with expandable family section
+  - "Family" toggle button on each connected user row
+  - Expands inline list showing name, relationship, allergies (read-only)
+- [x] 37.5 Update trip autocomplete to include connected family
+  - Shows as "Their family" badge with "via OwnerName" subtitle
+  - Auto-detects child type on selection

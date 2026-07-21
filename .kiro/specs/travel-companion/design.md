@@ -1765,3 +1765,30 @@ formatCurrency(converted, primaryCurrency) → Intl.NumberFormat display
 16 standard codes: STD, VGML, AVML, VJML, RVML, GFML, NLML, DBML, LFML, LSML, BLML, KSML, MOML, HNML, CHML, BBML
 
 Display: "Label (CODE)" with description on selection. Airline disclaimer shown.
+
+
+### Shared Family Visibility (Extension to Component 34)
+
+**New column:** `family_members.visibility_to_connections` — controls who can see this family member
+
+| Value | Who can see |
+|-------|-------------|
+| `private` (default) | Only the owner |
+| `connections` | All users connected to the owner (status = 'connected') |
+| `specific` | Only selected connections (future: via junction table) |
+
+**New endpoint:** `GET /api/connections/:userId/family`
+- Verifies requester is connected (status='connected') to target user
+- Returns family members with `visibility_to_connections = 'connections'`
+- Returns: name, relationship, shared dietary/allergies (per sharing toggles)
+- **Never returns:** passport data, notes, or any PII beyond name
+
+**Updated endpoint:** `GET /api/family-members/for-trip`
+- Now does a JOIN with `user_connections` + `family_members` to include connected users' visible family
+- Response includes `source: 'own' | 'connection'` and `ownerName` field
+- Used by trip autocomplete to show "Tommy Johnson — via Alice Johnson"
+
+**Security:**
+- Passport fields never leave the owner's scope
+- Connected users get read-only access (no edit/delete endpoints for others' family)
+- Visibility can be changed at any time by the owner

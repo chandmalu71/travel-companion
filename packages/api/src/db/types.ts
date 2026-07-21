@@ -795,6 +795,7 @@ export interface FamilyMembersTable {
   share_dietary: Generated<boolean>;
   share_allergies: Generated<boolean>;
   share_travel_prefs: Generated<boolean>;
+  visibility_to_connections: Generated<string>; // 'private' | 'connections' | 'specific'
   notes: string | null;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
