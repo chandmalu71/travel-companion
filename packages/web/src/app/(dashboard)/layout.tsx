@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { I18nProvider } from '@/i18n/provider';
+import { usePageViewTracker } from '@/hooks/use-analytics';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: '🏠' },
@@ -23,6 +24,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  usePageViewTracker();
   const [user, setUser] = useState<{ displayName: string; email: string } | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isImpersonating, setIsImpersonating] = useState(false);
