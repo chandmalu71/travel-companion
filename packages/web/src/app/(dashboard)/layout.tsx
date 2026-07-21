@@ -127,7 +127,7 @@ export default function DashboardLayout({
       {/* Main content */}
       <div className="flex flex-1 flex-col">
         {/* Top bar */}
-        <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
+        <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
           <div className="lg:hidden">
             <span className="text-lg font-bold text-primary-500">
               <img src="/logo-icon.svg" alt="Neyya" className="h-8" />
