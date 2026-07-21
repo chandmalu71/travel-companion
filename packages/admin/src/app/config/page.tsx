@@ -108,6 +108,54 @@ export default function ConfigPage() {
           </div>
         </div>
       </section>
+
+      {/* Impersonation Settings */}
+      <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <h2 className="text-lg font-semibold text-white mb-4">Impersonation Settings</h2>
+        <p className="text-sm text-gray-400 mb-4">Configure how admin impersonation sessions behave.</p>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-white">Session Timeout</p>
+              <p className="text-xs text-gray-400">How long an impersonation session lasts before auto-expiring</p>
+            </div>
+            <select defaultValue="60" className="rounded-lg bg-gray-700 border border-gray-600 px-3 py-2 text-sm text-white">
+              <option value="15">15 minutes</option>
+              <option value="30">30 minutes</option>
+              <option value="60">1 hour</option>
+              <option value="120">2 hours</option>
+              <option value="240">4 hours</option>
+            </select>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-white">Show Banner</p>
+              <p className="text-xs text-gray-400">Display impersonation indicator banner in the web app</p>
+            </div>
+            <button className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-600">
+              Enabled
+            </button>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-white">Audit Logging</p>
+              <p className="text-xs text-gray-400">Log all impersonation sessions to the audit trail</p>
+            </div>
+            <button className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-600">
+              Enabled
+            </button>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-white">Read-Only Mode</p>
+              <p className="text-xs text-gray-400">Prevent write operations during impersonation (recommended for production)</p>
+            </div>
+            <button className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-600">
+              Enabled
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

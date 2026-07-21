@@ -23,11 +23,46 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [user, setUser] = useState<{ displayName: string; email: string } | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isImpersonating, setIsImpersonating] = useState(false);
+  const [impersonationTimeLeft, setImpersonationTimeLeft] = useState('');
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
     if (stored) {
       try { setUser(JSON.parse(stored)); } catch {}
+    }
+
+    // Check for impersonation mode
+    if (localStorage.getItem('impersonating') === 'true') {
+      setIsImpersonating(true);
+
+      // Decode token to get expiry
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const expiresAt = payload.exp * 1000;
+
+          const updateCountdown = () => {
+            const remaining = expiresAt - Date.now();
+            if (remaining <= 0) {
+              // Session expired — end impersonation
+              localStorage.removeItem('accessToken');
+              localStorage.removeItem('user');
+              localStorage.removeItem('impersonating');
+              window.location.href = '/login';
+              return;
+            }
+            const mins = Math.floor(remaining / 60000);
+            const secs = Math.floor((remaining % 60000) / 1000);
+            setImpersonationTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
+          };
+
+          updateCountdown();
+          const interval = setInterval(updateCountdown, 1000);
+          return () => clearInterval(interval);
+        } catch {}
+      }
     }
   }, []);
 
@@ -36,12 +71,30 @@ export default function DashboardLayout({
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     localStorage.removeItem('loginProvider');
+    localStorage.removeItem('impersonating');
     window.location.href = '/login';
+  };
+
+  const endImpersonation = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem('impersonating');
+    window.close(); // Close the impersonation tab
   };
 
   return (
     <I18nProvider>
-    <div className="flex min-h-screen">
+    {/* Impersonation banner */}
+    {isImpersonating && (
+      <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-500 text-white text-center py-1 px-4 text-xs font-medium flex items-center justify-center gap-3">
+        <span>👁️ Impersonating: <strong>{user?.email ?? 'unknown'}</strong></span>
+        <span className="bg-amber-600 px-2 py-0.5 rounded text-[10px]">Expires in {impersonationTimeLeft}</span>
+        <button onClick={endImpersonation} className="bg-amber-700 hover:bg-amber-800 px-2 py-0.5 rounded text-[10px] font-semibold">
+          End Session ✕
+        </button>
+      </div>
+    )}
+    <div className={`flex min-h-screen ${isImpersonating ? 'pt-7' : ''}`}>
       {/* Sidebar */}
       <aside className="hidden w-64 flex-shrink-0 border-r border-gray-200 bg-white lg:block">
         <div className="flex h-16 items-center px-6 border-b border-gray-200">
