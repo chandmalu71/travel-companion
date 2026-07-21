@@ -855,3 +855,16 @@ This implementation plan builds the Travel Companion application incrementally, 
 - [x] 41.3 Admin configuration
   - Dashboard Widgets section in Admin → Configuration
   - Toggle availability of each widget globally
+
+
+## Phase 12: Email Aliases (Req 42)
+
+- [x] 42.1 Create DB table + API endpoints
+  - user_email_aliases (user_id, email UNIQUE, is_verified, verification_token, expires_at, source)
+  - GET /api/email-aliases, POST (add + verify), POST /verify, DELETE, GET /lookup
+- [x] 42.2 Settings UI + booking-forward update
+  - Email Aliases section in Settings → Profile & Account
+  - Add/remove/verify flow, verified/pending badges
+  - Booking ingestion now checks aliases after primary email
+- [x] 42.3 Admin config
+  - Max aliases (5/10/15), login-with-alias toggle, verification requirement toggle

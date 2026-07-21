@@ -186,6 +186,9 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* ─── Email Aliases ────────────────────────────────────────────── */}
+      <EmailAliasesSection />
+
       {/* ═══════════════════════════════════════════════════════════════
           SECTION 2: Travel Preferences
           ═══════════════════════════════════════════════════════════════ */}
@@ -486,6 +489,108 @@ function LanguageRegionSection({ preferences, onChange }: { preferences: any; on
           </label>
         </div>
       </div>
+    </section>
+  );
+}
+
+
+// ─── Email Aliases Section ───────────────────────────────────────────────────
+
+function EmailAliasesSection() {
+  const [aliases, setAliases] = useState<Array<{ id: string; email: string; isVerified: boolean; source: string }>>([]);
+  const [newEmail, setNewEmail] = useState('');
+  const [adding, setAdding] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    api.get<{ data: any[] }>('/api/email-aliases')
+      .then(res => setAliases(res.data ?? []))
+      .catch(() => {});
+  }, []);
+
+  const handleAdd = async () => {
+    if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    setAdding(true); setError(''); setSuccess('');
+    try {
+      await api.post('/api/email-aliases', { email: newEmail });
+      setSuccess('Verification email sent! Check your inbox.');
+      setNewEmail('');
+      // Reload list
+      const res = await api.get<{ data: any[] }>('/api/email-aliases');
+      setAliases(res.data ?? []);
+    } catch (err: any) {
+      setError(err?.data?.message ?? 'Failed to add email');
+    } finally { setAdding(false); }
+  };
+
+  const handleRemove = async (id: string) => {
+    if (!confirm('Remove this email alias?')) return;
+    try {
+      await api.delete(`/api/email-aliases/${id}`);
+      setAliases(prev => prev.filter(a => a.id !== id));
+    } catch { /* error */ }
+  };
+
+  return (
+    <section className="rounded-lg border border-gray-200 bg-white p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="font-medium text-gray-900">📧 Email Aliases</h3>
+          <p className="text-sm text-gray-600 mt-0.5">
+            Add alternate emails so booking confirmations forwarded from any address are matched to your account.
+          </p>
+        </div>
+      </div>
+
+      {/* Existing aliases */}
+      {aliases.length > 0 && (
+        <div className="space-y-2 mb-3">
+          {aliases.map(alias => (
+            <div key={alias.id} className="flex items-center justify-between rounded-md border border-gray-100 bg-gray-50 px-3 py-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-700">{alias.email}</span>
+                {alias.isVerified ? (
+                  <span className="text-[10px] bg-green-100 text-green-700 border border-green-200 rounded px-1">✓ Verified</span>
+                ) : (
+                  <span className="text-[10px] bg-amber-100 text-amber-700 border border-amber-200 rounded px-1">⏳ Pending</span>
+                )}
+                {alias.source === 'connected' && (
+                  <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1">auto-added</span>
+                )}
+              </div>
+              <button onClick={() => handleRemove(alias.id)} className="text-xs text-gray-400 hover:text-red-500">Remove</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add new alias */}
+      <div className="flex gap-2">
+        <input
+          type="email"
+          value={newEmail}
+          onChange={e => setNewEmail(e.target.value)}
+          placeholder="work@company.com"
+          onKeyDown={e => e.key === 'Enter' && handleAdd()}
+          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+        />
+        <button onClick={handleAdd} disabled={adding}
+          className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500 disabled:opacity-50">
+          {adding ? 'Adding...' : 'Add Email'}
+        </button>
+      </div>
+
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+      {success && <p className="text-xs text-green-600 mt-2">✅ {success}</p>}
+
+      <p className="text-[10px] text-gray-400 mt-2">
+        Forwarded bookings from these addresses will be automatically matched to your account.
+        A verification email will be sent to confirm ownership.
+      </p>
     </section>
   );
 }

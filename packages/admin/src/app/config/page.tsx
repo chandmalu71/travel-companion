@@ -176,8 +176,37 @@ export default function ConfigPage() {
         </div>
       </section>
 
-      {/* Dashboard Widgets */}
+      {/* Email Aliases */}
       <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <h2 className="text-lg font-semibold text-white mb-4">Email Aliases</h2>
+        <p className="text-sm text-gray-400 mb-4">Configure how users manage alternate email addresses.</p>
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <p className="text-xs font-medium text-gray-300 mb-1">Max Aliases Per User</p>
+            <select defaultValue="5" className="w-full rounded-lg bg-gray-700 border border-gray-600 px-3 py-1.5 text-xs text-white">
+              <option value="5">5 aliases</option>
+              <option value="10">10 aliases</option>
+              <option value="15">15 aliases</option>
+            </select>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-white">Login with Alias</p>
+              <p className="text-xs text-gray-400">Allow login using alias emails</p>
+            </div>
+            <button className="rounded-lg bg-gray-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-500">Disabled</button>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-white">Require Verification</p>
+              <p className="text-xs text-gray-400">Send verification email on add</p>
+            </div>
+            <button className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600">Enabled</button>
+          </div>
+        </div>
+      </section>
+
+      {/* Dashboard Widgets */}      <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         <h2 className="text-lg font-semibold text-white mb-4">Dashboard Widgets</h2>
         <p className="text-sm text-gray-400 mb-4">Control which widgets are available to users on their dashboard. Disabled widgets will not appear in the customization list.</p>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2">

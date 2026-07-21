@@ -72,7 +72,7 @@ export class BookingIngestionService {
   ): Promise<IngestionResult> {
     const normalizedEmail = fromEmail.trim().toLowerCase();
 
-    // Step 1: Look up user by email
+    // Step 1: Look up user by primary email
     const user = await this.db
       .selectFrom('users')
       .select(['id', 'email', 'display_name'])
@@ -82,10 +82,23 @@ export class BookingIngestionService {
     if (user) {
       // Existing user — process normally
       return this.processForExistingUser(user.id, extracted);
-    } else {
-      // Unknown user — store and invite
-      return this.storeUnclaimedBooking(normalizedEmail, extracted);
     }
+
+    // Step 2: Check email aliases (verified only)
+    const alias = await this.db
+      .selectFrom('user_email_aliases' as any)
+      .select(['user_id'])
+      .where('email', '=', normalizedEmail)
+      .where('is_verified', '=', true)
+      .executeTakeFirst();
+
+    if (alias) {
+      // Matched via alias — process for the alias owner
+      return this.processForExistingUser((alias as any).user_id, extracted);
+    }
+
+    // Step 3: Unknown user — store and invite
+    return this.storeUnclaimedBooking(normalizedEmail, extracted);
   }
 
   /**
