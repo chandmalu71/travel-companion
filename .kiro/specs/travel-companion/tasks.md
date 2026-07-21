@@ -868,3 +868,23 @@ This implementation plan builds the Travel Companion application incrementally, 
   - Booking ingestion now checks aliases after primary email
 - [x] 42.3 Admin config
   - Max aliases (5/10/15), login-with-alias toggle, verification requirement toggle
+
+
+## Phase 13: Subscription & Pricing (Req 43)
+
+- [x] 43.1 Create DB schema + seed plans
+  - subscription_plans, user_subscriptions, subscription_family_members, subscription_campaigns
+  - 3 plans seeded: Free/Pro/Premium with all limits
+  - 2 campaigns seeded: LAUNCH50, EARLYBIRD
+- [x] 43.2 Create subscription API
+  - GET /api/plans (public), GET /api/subscription, POST start-trial, POST upgrade
+  - POST cancel/reactivate, POST apply-campaign, GET limits + usage
+  - POST /api/webhooks/stripe (stub)
+- [x] 43.3 Create Pricing page + Settings subscription UI
+  - Public /pricing page with plan cards, monthly/annual toggle, campaign codes
+  - Settings → Subscription section (plan name, status, cancel/reactivate)
+- [x] 43.4 Admin subscriptions page
+  - Plans tab: view/edit all plan limits and prices
+  - Campaigns tab: view/create/disable campaigns
+  - User Overrides tab: grant free Premium to specific users
+  - Settings tab: trial duration, grace period, retry attempts, auto-renew, Stripe config

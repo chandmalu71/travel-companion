@@ -959,3 +959,61 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 10. THE Application SHALL prevent adding an alias that belongs to another user's primary email or verified alias
 11. Alias verification tokens SHALL expire after 24 hours
 12. Admin SHALL be able to configure: max aliases, login-with-alias toggle, verification requirement toggle
+
+
+## Requirement 43: Subscription & Pricing (Freemium Model)
+
+**User Story:** As a user, I want a freemium service with tiered plans so I can use basic features for free and upgrade for advanced capabilities.
+
+### Plans & Pricing (admin-configurable)
+
+| Plan | Individual | Family (up to 5) | Annual Individual | Annual Family |
+|------|-----------|------------------|-------------------|---------------|
+| Free | €0 | — | — | — |
+| Pro | €14.99/mo | €24.99/mo | €149.99/yr | €249.99/yr |
+| Premium | €29.99/mo | €44.99/mo | €299.99/yr | €449.99/yr |
+
+### Feature Limits by Tier
+
+| Feature | Free | Pro | Premium |
+|---------|------|-----|---------|
+| Active trips | 3 | Unlimited | Unlimited |
+| Bookings | 10 | Unlimited | Unlimited |
+| Expenses/month | 20 | Unlimited | Unlimited |
+| AI Tips generations | 1/trip | Unlimited | Unlimited + priority model |
+| AI Chat messages | 5/day | Unlimited | Unlimited |
+| Email connections | 1 | 3 | 5 |
+| Network connections | 20 | 200 | 500 |
+| Family members | 3 | 10 | 20 |
+| Document storage | 100MB | 5GB | 25GB |
+| Messages/day | 50 | Unlimited | Unlimited |
+| Weather forecast | 3-day | 14-day + alerts | 14-day + alerts + historical |
+| Expense splitting | Equal only | All modes | All modes |
+| Polls & Trip Decisions | ❌ | ✅ | ✅ |
+| Email aliases | 1 | 5 | 15 |
+| Shared family visibility | ❌ | ❌ | ✅ |
+| Broadcast messages | ❌ | ❌ | ✅ |
+| Multi-currency conversion | ❌ | ✅ | ✅ |
+| Data export (PDF/CSV) | ❌ | ✅ | ✅ |
+| Priority support | ❌ | ❌ | ✅ |
+
+### Acceptance Criteria
+
+1. New users SHALL receive a 30-day free trial with ALL features (Premium-level access)
+2. After trial, users SHALL receive a 7-day grace period with warnings before downgrade to Free
+3. THE Application SHALL show soft upgrade prompts when approaching limits, then hard-block at 2x free limit
+4. Subscription SHALL be managed via Stripe (Checkout, Customer Portal, Webhooks)
+5. Prices SHALL be displayed in the user's preferred display currency (converted from EUR base)
+6. Auto-renewal SHALL be the default; users can disable in Settings (configurable in admin)
+7. Family plan: one person (plan owner) pays, adds/removes members, all get same tier features
+8. Family plan members SHALL be manageable in Settings → Subscription → Family Members
+9. Admin SHALL be able to configure: all tier prices, feature limits, trial duration, grace period
+10. Admin SHALL be able to grant individual users free Premium access (grandfathering/promotions)
+11. Admin SHALL be able to create campaigns: discount codes with % off, duration, usage limits
+12. THE Application SHALL enforce feature limits in the API (return 403 with upgrade message when limit exceeded)
+13. THE Application SHALL show a Pricing page (public) and a Subscription page (authenticated, in Settings)
+14. Stripe webhooks SHALL handle: subscription created, renewed, cancelled, payment failed
+15. THE Application SHALL support annual billing with 2-months-free discount
+16. Payment failure SHALL trigger 3 retry attempts over 7 days before downgrade
+17. Users SHALL be able to cancel anytime (access continues until end of billing period)
+18. Cancelled users SHALL keep their data but lose premium feature access
