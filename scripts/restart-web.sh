@@ -7,7 +7,7 @@ pkill -f "next dev --port 3001" 2>/dev/null
 sleep 1
 
 echo "🗑️  Clearing .next cache..."
-rm -rf packages/web/.next
+rm -rf packages/web/.next packages/web/node_modules/.cache
 
 echo "🚀 Starting web dev server on port 3001..."
 cd packages/web && npx next dev --port 3001 &
