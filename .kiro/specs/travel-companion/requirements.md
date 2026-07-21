@@ -821,3 +821,23 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 14. Each tip card SHALL have a per-card AI interaction: user can type a question specific to that category and get an inline AI response
 15. THE Application SHALL support a "Nearby Tips" mode using the device's current GPS location to show local attractions and activities
 16. THE Admin Configuration panel SHALL provide controls for: enabling/disabling each tip category, per-card AI chat toggle, location-based tips toggle, web search enhancement toggle, and cache duration setting
+
+
+## Requirement 39: Weather Integration
+
+**User Story:** As a user, I want to see the weather forecast for my trip destination so I can plan activities and pack appropriately.
+
+### Acceptance Criteria
+
+1. THE Application SHALL provide a "Weather" tab in the trip detail page showing day-by-day forecast
+2. Each forecast day SHALL display: high/low temperature, weather condition icon, precipitation %, humidity, wind speed, UV index
+3. THE trip Overview tab SHALL show a weather preview widget (first 5 days, horizontal scrollable strip)
+4. THE Application SHALL show weather alerts (rain, heat, cold, wind) with color-coded severity and suggestions
+5. THE Application SHALL support live GPS weather via "📍 Live Weather" button using device location
+6. THE Application SHALL show home location weather for comparison on the Weather tab
+7. THE Application SHALL use OpenWeatherMap API in production (env: OPENWEATHERMAP_API_KEY)
+8. THE Application SHALL provide mock weather data in development (destination-aware: Italy=hot, London=mild, etc.)
+9. Weather data SHALL respect user's temperature unit preference (°C/°F from Settings)
+10. THE Application SHALL provide GET /api/trips/:tripId/weather, GET /api/weather/location, GET /api/weather/alerts/:tripId endpoints
+11. Weather alerts SHALL trigger notifications when significant changes are detected (rain, heat waves)
+12. THE Application SHALL show multi-location weather when trip covers multiple destinations

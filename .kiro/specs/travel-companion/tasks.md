@@ -793,3 +793,21 @@ This implementation plan builds the Travel Companion application incrementally, 
   - Text input with Enter-to-send
   - Loading state ("Thinking...")
   - Contextual responses based on destination
+
+
+## Phase 9: Weather Integration (Req 39)
+
+- [x] 39.1 Create weather API service + endpoints
+  - GET /api/trips/:tripId/weather — full forecast + alerts + home weather
+  - GET /api/weather/location?lat=X&lng=Y — live GPS weather
+  - GET /api/weather/alerts/:tripId — weather alerts only
+  - Mock data in dev (destination-aware), OpenWeatherMap in production
+- [x] 39.2 Create Weather tab in trip detail page
+  - Day-by-day forecast cards (icon, temp high/low, precipitation, wind, UV, humidity)
+  - Weather alerts section (color-coded: info/warning/severe with suggestions)
+  - Live GPS weather button (📍 Live Weather)
+  - Home weather comparison card
+  - Data source attribution
+- [x] 39.3 Add weather widget to trip Overview tab
+  - Horizontal scrollable strip (first 5 days)
+  - Day name, weather icon, high/low temp, rain badge (>30%)
