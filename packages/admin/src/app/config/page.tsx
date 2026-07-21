@@ -176,8 +176,32 @@ export default function ConfigPage() {
         </div>
       </section>
 
-      {/* Messaging Configuration */}
+      {/* Dashboard Widgets */}
       <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <h2 className="text-lg font-semibold text-white mb-4">Dashboard Widgets</h2>
+        <p className="text-sm text-gray-400 mb-4">Control which widgets are available to users on their dashboard. Disabled widgets will not appear in the customization list.</p>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          {[
+            { id: 'quick_actions', label: '⚡ Quick Actions', enabled: true },
+            { id: 'upcoming_trips', label: '✈️ Upcoming Trips', enabled: true },
+            { id: 'recent_expenses', label: '💰 Expenses', enabled: true },
+            { id: 'messages', label: '💬 Messages', enabled: true },
+            { id: 'network', label: '👥 Network', enabled: true },
+            { id: 'weather', label: '🌤️ Weather', enabled: true },
+            { id: 'ai_tips', label: '💡 AI Tips', enabled: true },
+            { id: 'trip_decisions', label: '✅ Decisions', enabled: true },
+            { id: 'bookings', label: '📋 Bookings', enabled: true },
+            { id: 'favorites', label: '⭐ Favorites', enabled: true },
+          ].map(w => (
+            <label key={w.id} className="flex items-center gap-2 rounded-md p-2 border border-gray-600 bg-green-900/20 cursor-pointer">
+              <input type="checkbox" defaultChecked={w.enabled} className="rounded border-gray-600" />
+              <span className="text-[11px] text-gray-200">{w.label}</span>
+            </label>
+          ))}
+        </div>
+      </section>
+
+      {/* Messaging Configuration */}      <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         <h2 className="text-lg font-semibold text-white mb-4">Messaging & Communications</h2>
         <p className="text-sm text-gray-400 mb-4">Control messaging features across the platform.</p>
         <div className="space-y-4">
