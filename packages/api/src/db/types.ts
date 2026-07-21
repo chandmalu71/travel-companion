@@ -41,6 +41,7 @@ export interface Database {
   trip_groups: TripGroupsTable;
   trip_travellers: TripTravellersTable;
   trip_invitations: TripInvitationsTable;
+  user_connections: UserConnectionsTable;
 }
 
 // --- Users ---
@@ -745,3 +746,23 @@ export interface TripInvitationsTable {
 
 export type TripInvitation = Selectable<TripInvitationsTable>;
 export type NewTripInvitation = Insertable<TripInvitationsTable>;
+
+// --- User Connections ---
+
+export interface UserConnectionsTable {
+  id: Generated<string>;
+  user_id: string;
+  connected_user_id: string | null;
+  connected_email: string | null;
+  connected_name: string | null;
+  status: Generated<string>; // 'connected' | 'invited' | 'declined' | 'blocked'
+  label: string | null;
+  privacy: Generated<string>; // 'full' | 'limited' | 'minimal'
+  source: Generated<string>; // 'manual' | 'trip_invite' | 'trip_accept'
+  source_trip_id: string | null;
+  notes: string | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+export type UserConnection = Selectable<UserConnectionsTable>;
+export type NewUserConnection = Insertable<UserConnectionsTable>;
