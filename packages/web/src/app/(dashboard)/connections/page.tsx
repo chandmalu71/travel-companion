@@ -251,6 +251,25 @@ const RELATIONSHIP_LABELS: Record<string, string> = {
   spouse: 'Spouse', partner: 'Partner', child: 'Child', parent: 'Parent', sibling: 'Sibling', grandparent: 'Grandparent', other: 'Other',
 };
 
+const FLIGHT_MEAL_OPTIONS = [
+  { code: 'STD', label: 'Standard', desc: 'Regular airline meal with no special requirements' },
+  { code: 'VGML', label: 'Vegan', desc: 'Completely plant-based. No meat, dairy, eggs, or honey' },
+  { code: 'AVML', label: 'Asian Vegetarian', desc: 'Spiced Indian-style vegetarian. Contains dairy but no meat or fish' },
+  { code: 'VJML', label: 'Jain Vegetarian', desc: 'No root vegetables (potatoes, onions, garlic) and no animal products' },
+  { code: 'RVML', label: 'Raw Vegetarian', desc: 'Served as raw fruits and vegetables' },
+  { code: 'GFML', label: 'Gluten-Free', desc: 'Excludes wheat, barley, and rye for celiac disease or gluten sensitivity' },
+  { code: 'NLML', label: 'Low-Lactose', desc: 'Excludes cow\'s milk and dairy products. Not for severe milk allergies' },
+  { code: 'DBML', label: 'Diabetic', desc: 'Low in sugar and simple carbs. Manages blood sugar' },
+  { code: 'LFML', label: 'Low-Fat', desc: 'Limits fats and saturated fat (low-cholesterol)' },
+  { code: 'LSML', label: 'Low-Sodium', desc: 'Prepared with little to no added salt or baking powder' },
+  { code: 'BLML', label: 'Bland', desc: 'Soft, non-spicy foods meant to be gentle on the stomach' },
+  { code: 'KSML', label: 'Kosher', desc: 'Prepared under strict Jewish dietary laws. Meals are typically double-wrapped' },
+  { code: 'MOML', label: 'Halal', desc: 'Prepared strictly following Islamic dietary laws. No pork or alcohol' },
+  { code: 'HNML', label: 'Hindu', desc: 'Non-vegetarian food prepared in Indian style. No beef or pork' },
+  { code: 'CHML', label: 'Child Meal', desc: 'Popular foods for kids like nuggets, pasta, and fruit' },
+  { code: 'BBML', label: 'Baby Meal', desc: 'Includes jars of baby food, purees, or milk' },
+];
+
 function FamilyTab() {
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -470,12 +489,17 @@ function AddFamilyMemberModal({ onClose, onAdded }: { onClose: () => void; onAdd
             </div>
           </div>
 
-          <div><label className="block text-xs font-medium text-gray-700 mb-1">Meal Preference (flights)</label>
+          <div><label className="block text-xs font-medium text-gray-700 mb-1">Flight Meal Preference</label>
             <select value={mealPreference} onChange={e => setMealPreference(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-              <option value="">Standard</option><option value="vegetarian">Vegetarian</option><option value="vegan">Vegan</option>
-              <option value="halal">Halal</option><option value="kosher">Kosher</option><option value="child_meal">Child Meal</option>
-              <option value="gluten_free">Gluten Free</option><option value="diabetic">Diabetic</option>
-            </select></div>
+              {FLIGHT_MEAL_OPTIONS.map(m => (
+                <option key={m.code} value={m.code} title={m.desc}>{m.label} ({m.code})</option>
+              ))}
+            </select>
+            {mealPreference && mealPreference !== 'STD' && (
+              <p className="text-[10px] text-gray-500 mt-1">{FLIGHT_MEAL_OPTIONS.find(m => m.code === mealPreference)?.desc}</p>
+            )}
+            <p className="text-[10px] text-amber-600 mt-1">* Meal availability may vary by airline and route</p>
+          </div>
 
           {/* Passport (collapsible) */}
           <div className="border border-gray-200 rounded-lg p-3">
@@ -620,11 +644,17 @@ function EditFamilyMemberModal({ member, onClose, onSaved }: { member: FamilyMem
                 <option value="">No preference</option><option value="window">Window</option>
                 <option value="aisle">Aisle</option><option value="middle">Middle</option>
               </select></div>
-            <div><label className="block text-xs font-medium text-gray-700 mb-1">Meal Preference</label>
+            <div><label className="block text-xs font-medium text-gray-700 mb-1">Flight Meal Preference</label>
               <select value={mealPreference} onChange={e => setMealPreference(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                <option value="">Standard</option><option value="vegetarian">Vegetarian</option><option value="vegan">Vegan</option>
-                <option value="halal">Halal</option><option value="kosher">Kosher</option><option value="child_meal">Child Meal</option>
-              </select></div>
+                {FLIGHT_MEAL_OPTIONS.map(m => (
+                  <option key={m.code} value={m.code} title={m.desc}>{m.label} ({m.code})</option>
+                ))}
+              </select>
+              {mealPreference && mealPreference !== 'STD' && (
+                <p className="text-[10px] text-gray-500 mt-1">{FLIGHT_MEAL_OPTIONS.find(m => m.code === mealPreference)?.desc}</p>
+              )}
+              <p className="text-[10px] text-amber-600 mt-1">* Meal availability may vary by airline and route</p>
+            </div>
           </div>
 
           {/* Sharing scope */}

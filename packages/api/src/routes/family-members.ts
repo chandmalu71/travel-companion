@@ -26,7 +26,7 @@ const ALGORITHM = 'aes-256-gcm';
 
 const VALID_RELATIONSHIPS = ['spouse', 'partner', 'child', 'parent', 'sibling', 'grandparent', 'other'];
 const VALID_SEAT_PREFERENCES = ['window', 'aisle', 'middle', 'no_preference'];
-const VALID_MEAL_PREFERENCES = ['standard', 'vegetarian', 'vegan', 'halal', 'kosher', 'child_meal', 'diabetic', 'gluten_free', 'low_fat'];
+const VALID_MEAL_PREFERENCES = ['STD', 'VGML', 'AVML', 'VJML', 'RVML', 'GFML', 'NLML', 'DBML', 'LFML', 'LSML', 'BLML', 'KSML', 'MOML', 'HNML', 'CHML', 'BBML'];
 const VALID_CABIN_CLASSES = ['economy', 'premium_economy', 'business', 'first'];
 
 interface FamilyMembersOptions {
