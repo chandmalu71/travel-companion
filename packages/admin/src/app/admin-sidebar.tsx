@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: '/roles', label: 'Roles', icon: '🔑' },
   { href: '/memberships', label: 'Memberships', icon: '🧑‍🤝‍🧑' },
   { href: '/i18n', label: 'Locale & i18n', icon: '🌐' },
+  { href: '/preferences', label: 'Preferences', icon: '🎯' },
   { href: '/i18n/translations', label: 'Translations', icon: '📝' },
   { href: '/config', label: 'Configuration', icon: '⚙️' },
   { href: '/costs', label: 'Costs', icon: '💰' },

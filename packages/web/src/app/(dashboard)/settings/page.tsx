@@ -3,69 +3,9 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 
-// ─── Constants from Requirements ─────────────────────────────────────────────
-
-const INTEREST_OPTIONS = [
-  { id: 'adventure', label: 'Adventure', icon: '🏔️' },
-  { id: 'arts_culture', label: 'Arts & Culture', icon: '🎨' },
-  { id: 'beaches', label: 'Beaches', icon: '🏖️' },
-  { id: 'food_drink', label: 'Food & Drink', icon: '🍕' },
-  { id: 'history', label: 'History', icon: '🏛️' },
-  { id: 'nature', label: 'Nature', icon: '🌿' },
-  { id: 'nightlife', label: 'Nightlife', icon: '🌃' },
-  { id: 'photography', label: 'Photography', icon: '📷' },
-  { id: 'relaxation', label: 'Relaxation', icon: '🧘' },
-  { id: 'shopping', label: 'Shopping', icon: '🛍️' },
-  { id: 'sports', label: 'Sports', icon: '⚽' },
-  { id: 'wellness', label: 'Wellness', icon: '💆' },
-];
-
-const DIETARY_OPTIONS = [
-  { id: 'vegetarian', label: 'Vegetarian', icon: '🥬' },
-  { id: 'vegan', label: 'Vegan', icon: '🌱' },
-  { id: 'pescatarian', label: 'Pescatarian', icon: '🐟' },
-  { id: 'gluten_free', label: 'Gluten Free', icon: '🌾' },
-  { id: 'dairy_free', label: 'Dairy Free', icon: '🥛' },
-  { id: 'halal', label: 'Halal', icon: '☪️' },
-  { id: 'kosher', label: 'Kosher', icon: '✡️' },
-  { id: 'nut_free', label: 'Nut Free', icon: '🥜' },
-  { id: 'low_carb', label: 'Low Carb', icon: '🍞' },
-  { id: 'keto', label: 'Keto', icon: '🥑' },
-  { id: 'none', label: 'None', icon: '✅' },
-];
-
-// 10 known allergies from requirements (Req 20.3)
-const KNOWN_ALLERGIES = [
-  { id: 'peanuts', label: 'Peanuts', icon: '🥜' },
-  { id: 'tree_nuts', label: 'Tree Nuts', icon: '🌰' },
-  { id: 'shellfish', label: 'Shellfish', icon: '🦐' },
-  { id: 'fish', label: 'Fish', icon: '🐟' },
-  { id: 'eggs', label: 'Eggs', icon: '🥚' },
-  { id: 'milk', label: 'Milk/Dairy', icon: '🥛' },
-  { id: 'soy', label: 'Soy', icon: '🫘' },
-  { id: 'wheat', label: 'Wheat', icon: '🌾' },
-  { id: 'sesame', label: 'Sesame', icon: '🫒' },
-  { id: 'sulfites', label: 'Sulfites', icon: '🍷' },
-];
-
-// Major currencies for display (Req 20.7)
-const CURRENCY_OPTIONS = [
-  { code: 'USD', label: 'US Dollar', symbol: '$' },
-  { code: 'EUR', label: 'Euro', symbol: '€' },
-  { code: 'GBP', label: 'British Pound', symbol: '£' },
-  { code: 'JPY', label: 'Japanese Yen', symbol: '¥' },
-  { code: 'AUD', label: 'Australian Dollar', symbol: 'A$' },
-  { code: 'CAD', label: 'Canadian Dollar', symbol: 'C$' },
-  { code: 'CHF', label: 'Swiss Franc', symbol: 'CHF' },
-  { code: 'INR', label: 'Indian Rupee', symbol: '₹' },
-  { code: 'SGD', label: 'Singapore Dollar', symbol: 'S$' },
-  { code: 'NZD', label: 'New Zealand Dollar', symbol: 'NZ$' },
-  { code: 'MXN', label: 'Mexican Peso', symbol: 'MX$' },
-  { code: 'BRL', label: 'Brazilian Real', symbol: 'R$' },
-  { code: 'KRW', label: 'South Korean Won', symbol: '₩' },
-  { code: 'THB', label: 'Thai Baht', symbol: '฿' },
-  { code: 'AED', label: 'UAE Dirham', symbol: 'د.إ' },
-];
+// ─── Options fetched from Admin-configured API ──────────────────────────────
+// Interests, Dietary, Allergies, and Currencies are all managed in the Admin panel.
+// The settings page fetches enabled options from the API on mount.
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -82,6 +22,20 @@ export default function SettingsPage() {
   const [customAllergyInput, setCustomAllergyInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Admin-managed option lists (fetched from API)
+  const [INTEREST_OPTIONS, setInterestOptions] = useState<Array<{ key: string; name: string; icon: string }>>([]);
+  const [DIETARY_OPTIONS, setDietaryOptions] = useState<Array<{ key: string; name: string; icon: string }>>([]);
+  const [KNOWN_ALLERGIES, setAllergyOptions] = useState<Array<{ key: string; name: string; icon: string }>>([]);
+  const [CURRENCY_OPTIONS, setCurrencyOptions] = useState<Array<{ code: string; name: string; symbol: string }>>([]);
+
+  useEffect(() => {
+    // Fetch admin-configured options
+    api.get<{ data: any[] }>('/api/preferences/interests').then(r => setInterestOptions(r.data ?? [])).catch(() => {});
+    api.get<{ data: any[] }>('/api/preferences/dietary').then(r => setDietaryOptions(r.data ?? [])).catch(() => {});
+    api.get<{ data: any[] }>('/api/preferences/allergies').then(r => setAllergyOptions(r.data ?? [])).catch(() => {});
+    api.get<{ data: any[] }>('/api/i18n/currencies').then(r => setCurrencyOptions(r.data ?? [])).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const userId = 'me';
@@ -229,15 +183,15 @@ export default function SettingsPage() {
         <div className="flex flex-wrap gap-2">
           {INTEREST_OPTIONS.map((interest) => (
             <button
-              key={interest.id}
-              onClick={() => toggleInterest(interest.id)}
+              key={interest.key}
+              onClick={() => toggleInterest(interest.key)}
               className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-                preferences.interests.includes(interest.id)
+                preferences.interests.includes(interest.key)
                   ? 'bg-primary-100 text-primary-700 border border-primary-300'
                   : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
               }`}
             >
-              {interest.icon} {interest.label}
+              {interest.icon} {interest.name}
             </button>
           ))}
         </div>
@@ -250,15 +204,15 @@ export default function SettingsPage() {
         <div className="flex flex-wrap gap-2">
           {DIETARY_OPTIONS.map((pref) => (
             <button
-              key={pref.id}
-              onClick={() => toggleDietary(pref.id)}
+              key={pref.key}
+              onClick={() => toggleDietary(pref.key)}
               className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-                preferences.dietaryPreferences.includes(pref.id)
+                preferences.dietaryPreferences.includes(pref.key)
                   ? 'bg-green-100 text-green-700 border border-green-300'
                   : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
               }`}
             >
-              {pref.icon} {pref.label}
+              {pref.icon} {pref.name}
             </button>
           ))}
         </div>
@@ -275,15 +229,15 @@ export default function SettingsPage() {
         <div className="flex flex-wrap gap-2 mb-4">
           {KNOWN_ALLERGIES.map((allergy) => (
             <button
-              key={allergy.id}
-              onClick={() => toggleAllergy(allergy.id)}
+              key={allergy.key}
+              onClick={() => toggleAllergy(allergy.key)}
               className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-                preferences.allergies.includes(allergy.id)
+                preferences.allergies.includes(allergy.key)
                   ? 'bg-red-100 text-red-700 border border-red-300'
                   : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
               }`}
             >
-              {allergy.icon} {allergy.label}
+              {allergy.icon} {allergy.name}
             </button>
           ))}
         </div>
@@ -308,11 +262,11 @@ export default function SettingsPage() {
         </div>
 
         {/* Show custom allergies (ones not in the known list) */}
-        {preferences.allergies.filter((a) => !KNOWN_ALLERGIES.some((k) => k.id === a)).length > 0 && (
+        {preferences.allergies.filter((a) => !KNOWN_ALLERGIES.some((k) => k.key === a)).length > 0 && (
           <div className="flex flex-wrap gap-2">
             <span className="text-xs text-gray-500 self-center">Custom:</span>
             {preferences.allergies
-              .filter((a) => !KNOWN_ALLERGIES.some((k) => k.id === a))
+              .filter((a) => !KNOWN_ALLERGIES.some((k) => k.key === a))
               .map((allergy) => (
                 <span
                   key={allergy}
