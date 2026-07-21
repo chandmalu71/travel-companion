@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { I18nProvider } from '@/i18n/provider';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: '🏠' },
@@ -38,6 +39,7 @@ export default function DashboardLayout({
   };
 
   return (
+    <I18nProvider>
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <aside className="hidden w-64 flex-shrink-0 border-r border-gray-200 bg-white lg:block">
@@ -126,5 +128,6 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+    </I18nProvider>
   );
 }

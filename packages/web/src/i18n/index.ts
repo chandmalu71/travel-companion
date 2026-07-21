@@ -24,7 +24,14 @@ export const I18nContext = createContext<I18nContextValue>({
   t: (key: string) => defaultTranslations[key] ?? key,
   formatDate: (date) => String(date),
   formatNumber: (num) => String(num),
-  formatCurrency: (amount) => `$${amount.toFixed(2)}`,
+  formatCurrency: (amount, currency) => {
+    const curr = currency ?? 'USD';
+    try {
+      return amount.toLocaleString('en', { style: 'currency', currency: curr });
+    } catch {
+      return `${curr} ${amount.toFixed(2)}`;
+    }
+  },
 });
 
 export function useTranslation() {
