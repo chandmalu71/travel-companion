@@ -316,7 +316,26 @@ When implementing any feature, verify:
 - Use `t('namespace.key')` from the `useTranslation()` hook
 - Add the English text to `packages/web/src/i18n/en.json`
 - Use the naming convention: `{namespace}.{page_or_component}.{element}`
-- Namespaces: `common`, `nav`, `auth`, `trips`, `bookings`, `expenses`, `settings`, `admin`, `errors`
+- Namespaces: `common`, `nav`, `auth`, `trips`, `bookings`, `expenses`, `settings`, `search`, `network`, `landing`, `flight`, `errors`
+- **MUST also insert** the key into the `translation_keys` database table so it appears in Admin → Locale & Translation editor
+
+### Translation Key Database Rule
+
+When adding new translation keys to `en.json`, you MUST also insert them into the `translation_keys` PostgreSQL table:
+
+```sql
+INSERT INTO translation_keys (key, namespace, english_text, context) VALUES
+  ('namespace.key_name', 'namespace', 'English text value', 'Brief description of where this is used')
+ON CONFLICT (key) DO NOTHING;
+```
+
+This ensures:
+- Keys appear in the Admin Translation Editor (`/admin/i18n/translations`)
+- Admins can translate them to other languages via the UI
+- The auto-translate feature (Bedrock) can pick them up
+- Translation coverage reports are accurate
+
+**If you skip this step, translations will only work in English** (the `en.json` fallback) but won't be translatable via the admin panel.
 
 ### When Adding Date/Number/Currency Display
 
@@ -336,10 +355,12 @@ When implementing any feature, verify:
 
 ### Admin Translation Workflow
 
-When significant new UI text is added:
-1. Add keys to `en.json`
-2. Admin can auto-translate via `/admin/i18n/translations`
-3. Admin can manually review/edit translations
+When new UI text is added (any feature, bug fix, or content change):
+1. Add keys to `packages/web/src/i18n/en.json` (client-side fallback)
+2. Insert keys into `translation_keys` DB table (enables admin management)
+3. Keys will appear in Admin → Locale & Translation → Translation Editor
+4. Admin can auto-translate via Bedrock or manually edit per language
+5. Verify keys appear by checking: `SELECT count(*) FROM translation_keys WHERE namespace = 'your_namespace';`
 
 ## 15. Dark Theme Consistency (Admin Panel)
 
