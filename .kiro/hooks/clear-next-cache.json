@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Clear .next cache before web dev server",
+      "trigger": "SessionStart",
+      "description": "Clears the Next.js dev cache on session start to prevent stale asset 404 errors",
+      "action": {
+        "type": "command",
+        "command": "rm -rf /Users/k64149367/Documents/DevProjects/travel-companion/packages/web/.next 2>/dev/null; echo \"Cleared .next cache\""
+      }
+    }
+  ]
+}

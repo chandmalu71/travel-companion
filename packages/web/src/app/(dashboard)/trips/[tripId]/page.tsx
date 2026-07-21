@@ -507,6 +507,9 @@ function MembersTab({ tripId }: { tripId: string }) {
   const [newGroupName, setNewGroupName] = useState('');
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [invitations, setInvitations] = useState<any[]>([]);
+  const [showFamilyPicker, setShowFamilyPicker] = useState(false);
+  const [familyMembers, setFamilyMembers] = useState<Array<{ id: string; firstName: string; lastName: string | null; relationship: string; allergies: string[]; dietaryPreferences: string[] }>>([]);
+  const [addingFamily, setAddingFamily] = useState(false);
 
   const loadInvitations = () => {
     api.get<{ data: any[] }>(`/api/trips/${tripId}/invitations`).then(r => setInvitations(r.data ?? [])).catch(() => {});
@@ -563,6 +566,7 @@ function MembersTab({ tripId }: { tripId: string }) {
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-gray-900">Members ({data?.totalCount ?? 0})</h3>
         <div className="flex gap-2">
+          <button onClick={() => { setShowFamilyPicker(true); api.get<{ data: any[] }>('/api/family-members/for-trip').then(r => setFamilyMembers(r.data ?? [])).catch(() => {}); }} className="rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-100">👨‍👩‍👧 Family</button>
           <button onClick={() => setShowInviteForm(true)} className="rounded-md border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50">✉️ Invite</button>
           <button onClick={() => setShowGroupForm(true)} className="rounded-md border border-gray-300 px-3 py-1.5 text-xs hover:bg-gray-50">+ Group</button>
           <button onClick={() => setShowAddForm(true)} className="rounded-md bg-primary-600 px-3 py-1.5 text-xs text-white hover:bg-primary-500">+ Add Member</button>
@@ -669,6 +673,60 @@ function MembersTab({ tripId }: { tripId: string }) {
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={() => setShowGroupForm(false)} className="rounded-md border border-gray-300 px-4 py-2 text-sm">Cancel</button>
               <button onClick={handleCreateGroup} className="rounded-md bg-primary-600 px-4 py-2 text-sm text-white font-medium">Create</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Family Picker Modal */}
+      {showFamilyPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowFamilyPicker(false)}>
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Add Family Members</h3>
+            <p className="text-sm text-gray-500 mb-4">Select family members to add to this trip as a "Family" group. Their preferences will auto-apply.</p>
+
+            {familyMembers.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-gray-500 text-sm">No family members added yet.</p>
+                <a href="/connections" className="text-primary-600 text-sm hover:underline mt-1 inline-block">Go to My Network → Family tab to add members</a>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {familyMembers.map(fm => (
+                  <div key={fm.id} className="flex items-center gap-3 rounded-md border border-gray-200 p-3 hover:bg-gray-50">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">{fm.firstName} {fm.lastName ?? ''}</p>
+                      <div className="flex gap-2 mt-0.5">
+                        <span className="text-[10px] text-amber-600 bg-amber-50 px-1 rounded">{fm.relationship}</span>
+                        {fm.allergies.length > 0 && <span className="text-[10px] text-red-500">⚠️ {fm.allergies.join(', ')}</span>}
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        setAddingFamily(true);
+                        try {
+                          await api.post(`/api/trips/${tripId}/members`, {
+                            displayName: `${fm.firstName} ${fm.lastName ?? ''}`.trim(),
+                            travellerType: fm.relationship === 'child' ? 'child' : 'adult',
+                          });
+                          // Refresh members list
+                          const res = await api.get<{ data: any }>(`/api/trips/${tripId}/members`);
+                          setData(res.data);
+                        } catch { /* already added or error */ }
+                        setAddingFamily(false);
+                      }}
+                      disabled={addingFamily}
+                      className="rounded-md bg-primary-600 px-3 py-1.5 text-xs text-white hover:bg-primary-500 disabled:opacity-50"
+                    >
+                      Add
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex justify-end mt-4">
+              <button onClick={() => setShowFamilyPicker(false)} className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Done</button>
             </div>
           </div>
         </div>
