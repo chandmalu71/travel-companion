@@ -1792,3 +1792,87 @@ Display: "Label (CODE)" with description on selection. Airline disclaimer shown.
 - Passport fields never leave the owner's scope
 - Connected users get read-only access (no edit/delete endpoints for others' family)
 - Visibility can be changed at any time by the owner
+
+
+---
+
+## Component 38: AI Trip Tips
+
+**Responsibility**: Personalized travel advice generation, checklist management, destination Q&A chat
+
+### Data Model
+
+```
+trip_tips (Migration 017)
+├── trip_id → trips.id (CASCADE)
+├── user_id (owner)
+├── category: activities | packing | precautions | culture | food | transport | budget | documents
+├── title, content (markdown)
+├── checklist: JSONB [{ id, text, checked }]
+├── is_favorited, is_dismissed
+├── source: ai | user | web
+├── ai_model, generated_at, expires_at (7-day cache)
+└── created_at, updated_at
+
+trip_tip_chats (Migration 017)
+├── trip_id → trips.id (CASCADE)
+├── user_id
+├── role: user | assistant
+├── message (text)
+└── ai_model, created_at
+```
+
+### AI Generation Flow
+
+```
+POST /api/trips/:tripId/tips/generate
+  ↓
+Fetch trip context (destination, dates, budget)
+  ↓
+Fetch user preferences (allergies, dietary)
+  ↓
+Fetch family members (kids → kid-specific tips)
+  ↓
+Build personalized prompt per category
+  ↓
+Call LLM (dev: mock | prod: Bedrock Nova Lite → Haiku)
+  ↓
+Parse response into structured tips + checklist items
+  ↓
+Store in trip_tips with 7-day expiry
+```
+
+### Chat Flow
+
+```
+POST /api/trips/:tripId/tips/chat { message }
+  ↓
+Load conversation history (last 50 messages)
+  ↓
+Build prompt: system context (trip info) + history + user message
+  ↓
+Call LLM (contextual response about destination)
+  ↓
+Store both user message + assistant response
+  ↓
+Return assistant message
+```
+
+### UI Components
+
+- **TipsTab**: Main container with generate button + tip cards + chat
+- **Tip Card**: Expandable card with header (icon + title + progress), content (markdown), checklist (checkboxes), actions (favorite/dismiss)
+- **Chat Section**: Message bubbles + input field, integrated below tips
+
+### Category Icons
+
+| Category | Icon | Title |
+|----------|------|-------|
+| activities | 🎯 | Things to Do |
+| packing | 🧳 | Packing Guide |
+| precautions | ⚠️ | Safety & Precautions |
+| culture | 🎭 | Culture & Etiquette |
+| food | 🍽️ | Food & Dining |
+| transport | 🚌 | Getting Around |
+| budget | 💰 | Budget & Costs |
+| documents | 📋 | Documents & Visas |

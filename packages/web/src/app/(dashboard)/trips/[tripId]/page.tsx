@@ -27,7 +27,7 @@ interface Booking {
   checked_in: boolean;
 }
 
-type TabId = 'overview' | 'timeline' | 'map' | 'expenses' | 'members' | 'documents';
+type TabId = 'overview' | 'timeline' | 'map' | 'expenses' | 'members' | 'documents' | 'tips';
 
 const CATEGORY_ICONS: Record<string, string> = {
   food_dining: '🍕', transportation: '🚗', accommodation: '🏨',
@@ -71,6 +71,7 @@ export default function TripDetailPage() {
     { id: 'map', label: 'Map', icon: '🗺️' },
     { id: 'expenses', label: 'Expenses', icon: '💰' },
     { id: 'members', label: 'Members', icon: '👥' },
+    { id: 'tips', label: 'AI Tips', icon: '💡' },
     { id: 'documents', label: 'Documents', icon: '📄' },
   ];
 
@@ -119,6 +120,7 @@ export default function TripDetailPage() {
       {activeTab === 'map' && <MapTab tripId={tripId} />}
       {activeTab === 'expenses' && <ExpensesTab tripId={tripId} />}
       {activeTab === 'members' && <MembersTab tripId={tripId} />}
+      {activeTab === 'tips' && <TipsTab tripId={tripId} />}
       {activeTab === 'documents' && <DocumentsTab tripId={tripId} />}
     </div>
   );
@@ -1080,6 +1082,213 @@ function InviteModal({ tripId, groups, onClose, onInvited }: { tripId: string; g
   );
 }
 
+
+// ─── AI Tips Tab ─────────────────────────────────────────────────────────────
+
+function TipsTab({ tripId }: { tripId: string }) {
+  const [tips, setTips] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{ role: string; message: string }>>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [expandedTip, setExpandedTip] = useState<string | null>(null);
+
+  const loadTips = () => {
+    api.get<{ data: any[] }>(`/api/trips/${tripId}/tips`)
+      .then((res) => setTips(res.data ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  const loadChat = () => {
+    api.get<{ data: any[] }>(`/api/trips/${tripId}/tips/chat`)
+      .then((res) => setChatMessages(res.data ?? []))
+      .catch(() => {});
+  };
+
+  useEffect(() => { loadTips(); loadChat(); }, [tripId]);
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    try {
+      await api.post(`/api/trips/${tripId}/tips/generate`, {});
+      loadTips();
+    } catch { /* error */ }
+    finally { setGenerating(false); }
+  };
+
+  const handleFavorite = async (tipId: string, current: boolean) => {
+    await api.put(`/api/trips/${tripId}/tips/${tipId}`, { isFavorited: !current });
+    setTips(prev => prev.map(t => t.id === tipId ? { ...t, isFavorited: !current } : t));
+  };
+
+  const handleDismiss = async (tipId: string) => {
+    await api.put(`/api/trips/${tripId}/tips/${tipId}`, { isDismissed: true });
+    setTips(prev => prev.filter(t => t.id !== tipId));
+  };
+
+  const handleCheckItem = async (tipId: string, itemId: string) => {
+    const tip = tips.find(t => t.id === tipId);
+    if (!tip) return;
+    const updatedChecklist = tip.checklist.map((item: any) =>
+      item.id === itemId ? { ...item, checked: !item.checked } : item
+    );
+    await api.put(`/api/trips/${tripId}/tips/${tipId}`, { checklist: updatedChecklist });
+    setTips(prev => prev.map(t => t.id === tipId ? { ...t, checklist: updatedChecklist } : t));
+  };
+
+  const handleChatSend = async () => {
+    if (!chatInput.trim()) return;
+    const msg = chatInput.trim();
+    setChatInput('');
+    setChatMessages(prev => [...prev, { role: 'user', message: msg }]);
+    setChatLoading(true);
+    try {
+      const res = await api.post<{ data: { message: string } }>(`/api/trips/${tripId}/tips/chat`, { message: msg });
+      setChatMessages(prev => [...prev, { role: 'assistant', message: res.data.message }]);
+    } catch { setChatMessages(prev => [...prev, { role: 'assistant', message: 'Sorry, I couldn\'t process that. Try again.' }]); }
+    finally { setChatLoading(false); }
+  };
+
+  if (loading) return <div className="animate-pulse space-y-4">{[1, 2, 3].map(i => <div key={i} className="h-24 bg-gray-200 rounded-lg" />)}</div>;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-gray-900">AI Travel Tips</h3>
+          <p className="text-xs text-gray-500">Personalized advice based on your trip, preferences, and travel companions</p>
+        </div>
+        <button onClick={handleGenerate} disabled={generating}
+          className="rounded-md bg-primary-600 px-4 py-2 text-xs font-medium text-white hover:bg-primary-500 disabled:opacity-50">
+          {generating ? '✨ Generating...' : tips.length > 0 ? '🔄 Regenerate Tips' : '✨ Generate Tips'}
+        </button>
+      </div>
+
+      {/* Tips empty state */}
+      {tips.length === 0 && !generating && (
+        <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
+          <p className="text-4xl mb-3">💡</p>
+          <p className="text-gray-500 font-medium">No tips generated yet</p>
+          <p className="text-sm text-gray-400 mt-1">Click "Generate Tips" to get AI-powered advice for your trip including activities, packing lists, safety tips, and more.</p>
+        </div>
+      )}
+
+      {/* Tips cards */}
+      {tips.length > 0 && (
+        <div className="grid gap-4">
+          {tips.map((tip) => (
+            <div key={tip.id} className={`rounded-lg border bg-white shadow-sm overflow-hidden transition-all ${tip.isFavorited ? 'border-yellow-300 ring-1 ring-yellow-200' : 'border-gray-200'}`}>
+              {/* Card header */}
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100 cursor-pointer"
+                onClick={() => setExpandedTip(expandedTip === tip.id ? null : tip.id)}>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{tip.icon}</span>
+                  <h4 className="text-sm font-semibold text-gray-900">{tip.title}</h4>
+                  {tip.isFavorited && <span className="text-yellow-500 text-xs">⭐</span>}
+                </div>
+                <div className="flex items-center gap-2">
+                  {tip.checklist?.length > 0 && (
+                    <span className="text-[10px] text-gray-400">
+                      {tip.checklist.filter((c: any) => c.checked).length}/{tip.checklist.length} done
+                    </span>
+                  )}
+                  <span className={`text-gray-400 transition-transform ${expandedTip === tip.id ? 'rotate-180' : ''}`}>▼</span>
+                </div>
+              </div>
+
+              {/* Expanded content */}
+              {expandedTip === tip.id && (
+                <div className="px-4 py-3 space-y-3">
+                  {/* Content (markdown-ish) */}
+                  <div className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                    {tip.content.split('\n').map((line: string, idx: number) => {
+                      if (line.startsWith('**') && line.endsWith('**')) return <p key={idx} className="font-semibold text-gray-900 mt-2">{line.replace(/\*\*/g, '')}</p>;
+                      if (line.startsWith('- ')) return <p key={idx} className="ml-3 text-gray-600">• {line.slice(2)}</p>;
+                      return <p key={idx}>{line}</p>;
+                    })}
+                  </div>
+
+                  {/* Checklist */}
+                  {tip.checklist?.length > 0 && (
+                    <div className="border-t border-gray-100 pt-3">
+                      <p className="text-xs font-semibold text-gray-600 uppercase mb-2">Checklist</p>
+                      <div className="space-y-1.5">
+                        {tip.checklist.map((item: any) => (
+                          <label key={item.id} className="flex items-center gap-2 cursor-pointer group">
+                            <input type="checkbox" checked={item.checked}
+                              onChange={() => handleCheckItem(tip.id, item.id)}
+                              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                            <span className={`text-sm ${item.checked ? 'line-through text-gray-400' : 'text-gray-700'}`}>{item.text}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 border-t border-gray-100 pt-3">
+                    <button onClick={() => handleFavorite(tip.id, tip.isFavorited)}
+                      className={`text-xs px-2 py-1 rounded transition-colors ${tip.isFavorited ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600 hover:bg-yellow-50'}`}>
+                      {tip.isFavorited ? '⭐ Favorited' : '☆ Favorite'}
+                    </button>
+                    <button onClick={() => handleDismiss(tip.id)}
+                      className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors">
+                      ✕ Dismiss
+                    </button>
+                    <span className="text-[9px] text-gray-400 ml-auto">Generated by AI • {new Date(tip.generatedAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Chat section */}
+      <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+        <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+          <h4 className="text-sm font-semibold text-gray-900">💬 Ask about your destination</h4>
+          <p className="text-[10px] text-gray-400">Ask follow-up questions about activities, safety, food, weather, or anything else</p>
+        </div>
+
+        {/* Chat messages */}
+        {chatMessages.length > 0 && (
+          <div className="px-4 py-3 max-h-64 overflow-y-auto space-y-3">
+            {chatMessages.map((msg, idx) => (
+              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                  msg.role === 'user' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-700'
+                }`}>
+                  <p className="whitespace-pre-line">{msg.message}</p>
+                </div>
+              </div>
+            ))}
+            {chatLoading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-100 rounded-lg px-3 py-2 text-sm text-gray-400 animate-pulse">Thinking...</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Chat input */}
+        <div className="flex gap-2 px-4 py-3 border-t border-gray-100">
+          <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleChatSend())}
+            placeholder="What restaurants do you recommend? Is it safe at night? What should I pack?"
+            className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
+          <button onClick={handleChatSend} disabled={chatLoading || !chatInput.trim()}
+            className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-500 disabled:opacity-50">
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function DocumentsTab({ tripId }: { tripId: string }) {
   return (

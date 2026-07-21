@@ -43,6 +43,8 @@ export interface Database {
   trip_invitations: TripInvitationsTable;
   user_connections: UserConnectionsTable;
   family_members: FamilyMembersTable;
+  trip_tips: TripTipsTable;
+  trip_tip_chats: TripTipChatsTable;
 }
 
 // --- Users ---
@@ -802,3 +804,33 @@ export interface FamilyMembersTable {
 }
 export type FamilyMember = Selectable<FamilyMembersTable>;
 export type NewFamilyMember = Insertable<FamilyMembersTable>;
+
+// --- Trip Tips ---
+
+export interface TripTipsTable {
+  id: Generated<string>;
+  trip_id: string;
+  user_id: string;
+  category: string;
+  title: string;
+  content: string;
+  checklist: Generated<any>; // JSON array of { id, text, checked }
+  is_favorited: Generated<boolean>;
+  is_dismissed: Generated<boolean>;
+  source: Generated<string>;
+  ai_model: string | null;
+  generated_at: Generated<Date>;
+  expires_at: Date | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface TripTipChatsTable {
+  id: Generated<string>;
+  trip_id: string;
+  user_id: string;
+  role: string; // 'user' | 'assistant'
+  message: string;
+  ai_model: string | null;
+  created_at: Generated<Date>;
+}

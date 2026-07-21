@@ -797,3 +797,24 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 8. WHEN a connected user's family member is added to a trip, their allergies and dietary preferences SHALL auto-apply to trip recommendation filters
 9. Connections SHALL NOT be able to edit another user's family member details (read-only access)
 10. THE owner SHALL be able to change visibility at any time via the Edit Family Member modal
+
+
+## Requirement 38: AI Trip Tips
+
+**User Story:** As a user, I want AI-generated personalized travel advice for my trip so I know what to do, pack, and be cautious about at my destination.
+
+### Acceptance Criteria
+
+1. THE Application SHALL provide an "AI Tips" tab in the trip detail page
+2. THE Application SHALL generate personalized tips in 8 categories: activities, packing, precautions, culture, food, transport, budget, documents
+3. THE tips SHALL be personalized based on: trip destination/dates, user dietary/allergies, family members (including children)
+4. Each tip SHALL contain: title, markdown content, and a checkable checklist of actionable items
+5. THE Application SHALL allow users to favorite tips (appear in favorites list) and dismiss tips (hidden from view)
+6. THE Application SHALL cache generated tips for 7 days with a "Regenerate Tips" button for on-demand refresh
+7. THE Application SHALL provide a chat follow-up section where users can ask destination-specific questions
+8. THE chat SHALL maintain conversation history (up to 50 messages per trip)
+9. THE Application SHALL use tiered LLM: mock in dev, AWS Bedrock (Nova Lite → Haiku escalation) in production
+10. Checklist items SHALL persist their checked state across sessions
+11. Tips SHALL be shareable with trip members (visible to all members on the same trip)
+12. Generated tips SHALL include source attribution (AI model used, generation date)
+13. THE Application SHALL support offline access for previously generated tips (cached)
