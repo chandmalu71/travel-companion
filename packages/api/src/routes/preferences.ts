@@ -177,6 +177,14 @@ export async function registerPreferencesRoutes(
       // Support "me" as alias for authenticated user
       const targetUserId = userId === 'me' ? authenticatedUserId : userId;
 
+      if (!targetUserId) {
+        return reply.status(401).send({
+          statusCode: 401,
+          error: 'UNAUTHORIZED',
+          message: 'Not authenticated. Please log in again.',
+        });
+      }
+
       if (authenticatedUserId !== targetUserId) {
         return reply.status(403).send({
           statusCode: 403,
