@@ -716,6 +716,15 @@ function InviteModal({ tripId, groups, onClose, onInvited }: { tripId: string; g
   const [expiresInDays, setExpiresInDays] = useState(7);
   const [sending, setSending] = useState(false);
   const [generatedLink, setGeneratedLink] = useState('');
+  const [networkSuggestions, setNetworkSuggestions] = useState<Array<{ id: string; name: string; email: string | null; label: string | null }>>([]);
+  const [showNetwork, setShowNetwork] = useState(false);
+
+  // Fetch connected users for quick selection
+  useEffect(() => {
+    api.get<{ data: Array<{ id: string; name: string; email: string | null; label: string | null }> }>('/api/connections/suggest')
+      .then(res => setNetworkSuggestions(res.data ?? []))
+      .catch(() => {});
+  }, []);
 
   const handleSend = async () => {
     setSending(true);
@@ -763,6 +772,42 @@ function InviteModal({ tripId, groups, onClose, onInvited }: { tripId: string; g
             {channel !== 'link' && (
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{channel === 'email' ? 'Email address' : 'Phone number'}</label>
+
+                {/* My Network quick-select */}
+                {channel === 'email' && networkSuggestions.length > 0 && (
+                  <div className="mb-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowNetwork(!showNetwork)}
+                      className="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
+                    >
+                      👥 Select from My Network ({networkSuggestions.length})
+                      <span className={`transition-transform ${showNetwork ? 'rotate-180' : ''}`}>▼</span>
+                    </button>
+                    {showNetwork && (
+                      <div className="mt-1.5 max-h-32 overflow-y-auto rounded-md border border-gray-200 bg-gray-50 divide-y divide-gray-100">
+                        {networkSuggestions.filter(s => s.email).map(contact => (
+                          <button
+                            key={contact.id}
+                            type="button"
+                            onClick={() => { setRecipient(contact.email!); setShowNetwork(false); }}
+                            className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-primary-50 transition-colors ${recipient === contact.email ? 'bg-primary-50' : ''}`}
+                          >
+                            <div className="h-6 w-6 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                              <span className="text-primary-600 text-[10px] font-bold">{contact.name.charAt(0)}</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium text-gray-900 truncate">{contact.name}</p>
+                              <p className="text-[10px] text-gray-400 truncate">{contact.email}</p>
+                            </div>
+                            {contact.label && <span className="text-[9px] bg-indigo-50 text-indigo-600 px-1 rounded flex-shrink-0">{contact.label}</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <input type={channel === 'email' ? 'email' : 'tel'} value={recipient} onChange={e => setRecipient(e.target.value)}
                   placeholder={channel === 'email' ? 'friend@example.com' : '+1234567890'}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
