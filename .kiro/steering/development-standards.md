@@ -360,19 +360,38 @@ When creating admin panel pages, use these color classes:
 | Buttons (primary) | Same as web app (`bg-primary-600`) |
 
 
-## 16. Confluence Documentation Sync
+## 16. Documentation Sync (Confluence + Spec Files)
 
 When making changes that affect requirements, design, or architecture:
 
 ### Auto-Update Triggers
 
-Update the Confluence space (`Nayyaai`) when any of the following change:
-- New requirement added (update Features page)
-- API endpoints added/changed (update API Reference page)
-- Database migration created (update Database Schema page)
-- New admin page created (update Admin Panel Guide page)
-- Architecture decision made (update Project Overview page)
-- Test coverage changes significantly (update Test Coverage page)
+**ALL of the following MUST be updated** when a new feature is implemented:
+
+1. **requirements.md** (`.kiro/specs/travel-companion/requirements.md`)
+   - Add formal requirement with acceptance criteria
+   - Number sequentially (Req 34, 35, etc.)
+
+2. **design.md** (`.kiro/specs/travel-companion/design.md`)
+   - Add component architecture (data model, API endpoints, UI components)
+   - Include security considerations if PII/encryption involved
+
+3. **tasks.md** (`.kiro/specs/travel-companion/tasks.md`)
+   - Add implementation tasks (mark [x] for completed)
+   - Group under a Phase heading
+
+4. **Confluence** (Space: `Nayyaai`)
+   - Update Features page with the new feature section
+   - Keep "Designed But Not Yet Built" table current
+
+### When to Update
+
+- New feature implemented → all 4 docs
+- Bug fix that changes behavior → requirements.md + Confluence
+- New API endpoint → design.md + Confluence API Reference
+- New database migration → design.md (data model)
+- New admin page → Confluence Admin Panel Guide
+- Architecture decision → design.md + Confluence Project Overview
 
 ### Confluence Space Details
 
@@ -392,10 +411,12 @@ Update the Confluence space (`Nayyaai`) when any of the following change:
 ### Update Process
 
 After implementing a feature or fix that affects documentation:
-1. Update the relevant Confluence page(s) via the MCP Confluence tools
-2. Use `mcp_atlassian_confluence_update_page` with the page ID and new content
-3. Keep content concise and structured (markdown format)
-4. Include the date of last update in the content
+1. Update requirements.md with acceptance criteria
+2. Update design.md with architecture/data model
+3. Update tasks.md with completed tasks
+4. Update the relevant Confluence page(s) via the MCP Confluence tools
+5. Use `mcp_atlassian_confluence_update_page_section` for targeted updates
+6. Keep content concise and structured (markdown format)
 
 ## 17. Admin-Managed Configuration Pattern
 
