@@ -65,7 +65,7 @@ export default function PricingPage() {
   };
 
   const getPrice = (plan: Plan) => {
-    const base = annual ? plan.price_annual_eur : plan.price_monthly_eur;
+    const base = annual ? Number(plan.price_annual_eur) : Number(plan.price_monthly_eur);
     if (discount && plan.slug !== 'free') return base * (1 - discount.percent / 100);
     return base;
   };
