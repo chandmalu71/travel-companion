@@ -189,6 +189,9 @@ export default function SettingsPage() {
       {/* ─── Email Aliases ────────────────────────────────────────────── */}
       <EmailAliasesSection />
 
+      {/* ─── Subscription ─────────────────────────────────────────────── */}
+      <SubscriptionSection />
+
       {/* ═══════════════════════════════════════════════════════════════
           SECTION 2: Travel Preferences
           ═══════════════════════════════════════════════════════════════ */}
@@ -593,6 +596,90 @@ function EmailAliasesSection() {
         Forwarded bookings from these addresses will be automatically matched to your account.
         A verification email will be sent to confirm ownership.
       </p>
+    </section>
+  );
+}
+
+
+// ─── Subscription Section ────────────────────────────────────────────────────
+
+function SubscriptionSection() {
+  const [sub, setSub] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get<{ data: any }>('/api/subscription')
+      .then(res => setSub(res.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="animate-pulse h-20 bg-gray-200 rounded-lg" />;
+
+  const planName = sub?.plan_name ?? sub?.planName ?? 'Free';
+  const status = sub?.status ?? 'active';
+  const trialEnds = sub?.trial_ends_at;
+  const periodEnd = sub?.current_period_end;
+  const cancelAtEnd = sub?.cancel_at_period_end;
+
+  const handleCancel = async () => {
+    if (!confirm('Cancel your subscription? Access continues until end of billing period.')) return;
+    await api.post('/api/subscription/cancel', {});
+    const res = await api.get<{ data: any }>('/api/subscription');
+    setSub(res.data);
+  };
+
+  const handleReactivate = async () => {
+    await api.post('/api/subscription/reactivate', {});
+    const res = await api.get<{ data: any }>('/api/subscription');
+    setSub(res.data);
+  };
+
+  return (
+    <section className="rounded-lg border border-gray-200 bg-white p-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-medium text-gray-900">💎 Subscription</h3>
+          <div className="flex items-center gap-2 mt-1">
+            <span className={`text-sm font-semibold ${planName === 'Premium' ? 'text-purple-600' : planName === 'Pro' ? 'text-primary-600' : 'text-gray-600'}`}>
+              {planName}
+            </span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+              status === 'trialing' ? 'bg-blue-100 text-blue-700' :
+              status === 'active' ? 'bg-green-100 text-green-700' :
+              status === 'cancelled' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'
+            }`}>
+              {status === 'trialing' ? 'Trial' : status === 'active' ? 'Active' : status}
+            </span>
+            {cancelAtEnd && <span className="text-[10px] text-amber-600">Cancels at period end</span>}
+          </div>
+          {trialEnds && status === 'trialing' && (
+            <p className="text-[10px] text-gray-400 mt-0.5">Trial ends: {new Date(trialEnds).toLocaleDateString()}</p>
+          )}
+          {periodEnd && status === 'active' && (
+            <p className="text-[10px] text-gray-400 mt-0.5">Renews: {new Date(periodEnd).toLocaleDateString()}</p>
+          )}
+        </div>
+        <div className="flex gap-2">
+          {(status === 'active' || status === 'trialing') && !cancelAtEnd && (
+            <>
+              <a href="/pricing" className="rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50">
+                {planName === 'Free' ? 'Upgrade' : 'Change Plan'}
+              </a>
+              {planName !== 'Free' && (
+                <button onClick={handleCancel} className="rounded-md border border-red-200 px-3 py-1.5 text-xs text-red-500 hover:bg-red-50">
+                  Cancel
+                </button>
+              )}
+            </>
+          )}
+          {cancelAtEnd && (
+            <button onClick={handleReactivate} className="rounded-md bg-primary-600 px-3 py-1.5 text-xs text-white hover:bg-primary-500">
+              Reactivate
+            </button>
+          )}
+        </div>
+      </div>
     </section>
   );
 }
