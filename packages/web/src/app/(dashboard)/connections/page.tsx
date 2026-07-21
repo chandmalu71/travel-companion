@@ -68,7 +68,7 @@ export default function ConnectionsPage() {
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Travel Companions</h1>
+          <h1 className="text-2xl font-bold text-gray-900">My Network</h1>
           <p className="text-sm text-gray-500 mt-1">People you travel with. Connected users appear as suggestions when inviting to trips.</p>
         </div>
         <button

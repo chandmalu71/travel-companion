@@ -19,9 +19,9 @@ test.describe('Travel Companions', () => {
   });
 
   test('should navigate to connections page via sidebar', async ({ page }) => {
-    await page.getByRole('link', { name: /companions/i }).click();
+    await page.getByRole('link', { name: /my network/i }).click();
     await expect(page).toHaveURL('/connections');
-    await expect(page.getByRole('heading', { name: /travel companions/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /my network/i })).toBeVisible();
   });
 
   test('should display existing connections with status badges', async ({ page }) => {
