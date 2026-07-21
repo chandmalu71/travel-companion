@@ -31,6 +31,45 @@ const LABEL_OPTIONS = [
 ];
 
 export default function ConnectionsPage() {
+  const [activeTab, setActiveTab] = useState<'network' | 'family'>('network');
+
+  return (
+    <div className="max-w-3xl space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">My Network</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage your travel contacts and family members</p>
+        </div>
+      </div>
+
+      {/* Tab switcher */}
+      <div className="flex border-b border-gray-200">
+        <button
+          onClick={() => setActiveTab('network')}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'network' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          👥 Network
+        </button>
+        <button
+          onClick={() => setActiveTab('family')}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'family' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          👨‍👩‍👧‍👦 Family
+        </button>
+      </div>
+
+      {activeTab === 'network' ? <NetworkTab /> : <FamilyTab />}
+    </div>
+  );
+}
+
+// ─── Network Tab (existing connections functionality) ─────────────────────────
+
+function NetworkTab() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -65,12 +104,9 @@ export default function ConnectionsPage() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Network</h1>
-          <p className="text-sm text-gray-500 mt-1">People you travel with. Connected users appear as suggestions when inviting to trips.</p>
-        </div>
+        <p className="text-sm text-gray-500">People you travel with. Connected users appear as suggestions when inviting to trips.</p>
         <button
           onClick={() => setShowAddModal(true)}
           className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500"
@@ -181,6 +217,351 @@ export default function ConnectionsPage() {
           onSaved={() => { setEditingConnection(null); loadConnections(); }}
         />
       )}
+    </div>
+  );
+}
+
+// ─── Family Tab ──────────────────────────────────────────────────────────────
+
+interface FamilyMember {
+  id: string;
+  mode: string;
+  relationship: string;
+  firstName: string;
+  lastName: string | null;
+  dateOfBirth: string | null;
+  gender: string | null;
+  dietaryPreferences: string[];
+  allergies: string[];
+  seatPreference: string | null;
+  mealPreference: string | null;
+  cabinClassPreference: string | null;
+  hasPassportStored: boolean;
+  passportNationality: string | null;
+  passportNumberMasked: string | null;
+  sharingScope: string;
+  notes: string | null;
+}
+
+const RELATIONSHIP_ICONS: Record<string, string> = {
+  spouse: '💑', partner: '💑', child: '👶', parent: '👴', sibling: '👫', grandparent: '👵', other: '👤',
+};
+
+const RELATIONSHIP_LABELS: Record<string, string> = {
+  spouse: 'Spouse', partner: 'Partner', child: 'Child', parent: 'Parent', sibling: 'Sibling', grandparent: 'Grandparent', other: 'Other',
+};
+
+function FamilyTab() {
+  const [members, setMembers] = useState<FamilyMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
+
+  const loadMembers = () => {
+    api.get<{ data: FamilyMember[] }>('/api/family-members')
+      .then((res) => setMembers(res.data ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadMembers(); }, []);
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Remove ${name} from your family members?`)) return;
+    try {
+      await api.delete(`/api/family-members/${id}`);
+      setMembers((prev) => prev.filter((m) => m.id !== id));
+    } catch { /* toast */ }
+  };
+
+  if (loading) {
+    return <div className="animate-pulse space-y-4">{[1, 2, 3].map((i) => <div key={i} className="h-16 bg-gray-200 rounded-lg" />)}</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500">Family members permanently linked to your profile. Their preferences auto-apply when added to trips.</p>
+        <button onClick={() => setShowAddModal(true)} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500">
+          + Add Family Member
+        </button>
+      </div>
+
+      {members.length === 0 ? (
+        <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
+          <p className="text-4xl mb-3">👨‍👩‍👧‍👦</p>
+          <p className="text-gray-500">No family members added yet.</p>
+          <p className="text-sm text-gray-400 mt-1">Add your family to quickly include them in trips with their preferences and passport details.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {members.map((member) => (
+            <div key={member.id} className="flex items-center gap-3 rounded-lg bg-white px-4 py-3 border border-gray-200 shadow-sm hover:border-primary-200 transition-all group">
+              {/* Avatar / Relationship icon */}
+              <div className="h-10 w-10 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0 text-lg">
+                {RELATIONSHIP_ICONS[member.relationship] ?? '👤'}
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setEditingMember(member)}>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-gray-900 text-sm">{member.firstName} {member.lastName ?? ''}</p>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                    {RELATIONSHIP_LABELS[member.relationship] ?? member.relationship}
+                  </span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${member.mode === 'connected' ? 'bg-green-50 text-green-600 border border-green-200' : 'bg-gray-50 text-gray-500 border border-gray-200'}`}>
+                    {member.mode === 'connected' ? 'Linked account' : 'Managed'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 mt-0.5 text-[11px] text-gray-400">
+                  {member.dateOfBirth && <span>Born: {new Date(member.dateOfBirth).toLocaleDateString()}</span>}
+                  {member.allergies.length > 0 && <span>⚠️ {member.allergies.length} allergies</span>}
+                  {member.hasPassportStored && <span>🛂 {member.passportNumberMasked}</span>}
+                  {member.seatPreference && <span>💺 {member.seatPreference}</span>}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => setEditingMember(member)} className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100" title="Edit">✏️</button>
+                <button onClick={() => handleDelete(member.id, member.firstName)} className="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50" title="Remove">🗑️</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showAddModal && (
+        <AddFamilyMemberModal onClose={() => setShowAddModal(false)} onAdded={() => { setShowAddModal(false); loadMembers(); }} />
+      )}
+      {editingMember && (
+        <EditFamilyMemberModal member={editingMember} onClose={() => setEditingMember(null)} onSaved={() => { setEditingMember(null); loadMembers(); }} />
+      )}
+    </div>
+  );
+}
+
+// ─── Add Family Member Modal ─────────────────────────────────────────────────
+
+function AddFamilyMemberModal({ onClose, onAdded }: { onClose: () => void; onAdded: () => void }) {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [relationship, setRelationship] = useState('child');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [gender, setGender] = useState('');
+  const [allergies, setAllergies] = useState('');
+  const [dietaryPreferences, setDietaryPreferences] = useState('');
+  const [seatPreference, setSeatPreference] = useState('');
+  const [mealPreference, setMealPreference] = useState('');
+  const [passportName, setPassportName] = useState('');
+  const [passportNumber, setPassportNumber] = useState('');
+  const [passportNationality, setPassportNationality] = useState('');
+  const [passportExpiry, setPassportExpiry] = useState('');
+  const [showPassportSection, setShowPassportSection] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!firstName || !relationship) { setError('Name and relationship are required'); return; }
+    setSubmitting(true); setError('');
+    try {
+      await api.post('/api/family-members', {
+        firstName, lastName: lastName || undefined, relationship, dateOfBirth: dateOfBirth || undefined,
+        gender: gender || undefined,
+        allergies: allergies ? allergies.split(',').map(s => s.trim()) : [],
+        dietaryPreferences: dietaryPreferences ? dietaryPreferences.split(',').map(s => s.trim()) : [],
+        seatPreference: seatPreference || undefined, mealPreference: mealPreference || undefined,
+        passport: (passportName || passportNumber) ? {
+          fullName: passportName || undefined, number: passportNumber || undefined,
+          nationality: passportNationality || undefined, expiry: passportExpiry || undefined,
+        } : undefined,
+      });
+      onAdded();
+    } catch (err: any) { setError(err?.data?.message ?? 'Failed to add family member'); }
+    finally { setSubmitting(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Family Member</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Name + Relationship */}
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="block text-xs font-medium text-gray-700 mb-1">First Name *</label>
+              <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" autoFocus /></div>
+            <div><label className="block text-xs font-medium text-gray-700 mb-1">Last Name</label>
+              <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="block text-xs font-medium text-gray-700 mb-1">Relationship *</label>
+              <select value={relationship} onChange={e => setRelationship(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="spouse">Spouse</option><option value="partner">Partner</option>
+                <option value="child">Child</option><option value="parent">Parent</option>
+                <option value="sibling">Sibling</option><option value="grandparent">Grandparent</option>
+                <option value="other">Other</option>
+              </select></div>
+            <div><label className="block text-xs font-medium text-gray-700 mb-1">Date of Birth</label>
+              <input type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="block text-xs font-medium text-gray-700 mb-1">Gender</label>
+              <select value={gender} onChange={e => setGender(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="">—</option><option value="male">Male</option><option value="female">Female</option>
+                <option value="non-binary">Non-binary</option><option value="prefer_not_to_say">Prefer not to say</option>
+              </select></div>
+            <div><label className="block text-xs font-medium text-gray-700 mb-1">Seat Preference</label>
+              <select value={seatPreference} onChange={e => setSeatPreference(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="">No preference</option><option value="window">Window</option>
+                <option value="aisle">Aisle</option><option value="middle">Middle</option>
+              </select></div>
+          </div>
+
+          {/* Dietary / Allergies */}
+          <div><label className="block text-xs font-medium text-gray-700 mb-1">Allergies <span className="text-gray-400">(comma-separated)</span></label>
+            <input type="text" value={allergies} onChange={e => setAllergies(e.target.value)} placeholder="e.g. peanuts, dairy" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+          <div><label className="block text-xs font-medium text-gray-700 mb-1">Dietary Preferences <span className="text-gray-400">(comma-separated)</span></label>
+            <input type="text" value={dietaryPreferences} onChange={e => setDietaryPreferences(e.target.value)} placeholder="e.g. vegetarian, gluten_free" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+
+          <div><label className="block text-xs font-medium text-gray-700 mb-1">Meal Preference (flights)</label>
+            <select value={mealPreference} onChange={e => setMealPreference(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <option value="">Standard</option><option value="vegetarian">Vegetarian</option><option value="vegan">Vegan</option>
+              <option value="halal">Halal</option><option value="kosher">Kosher</option><option value="child_meal">Child Meal</option>
+              <option value="gluten_free">Gluten Free</option><option value="diabetic">Diabetic</option>
+            </select></div>
+
+          {/* Passport (collapsible) */}
+          <div className="border border-gray-200 rounded-lg p-3">
+            <button type="button" onClick={() => setShowPassportSection(!showPassportSection)}
+              className="text-xs font-medium text-gray-700 flex items-center gap-1 w-full text-left">
+              🛂 Passport / ID Details <span className="text-gray-400 ml-1">(optional, encrypted)</span>
+              <span className={`ml-auto transition-transform ${showPassportSection ? 'rotate-180' : ''}`}>▼</span>
+            </button>
+            {showPassportSection && (
+              <div className="mt-3 space-y-3">
+                <div><label className="block text-xs text-gray-600 mb-1">Full Name (as on passport)</label>
+                  <input type="text" value={passportName} onChange={e => setPassportName(e.target.value)} placeholder="JOHN DOE" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase" /></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label className="block text-xs text-gray-600 mb-1">Passport Number</label>
+                    <input type="text" value={passportNumber} onChange={e => setPassportNumber(e.target.value)} placeholder="AB1234567" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+                  <div><label className="block text-xs text-gray-600 mb-1">Nationality (ISO code)</label>
+                    <input type="text" value={passportNationality} onChange={e => setPassportNationality(e.target.value.toUpperCase())} placeholder="DE" maxLength={3} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase" /></div>
+                </div>
+                <div><label className="block text-xs text-gray-600 mb-1">Expiry Date</label>
+                  <input type="date" value={passportExpiry} onChange={e => setPassportExpiry(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+                <p className="text-[10px] text-gray-400">🔒 Passport data is encrypted with AES-256-GCM and stored securely.</p>
+              </div>
+            )}
+          </div>
+
+          {error && <p className="text-xs text-red-600">{error}</p>}
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Cancel</button>
+            <button type="submit" disabled={submitting} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500 disabled:opacity-50">
+              {submitting ? 'Adding...' : 'Add Family Member'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Edit Family Member Modal ────────────────────────────────────────────────
+
+function EditFamilyMemberModal({ member, onClose, onSaved }: { member: FamilyMember; onClose: () => void; onSaved: () => void }) {
+  const [firstName, setFirstName] = useState(member.firstName);
+  const [lastName, setLastName] = useState(member.lastName ?? '');
+  const [relationship, setRelationship] = useState(member.relationship);
+  const [allergies, setAllergies] = useState(member.allergies.join(', '));
+  const [dietaryPreferences, setDietaryPreferences] = useState(member.dietaryPreferences.join(', '));
+  const [seatPreference, setSeatPreference] = useState(member.seatPreference ?? '');
+  const [mealPreference, setMealPreference] = useState(member.mealPreference ?? '');
+  const [sharingScope, setSharingScope] = useState(member.sharingScope);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.put(`/api/family-members/${member.id}`, {
+        firstName, lastName: lastName || null, relationship,
+        allergies: allergies ? allergies.split(',').map(s => s.trim()) : [],
+        dietaryPreferences: dietaryPreferences ? dietaryPreferences.split(',').map(s => s.trim()) : [],
+        seatPreference: seatPreference || null, mealPreference: mealPreference || null,
+        sharingScope,
+      });
+      onSaved();
+    } catch { alert('Failed to update'); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">Edit Family Member</h3>
+        <p className="text-sm text-gray-500 mb-4">{RELATIONSHIP_ICONS[member.relationship]} {member.firstName} {member.lastName ?? ''}</p>
+
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="block text-xs font-medium text-gray-700 mb-1">First Name</label>
+              <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+            <div><label className="block text-xs font-medium text-gray-700 mb-1">Last Name</label>
+              <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+          </div>
+
+          <div><label className="block text-xs font-medium text-gray-700 mb-1">Relationship</label>
+            <select value={relationship} onChange={e => setRelationship(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <option value="spouse">Spouse</option><option value="partner">Partner</option>
+              <option value="child">Child</option><option value="parent">Parent</option>
+              <option value="sibling">Sibling</option><option value="grandparent">Grandparent</option>
+              <option value="other">Other</option>
+            </select></div>
+
+          <div><label className="block text-xs font-medium text-gray-700 mb-1">Allergies (comma-separated)</label>
+            <input type="text" value={allergies} onChange={e => setAllergies(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+          <div><label className="block text-xs font-medium text-gray-700 mb-1">Dietary Preferences (comma-separated)</label>
+            <input type="text" value={dietaryPreferences} onChange={e => setDietaryPreferences(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="block text-xs font-medium text-gray-700 mb-1">Seat Preference</label>
+              <select value={seatPreference} onChange={e => setSeatPreference(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="">No preference</option><option value="window">Window</option>
+                <option value="aisle">Aisle</option><option value="middle">Middle</option>
+              </select></div>
+            <div><label className="block text-xs font-medium text-gray-700 mb-1">Meal Preference</label>
+              <select value={mealPreference} onChange={e => setMealPreference(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="">Standard</option><option value="vegetarian">Vegetarian</option><option value="vegan">Vegan</option>
+                <option value="halal">Halal</option><option value="kosher">Kosher</option><option value="child_meal">Child Meal</option>
+              </select></div>
+          </div>
+
+          {/* Sharing scope */}
+          <div><label className="block text-xs font-medium text-gray-700 mb-1">Preference Sharing</label>
+            <select value={sharingScope} onChange={e => setSharingScope(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <option value="this_trip">Share for this trip only</option>
+              <option value="all_trips">Share for all future trips</option>
+              <option value="none">Don't share preferences</option>
+            </select>
+            <p className="text-[10px] text-gray-400 mt-1">Controls whether trip members can see this person's dietary needs and allergies.</p>
+          </div>
+
+          {member.hasPassportStored && (
+            <div className="rounded-md bg-gray-50 border border-gray-200 px-3 py-2">
+              <p className="text-xs text-gray-600">🛂 Passport stored: {member.passportNumberMasked} ({member.passportNationality})</p>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2 mt-6">
+          <button onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Cancel</button>
+          <button onClick={handleSave} disabled={saving} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500 disabled:opacity-50">
+            {saving ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

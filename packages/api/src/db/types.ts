@@ -42,6 +42,7 @@ export interface Database {
   trip_travellers: TripTravellersTable;
   trip_invitations: TripInvitationsTable;
   user_connections: UserConnectionsTable;
+  family_members: FamilyMembersTable;
 }
 
 // --- Users ---
@@ -766,3 +767,37 @@ export interface UserConnectionsTable {
 }
 export type UserConnection = Selectable<UserConnectionsTable>;
 export type NewUserConnection = Insertable<UserConnectionsTable>;
+
+// --- Family Members ---
+
+export interface FamilyMembersTable {
+  id: Generated<string>;
+  user_id: string;
+  linked_user_id: string | null;
+  mode: Generated<string>; // 'managed' | 'connected'
+  relationship: string; // spouse, partner, child, parent, sibling, grandparent, other
+  first_name: string;
+  last_name: string | null;
+  date_of_birth: string | null;
+  gender: string | null;
+  dietary_preferences: Generated<string[]>;
+  allergies: Generated<string[]>;
+  seat_preference: string | null;
+  meal_preference: string | null;
+  cabin_class_preference: string | null;
+  passport_name: string | null; // encrypted
+  passport_number: string | null; // encrypted
+  passport_nationality: string | null;
+  passport_expiry: string | null; // encrypted
+  passport_issuing_country: string | null;
+  has_passport_stored: Generated<boolean>;
+  sharing_scope: Generated<string>; // 'this_trip' | 'all_trips' | 'none'
+  share_dietary: Generated<boolean>;
+  share_allergies: Generated<boolean>;
+  share_travel_prefs: Generated<boolean>;
+  notes: string | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+export type FamilyMember = Selectable<FamilyMembersTable>;
+export type NewFamilyMember = Insertable<FamilyMembersTable>;
