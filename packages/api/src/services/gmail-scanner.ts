@@ -259,7 +259,7 @@ export class GmailScannerService {
    * This enables real-time scanning (notifications on new emails).
    *
    * @param accessToken - Valid access token
-   * @param topicName - Google Pub/Sub topic (e.g., projects/nayya/topics/gmail-notifications)
+   * @param topicName - Google Pub/Sub topic (e.g., projects/neyya/topics/gmail-notifications)
    */
   async setupPushNotifications(
     accessToken: string,

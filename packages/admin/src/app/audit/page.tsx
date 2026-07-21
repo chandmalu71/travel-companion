@@ -13,9 +13,9 @@ interface AuditEntry {
 }
 
 const MOCK_ENTRIES: AuditEntry[] = [
-  { id: '1', timestamp: '2026-07-19 13:45:00', admin: 'admin@nayya.ai', action: 'user_suspended', target: 'spam@test.com', details: 'Misuse: 200+ email scans/day', ip: '192.168.1.1' },
-  { id: '2', timestamp: '2026-07-19 12:30:00', admin: 'admin@nayya.ai', action: 'config_changed', target: 'feature_flags', details: 'Disabled social_sharing', ip: '192.168.1.1' },
-  { id: '3', timestamp: '2026-07-19 10:15:00', admin: 'admin@nayya.ai', action: 'model_changed', target: 'email_parsing.tier1', details: 'Changed to amazon.nova-lite-v1:0', ip: '192.168.1.1' },
+  { id: '1', timestamp: '2026-07-19 13:45:00', admin: 'admin@neyya.ai', action: 'user_suspended', target: 'spam@test.com', details: 'Misuse: 200+ email scans/day', ip: '192.168.1.1' },
+  { id: '2', timestamp: '2026-07-19 12:30:00', admin: 'admin@neyya.ai', action: 'config_changed', target: 'feature_flags', details: 'Disabled social_sharing', ip: '192.168.1.1' },
+  { id: '3', timestamp: '2026-07-19 10:15:00', admin: 'admin@neyya.ai', action: 'model_changed', target: 'email_parsing.tier1', details: 'Changed to amazon.nova-lite-v1:0', ip: '192.168.1.1' },
 ];
 
 const ACTION_TYPES = ['All', 'user_suspended', 'user_reactivated', 'user_deleted', 'config_changed', 'model_changed', 'announcement_sent', 'impersonation'];

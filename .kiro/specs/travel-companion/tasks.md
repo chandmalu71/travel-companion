@@ -592,7 +592,7 @@ This implementation plan builds the Travel Companion application incrementally, 
 
 - [x] 29. Email-forward booking ingestion
   - [x] 29.1 Implement booking ingestion service
-    - Accept forwarded emails at trips@nayya.ai
+    - Accept forwarded emails at trips@neyya.ai
     - Identify user by "From" email address
     - Match booking to trip (date overlap → destination → create new)
     - Support unclaimed bookings for unregistered users (60-day hold)

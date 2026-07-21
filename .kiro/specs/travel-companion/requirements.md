@@ -433,11 +433,11 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 
 ### Requirement 26: Email-Forward Booking Ingestion
 
-**User Story:** As a traveler, I want to forward my booking confirmation emails to a single address (trips@nayya.ai) and have them automatically added to the right trip, so I don't need to manually enter booking details.
+**User Story:** As a traveler, I want to forward my booking confirmation emails to a single address (trips@neyya.ai) and have them automatically added to the right trip, so I don't need to manually enter booking details.
 
 #### Acceptance Criteria
 
-1. THE Application SHALL accept forwarded booking confirmation emails at the address `trips@nayya.ai`
+1. THE Application SHALL accept forwarded booking confirmation emails at the address `trips@neyya.ai`
 2. THE Application SHALL identify the user by the "From" email address of the forwarded message
 3. IF the "From" email matches an existing registered user, THEN THE Application SHALL process the booking and attempt to assign it to an existing trip
 4. THE trip matching logic SHALL follow this priority order:
@@ -505,7 +505,7 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 5. ALL bookings in a shared trip SHALL be visible to all members regardless of who created/forwarded them
 6. EACH booking SHALL have an `owner_id` indicating who booked it, displayed in the UI (e.g., "Bob's flight")
 7. THE trip timeline SHALL display a merged view of all members' bookings and events, showing who each item belongs to (e.g., "Alice arrives 2pm", "Bob arrives 5pm")
-8. WHEN a member forwards a booking to trips@nayya.ai or it's detected via connected email scanning, the trip-matching logic SHALL check **shared trips the user is a member of** BEFORE checking the user's own trips, with this priority: shared trips (by date/destination) → own trips → create new trip
+8. WHEN a member forwards a booking to trips@neyya.ai or it's detected via connected email scanning, the trip-matching logic SHALL check **shared trips the user is a member of** BEFORE checking the user's own trips, with this priority: shared trips (by date/destination) → own trips → create new trip
 9. IF the booking could match multiple shared trips, THE Application SHALL send the user a confirmation link asking which trip to add it to
 
 ##### Expense Visibility & Privacy
@@ -566,7 +566,7 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 
 ##### Access & Authentication
 
-1. THE admin panel SHALL be accessible at `admin.nayya.ai` as a separate frontend application
+1. THE admin panel SHALL be accessible at `admin.neyya.ai` as a separate frontend application
 2. THE admin panel SHALL require authentication with an admin-level account
 3. THE Application SHALL support admin roles: **super-admin** (full access) and **support** (read + user management only)
 4. Admin accounts SHALL also function as regular user accounts (admins can use the main app with their own trips)
@@ -576,9 +576,9 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 
 6. THE admin panel SHALL display a searchable, sortable user list with: email, display name, registration date, last login, status (active/suspended/deleted), connected emails count, trips count
 7. THE admin panel SHALL allow admins to: view user profile, suspend user, reactivate user, delete user and all data, impersonate user (view-only)
-8. WHEN a user is suspended, THEY SHALL see a message on login: "Your account has been suspended. Contact support@nayya.ai for assistance."
+8. WHEN a user is suspended, THEY SHALL see a message on login: "Your account has been suspended. Contact support@neyya.ai for assistance."
 9. THE Application SHALL support a warning system before suspension: email warning → 7-day notice → suspend
-10. THE Application SHALL auto-detect misuse patterns (configurable thresholds): >100 email scans/day, >50 AI searches/hour, spam forwarding to trips@nayya.ai
+10. THE Application SHALL auto-detect misuse patterns (configurable thresholds): >100 email scans/day, >50 AI searches/hour, spam forwarding to trips@neyya.ai
 11. Auto-detection SHALL be toggleable per-rule from the admin config panel
 12. WHEN a user is deleted, ALL their data (trips, bookings, expenses, documents, preferences) SHALL be permanently removed (GDPR right to erasure)
 
@@ -644,7 +644,7 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 
 #### Acceptance Criteria
 
-1. EVERY booking and expense SHALL track its **source type**: `email` (auto-imported), `receipt_scan` (photo), `pdf` (attached document), `manual` (user-typed), `forwarded` (via trips@nayya.ai)
+1. EVERY booking and expense SHALL track its **source type**: `email` (auto-imported), `receipt_scan` (photo), `pdf` (attached document), `manual` (user-typed), `forwarded` (via trips@neyya.ai)
 2. FOR email-sourced items, THE Application SHALL store BOTH: a) the full original email (HTML body, stored in S3) for offline viewing, and b) a reference (provider + message ID) for linking back to the user's inbox
 3. FOR receipt-scanned expenses, THE Application SHALL retain the original image (JPEG/PNG/HEIC) in S3 linked to the expense
 4. FOR PDF attachments, THE Application SHALL store the original PDF in S3 linked to the booking/expense
@@ -667,8 +667,8 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 
 1. THE Application SHALL support adding travellers to a Trip with the following types: **adult** (18+), **child** (2-17), and **infant** (0-2)
 2. EACH traveller SHALL have: display name (required), email (optional), phone (optional), date of birth (optional), traveller type (required), and optionally passport name, passport number (encrypted), and nationality
-3. THE Application SHALL support travellers with a linked Nayya account (registered users) AND travellers without an account (kids, elderly, or anyone who won't use the app)
-4. WHEN adding a traveller by email, THE Application SHALL check if the email matches an existing Nayya user and display a "User found" indicator
+3. THE Application SHALL support travellers with a linked Neyya account (registered users) AND travellers without an account (kids, elderly, or anyone who won't use the app)
+4. WHEN adding a traveller by email, THE Application SHALL check if the email matches an existing Neyya user and display a "User found" indicator
 5. NON-ACCOUNT travellers SHALL still appear on booking cards (as traveller names), expense splits (as split members), and flight manifests
 
 ##### Groups
@@ -691,7 +691,7 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 15. WHEN inviting via email, THE Application SHALL send an invitation email containing: trip name, destination, dates (if set), a personal message from the inviter, and an accept/decline link
 16. THE invitation SHALL have a configurable expiry period (1 day, 3 days, 7 days, 30 days, or never), set by the inviter with a default configurable in the admin panel
 17. THE Application SHALL allow the trip owner to resend or cancel pending invitations
-18. IF an invited user creates a new Nayya account, THE Application SHALL auto-add them to the trip (or require acceptance first — configurable in admin panel)
+18. IF an invited user creates a new Neyya account, THE Application SHALL auto-add them to the trip (or require acceptance first — configurable in admin panel)
 19. WHEN an invitation is accepted, THE Application SHALL add the traveller to the trip with the specified role and group
 
 ##### Visibility
@@ -739,7 +739,7 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 
 ### Acceptance Criteria
 
-1. THE Application SHALL support two family member modes: Connected (linked Nayya account) and Managed (no account, user maintains details)
+1. THE Application SHALL support two family member modes: Connected (linked Neyya account) and Managed (no account, user maintains details)
 2. THE Application SHALL store per family member: first/last name, relationship, date of birth, gender
 3. THE Application SHALL store preferences: dietary restrictions (chip selector), allergies (chip selector), seat preference, meal preference, cabin class
 4. THE Application SHALL use the same chip-based UI for dietary/allergies as the user's own Settings preferences (admin-managed options)

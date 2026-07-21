@@ -2,7 +2,7 @@
   "name": "@travel-companion/admin",
   "version": "0.1.0",
   "private": true,
-  "description": "Nayya Admin Panel — Operations, User Management, Analytics",
+  "description": "Neyya Admin Panel — Operations, User Management, Analytics",
   "scripts": {
     "build": "next build",
     "dev": "next dev --port 3002",

@@ -4,7 +4,7 @@ import { type Kysely, sql } from 'kysely';
  * Migration 016: Family Members
  *
  * Permanently linked family profiles with two modes:
- * - Connected: has own Nayya account (spouse/partner enforced)
+ * - Connected: has own Neyya account (spouse/partner enforced)
  * - Managed: no account (children, elderly) — user maintains their details
  *
  * Stores: name, relationship, DOB, dietary, allergies, passport (encrypted),

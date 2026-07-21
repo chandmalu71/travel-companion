@@ -1,12 +1,12 @@
-# Infrastructure - Nayya.ai
+# Infrastructure - Neyya.ai
 
 ## Environments
 
 | Environment | Domain | Branch | Auto-deploy |
 |-------------|--------|--------|-------------|
-| QA | qa.nayya.ai | `develop` | Yes |
-| Staging | staging.nayya.ai | `release/*` | Yes |
-| Production | nayya.ai | `main` | Manual approval |
+| QA | qa.neyya.ai | `develop` | Yes |
+| Staging | staging.neyya.ai | `release/*` | Yes |
+| Production | neyya.ai | `main` | Manual approval |
 
 ## AWS Resources per Environment
 
@@ -21,7 +21,7 @@
 ## Setup Steps
 
 1. Configure AWS CLI: `aws configure`
-2. Create ECR repository: `aws ecr create-repository --repository-name nayya-api`
+2. Create ECR repository: `aws ecr create-repository --repository-name neyya-api`
 3. Deploy infrastructure: see `cloudformation/` directory
 4. Set GitHub secrets (see main README)
 5. Push to `develop` branch to trigger QA deployment

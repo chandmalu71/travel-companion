@@ -2,7 +2,7 @@
 
 ## Overview
 
-Nayya supports multiple languages, currencies, and locale-specific formatting. The system is admin-configurable (which languages/currencies/locales are available) and user-selectable (each user picks their preferences).
+Neyya supports multiple languages, currencies, and locale-specific formatting. The system is admin-configurable (which languages/currencies/locales are available) and user-selectable (each user picks their preferences).
 
 ## Supported Languages (Initial)
 

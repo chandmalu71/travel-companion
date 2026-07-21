@@ -1,6 +1,6 @@
-# Nayya.ai — AI-Assisted Development Statistics
+# Neyya.ai — AI-Assisted Development Statistics
 
-**Project:** Nayya.ai — AI-powered travel companion  
+**Project:** Neyya.ai — AI-powered travel companion  
 **Development Period:** July 17–21, 2026 (5 days)  
 **AI Tool:** Kiro (AI-powered development environment)  
 **Human Role:** Product owner, requirements, decisions, testing, review

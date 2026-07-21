@@ -51,8 +51,8 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <img src="/logo-icon.svg" alt="Nayya" className="h-12" />
-            <span className="text-2xl font-bold text-gray-900">Nayya</span>
+            <img src="/logo-icon.svg" alt="Neyya" className="h-12" />
+            <span className="text-2xl font-bold text-gray-900">Neyya</span>
           </div>
         <h2 className="text-3xl font-bold tracking-tight text-gray-900">
             Sign in to your account

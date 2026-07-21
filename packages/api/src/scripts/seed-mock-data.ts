@@ -32,11 +32,11 @@ function hashPassword(password: string): string {
 // ─── Mock Users ──────────────────────────────────────────────────────────────
 
 const USERS = [
-  { id: '00000000-0000-4000-a000-000000000001', email: 'alice@demo.nayya.ai', displayName: 'Alice Johnson', password: 'Demo1234', adminRole: 'super-admin' },
-  { id: '00000000-0000-4000-a000-000000000002', email: 'bob@demo.nayya.ai', displayName: 'Bob Smith', password: 'Demo1234', adminRole: null },
-  { id: '00000000-0000-4000-a000-000000000003', email: 'charlie@demo.nayya.ai', displayName: 'Charlie Brown', password: 'Demo1234', adminRole: null },
-  { id: '00000000-0000-4000-a000-000000000004', email: 'dana@demo.nayya.ai', displayName: 'Dana Wilson', password: 'Demo1234', adminRole: 'support' },
-  { id: '00000000-0000-4000-a000-000000000005', email: 'eve@demo.nayya.ai', displayName: 'Eve Martinez', password: 'Demo1234', adminRole: null },
+  { id: '00000000-0000-4000-a000-000000000001', email: 'alice@demo.neyya.ai', displayName: 'Alice Johnson', password: 'Demo1234', adminRole: 'super-admin' },
+  { id: '00000000-0000-4000-a000-000000000002', email: 'bob@demo.neyya.ai', displayName: 'Bob Smith', password: 'Demo1234', adminRole: null },
+  { id: '00000000-0000-4000-a000-000000000003', email: 'charlie@demo.neyya.ai', displayName: 'Charlie Brown', password: 'Demo1234', adminRole: null },
+  { id: '00000000-0000-4000-a000-000000000004', email: 'dana@demo.neyya.ai', displayName: 'Dana Wilson', password: 'Demo1234', adminRole: 'support' },
+  { id: '00000000-0000-4000-a000-000000000005', email: 'eve@demo.neyya.ai', displayName: 'Eve Martinez', password: 'Demo1234', adminRole: null },
 ];
 
 // ─── Mock Trips ──────────────────────────────────────────────────────────────
@@ -327,9 +327,9 @@ async function seed() {
   const smithGroupId = groups[0]?.id;
 
   const travellers = [
-    { trip_id: baliTripId, user_id: '00000000-0000-4000-a000-000000000001', group_id: smithGroupId, display_name: 'Alice Johnson', email: 'alice@demo.nayya.ai', traveller_type: 'adult', role: 'owner', status: 'active', joined_at: new Date() },
-    { trip_id: baliTripId, user_id: '00000000-0000-4000-a000-000000000002', group_id: null, display_name: 'Bob Smith', email: 'bob@demo.nayya.ai', traveller_type: 'adult', role: 'editor', status: 'active', joined_at: new Date() },
-    { trip_id: baliTripId, user_id: '00000000-0000-4000-a000-000000000003', group_id: null, display_name: 'Charlie Davis', email: 'charlie@demo.nayya.ai', traveller_type: 'adult', role: 'editor', status: 'active', joined_at: new Date() },
+    { trip_id: baliTripId, user_id: '00000000-0000-4000-a000-000000000001', group_id: smithGroupId, display_name: 'Alice Johnson', email: 'alice@demo.neyya.ai', traveller_type: 'adult', role: 'owner', status: 'active', joined_at: new Date() },
+    { trip_id: baliTripId, user_id: '00000000-0000-4000-a000-000000000002', group_id: null, display_name: 'Bob Smith', email: 'bob@demo.neyya.ai', traveller_type: 'adult', role: 'editor', status: 'active', joined_at: new Date() },
+    { trip_id: baliTripId, user_id: '00000000-0000-4000-a000-000000000003', group_id: null, display_name: 'Charlie Davis', email: 'charlie@demo.neyya.ai', traveller_type: 'adult', role: 'editor', status: 'active', joined_at: new Date() },
     { trip_id: baliTripId, user_id: null, group_id: smithGroupId, display_name: 'Max Johnson', email: null, traveller_type: 'child', role: 'viewer', status: 'active', joined_at: new Date() },
     { trip_id: baliTripId, user_id: null, group_id: smithGroupId, display_name: 'Baby Lily', email: null, traveller_type: 'infant', role: 'viewer', status: 'active', joined_at: new Date() },
   ];

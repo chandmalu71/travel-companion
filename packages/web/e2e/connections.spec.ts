@@ -82,7 +82,7 @@ test.describe('Travel Companions', () => {
     await page.waitForTimeout(1000);
 
     await page.getByRole('button', { name: /add contact/i }).click();
-    await page.getByPlaceholder('friend@example.com').fill('alice@demo.nayya.ai');
+    await page.getByPlaceholder('friend@example.com').fill('alice@demo.neyya.ai');
     await page.getByRole('button', { name: /add companion/i }).click();
 
     // Should show duplicate error

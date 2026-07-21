@@ -170,9 +170,9 @@ feature/xyz  →  develop  →  main
 | Branch | Purpose | Deploys to | Merge via |
 |--------|---------|------------|-----------|
 | `feature/*` | Individual features/fixes | — (local only) | PR → develop |
-| `develop` | Integration branch, QA testing | qa.nayya.ai | PR → main |
-| `release/*` | Pre-production stabilization | staging.nayya.ai | PR → main |
-| `main` | Production-ready code only | nayya.ai | Manual approval |
+| `develop` | Integration branch, QA testing | qa.neyya.ai | PR → main |
+| `release/*` | Pre-production stabilization | staging.neyya.ai | PR → main |
+| `main` | Production-ready code only | neyya.ai | Manual approval |
 
 ### Branch Workflow
 
@@ -195,7 +195,7 @@ feature/xyz  →  develop  →  main
 
 4. **After PR approval**, merge to `develop` (squash or merge commit)
 
-5. **QA testing** happens on `develop` (auto-deploys to qa.nayya.ai)
+5. **QA testing** happens on `develop` (auto-deploys to qa.neyya.ai)
 
 6. **When ready for production**, create PR from `develop` → `main` (requires approval)
 

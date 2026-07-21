@@ -2,7 +2,7 @@
  * Family Members Routes
  *
  * Permanently linked family profiles with two modes:
- * - Connected: has own Nayya account (spouse/partner enforced)
+ * - Connected: has own Neyya account (spouse/partner enforced)
  * - Managed: no account (children, elderly) — user maintains details
  *
  * Passport/ID data is encrypted at application level (AES-256-GCM).

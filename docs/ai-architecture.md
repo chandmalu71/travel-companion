@@ -1,8 +1,8 @@
-# Nayya AI Architecture — Tiered LLM Strategy
+# Neyya AI Architecture — Tiered LLM Strategy
 
 ## Overview
 
-Nayya uses a tiered AI architecture to balance cost, accuracy, and latency. Each AI-powered feature follows a cascade: try the cheapest option first, escalate to more powerful (expensive) models only when needed.
+Neyya uses a tiered AI architecture to balance cost, accuracy, and latency. Each AI-powered feature follows a cascade: try the cheapest option first, escalate to more powerful (expensive) models only when needed.
 
 ## Tier Definitions
 

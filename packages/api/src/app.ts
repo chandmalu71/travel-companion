@@ -169,7 +169,7 @@ export async function buildApp(
   if (options.db) {
     await registerDocumentRoutes(app, {
       db: options.db,
-      s3Bucket: process.env['S3_DOCS_BUCKET'] ?? 'nayya-docs-qa',
+      s3Bucket: process.env['S3_DOCS_BUCKET'] ?? 'neyya-docs-qa',
       s3Region: process.env['AWS_REGION'] ?? 'eu-west-1',
       cloudfrontDomain: process.env['CLOUDFRONT_DOCS_DOMAIN'],
     });

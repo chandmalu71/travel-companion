@@ -285,7 +285,7 @@ export class OutlookScannerService {
         notificationUrl: webhookUrl,
         resource: 'me/mailFolders/inbox/messages',
         expirationDateTime,
-        clientState: 'nayya-outlook-subscription',
+        clientState: 'neyya-outlook-subscription',
       }),
     });
 

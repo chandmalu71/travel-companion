@@ -4,8 +4,8 @@ import { AdminSidebar } from './admin-sidebar';
 import { AdminTopBar } from './admin-topbar';
 
 export const metadata: Metadata = {
-  title: 'Nayya Admin',
-  description: 'Nayya platform administration panel',
+  title: 'Neyya Admin',
+  description: 'Neyya platform administration panel',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

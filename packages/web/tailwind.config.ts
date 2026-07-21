@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Brand colors from Nayya Brand Asset Pack
+        // Brand colors from Neyya Brand Asset Pack
         primary: {
           50: '#f0fdf0',
           100: '#dcfce7',

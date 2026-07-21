@@ -74,7 +74,7 @@ export function AdminSidebar() {
           <span className="text-white text-sm font-bold">N</span>
         </div>
         <div>
-          <p className="font-bold text-white text-sm">Nayya <span className="text-emerald-400">Admin</span></p>
+          <p className="font-bold text-white text-sm">Neyya <span className="text-emerald-400">Admin</span></p>
           <p className="text-[10px] text-gray-500">Operations Panel</p>
         </div>
       </div>
@@ -122,13 +122,13 @@ export function AdminSidebar() {
                 <span className="text-white text-sm font-bold">N</span>
               </div>
               <div>
-                <p className="font-bold text-white text-sm">Nayya <span className="text-emerald-400">Admin</span></p>
+                <p className="font-bold text-white text-sm">Neyya <span className="text-emerald-400">Admin</span></p>
               </div>
             </div>
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-gray-400 mb-1">Email</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@nayya.ai"
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@neyya.ai"
                   className="w-full rounded-md border border-gray-600 bg-gray-700 text-white px-3 py-2 text-sm" autoFocus />
               </div>
               <div>

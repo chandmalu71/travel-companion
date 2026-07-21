@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Nayya — Your Complete Travel Companion',
+  title: 'Neyya — Your Complete Travel Companion',
   description: 'AI-powered travel planning that adapts to your style. Plan trips, track expenses, discover places, and collaborate with fellow travelers.',
 };
 

@@ -1,4 +1,4 @@
-# Nayya.ai — AWS Deployment & Domain Configuration Guide
+# Neyya.ai — AWS Deployment & Domain Configuration Guide
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@
 
 ## Overview
 
-**Domain:** nayya.ai  
+**Domain:** neyya.ai  
 **Domain Registrar:** Squarespace  
 **Cloud Provider:** AWS (eu-west-1 — Ireland)  
 **CI/CD:** GitHub Actions  
@@ -29,9 +29,9 @@
 
 | Environment | Web URL | API URL | Branch Trigger |
 |-------------|---------|---------|----------------|
-| QA | https://qa.nayya.ai | https://api-qa.nayya.ai | `develop` |
-| Staging | https://staging.nayya.ai | https://api-staging.nayya.ai | `release/*` |
-| Production | https://nayya.ai | https://api.nayya.ai | `main` (manual approval) |
+| QA | https://qa.neyya.ai | https://api-qa.neyya.ai | `develop` |
+| Staging | https://staging.neyya.ai | https://api-staging.neyya.ai | `release/*` |
+| Production | https://neyya.ai | https://api.neyya.ai | `main` (manual approval) |
 
 ---
 
@@ -75,7 +75,7 @@ You're transferring DNS control from Squarespace to AWS Route 53. This gives AWS
 
 #### 1. Log into Squarespace
 
-Go to: https://account.squarespace.com → Domains → nayya.ai
+Go to: https://account.squarespace.com → Domains → neyya.ai
 
 #### 2. Note Current Settings
 
@@ -93,7 +93,7 @@ ns-1011.awsdns-78.com
 ```
 
 In Squarespace:
-1. Go to **Domains** → **nayya.ai** → **DNS** → **Nameservers**
+1. Go to **Domains** → **neyya.ai** → **DNS** → **Nameservers**
 2. Click **Use custom nameservers**
 3. Remove the existing Squarespace nameservers
 4. Add all 4 Route 53 nameserver values (one per field)
@@ -102,14 +102,14 @@ In Squarespace:
 #### 4. Wait for Propagation
 
 - DNS propagation takes **24–48 hours**
-- You can check progress at: https://dnschecker.org/#NS/nayya.ai
+- You can check progress at: https://dnschecker.org/#NS/neyya.ai
 - During propagation, the site may be intermittently unreachable
 
 #### 5. Verify Transfer
 
 Once propagated, verify with:
 ```bash
-dig NS nayya.ai
+dig NS neyya.ai
 # Should return your Route 53 nameservers
 ```
 
@@ -130,23 +130,23 @@ Create a dedicated IAM user for GitHub Actions deployments:
 
 ```bash
 # Create the user
-aws iam create-user --user-name nayya-github-deployer
+aws iam create-user --user-name neyya-github-deployer
 
 # Attach policies
-aws iam attach-user-policy --user-name nayya-github-deployer \
+aws iam attach-user-policy --user-name neyya-github-deployer \
   --policy-arn arn:aws:iam::aws:policy/AmazonECS_FullAccess
 
-aws iam attach-user-policy --user-name nayya-github-deployer \
+aws iam attach-user-policy --user-name neyya-github-deployer \
   --policy-arn arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
 
-aws iam attach-user-policy --user-name nayya-github-deployer \
+aws iam attach-user-policy --user-name neyya-github-deployer \
   --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
 
-aws iam attach-user-policy --user-name nayya-github-deployer \
+aws iam attach-user-policy --user-name neyya-github-deployer \
   --policy-arn arn:aws:iam::aws:policy/CloudFrontFullAccess
 
 # Create access key (save these securely!)
-aws iam create-access-key --user-name nayya-github-deployer
+aws iam create-access-key --user-name neyya-github-deployer
 ```
 
 **Save the AccessKeyId and SecretAccessKey** — you'll add them to GitHub Secrets.
@@ -167,8 +167,8 @@ aws configure
 
 ```bash
 aws route53 create-hosted-zone \
-  --name nayya.ai \
-  --caller-reference "nayya-$(date +%s)"
+  --name neyya.ai \
+  --caller-reference "neyya-$(date +%s)"
 ```
 
 **Output will include:**
@@ -176,7 +176,7 @@ aws route53 create-hosted-zone \
 {
   "HostedZone": {
     "Id": "/hostedzone/Z1234567890ABC",
-    "Name": "nayya.ai."
+    "Name": "neyya.ai."
   },
   "DelegationSet": {
     "NameServers": [
@@ -196,21 +196,21 @@ Save the Hosted Zone ID — you'll need it for DNS record creation.
 ### Step 2: ACM — SSL Certificate
 
 ```bash
-# Request a wildcard certificate (covers nayya.ai and *.nayya.ai)
+# Request a wildcard certificate (covers neyya.ai and *.neyya.ai)
 # NOTE: For CloudFront, you ALSO need a cert in us-east-1 (CloudFront requirement)
 # For ALB and other services, use eu-west-1
 
 # Certificate for ALB (eu-west-1)
 aws acm request-certificate \
-  --domain-name nayya.ai \
-  --subject-alternative-names "*.nayya.ai" \
+  --domain-name neyya.ai \
+  --subject-alternative-names "*.neyya.ai" \
   --validation-method DNS \
   --region eu-west-1
 
 # Certificate for CloudFront (MUST be us-east-1 — AWS requirement)
 aws acm request-certificate \
-  --domain-name nayya.ai \
-  --subject-alternative-names "*.nayya.ai" \
+  --domain-name neyya.ai \
+  --subject-alternative-names "*.neyya.ai" \
   --validation-method DNS \
   --region us-east-1
 ```
@@ -236,7 +236,7 @@ aws acm describe-certificate \
 
 ```bash
 aws ecr create-repository \
-  --repository-name nayya-api \
+  --repository-name neyya-api \
   --image-scanning-configuration scanOnPush=true \
   --region eu-west-1
 ```
@@ -249,24 +249,24 @@ Deploy the CloudFormation stack:
 # QA Environment
 aws cloudformation deploy \
   --template-file infrastructure/cloudformation/network.yml \
-  --stack-name nayya-qa-network \
-  --parameter-overrides Environment=qa ProjectName=nayya \
+  --stack-name neyya-qa-network \
+  --parameter-overrides Environment=qa ProjectName=neyya \
   --capabilities CAPABILITY_IAM \
   --region eu-west-1
 
 # Staging Environment
 aws cloudformation deploy \
   --template-file infrastructure/cloudformation/network.yml \
-  --stack-name nayya-staging-network \
-  --parameter-overrides Environment=staging ProjectName=nayya \
+  --stack-name neyya-staging-network \
+  --parameter-overrides Environment=staging ProjectName=neyya \
   --capabilities CAPABILITY_IAM \
   --region eu-west-1
 
 # Production Environment
 aws cloudformation deploy \
   --template-file infrastructure/cloudformation/network.yml \
-  --stack-name nayya-production-network \
-  --parameter-overrides Environment=production ProjectName=nayya \
+  --stack-name neyya-production-network \
+  --parameter-overrides Environment=production ProjectName=neyya \
   --capabilities CAPABILITY_IAM \
   --region eu-west-1
 ```
@@ -276,23 +276,23 @@ aws cloudformation deploy \
 ```bash
 # Create DB subnet group first
 aws rds create-db-subnet-group \
-  --db-subnet-group-name nayya-qa-db-subnet \
-  --db-subnet-group-description "Nayya QA DB subnets" \
+  --db-subnet-group-name neyya-qa-db-subnet \
+  --db-subnet-group-description "Neyya QA DB subnets" \
   --subnet-ids <PrivateSubnet1Id> <PrivateSubnet2Id>
 
 # Create the database
 aws rds create-db-instance \
-  --db-instance-identifier nayya-db-qa \
+  --db-instance-identifier neyya-db-qa \
   --engine postgres \
   --engine-version 16.4 \
   --db-instance-class db.t3.micro \
   --allocated-storage 20 \
   --storage-type gp3 \
-  --master-username nayya_admin \
+  --master-username neyya_admin \
   --master-user-password "<STRONG_PASSWORD>" \
-  --db-name nayya \
+  --db-name neyya \
   --vpc-security-group-ids <DatabaseSecurityGroupId> \
-  --db-subnet-group-name nayya-qa-db-subnet \
+  --db-subnet-group-name neyya-qa-db-subnet \
   --no-publicly-accessible \
   --backup-retention-period 7 \
   --multi-az false \
@@ -311,18 +311,18 @@ aws rds create-db-instance \
 ```bash
 # Create subnet group
 aws elasticache create-cache-subnet-group \
-  --cache-subnet-group-name nayya-qa-redis-subnet \
-  --cache-subnet-group-description "Nayya QA Redis subnets" \
+  --cache-subnet-group-name neyya-qa-redis-subnet \
+  --cache-subnet-group-description "Neyya QA Redis subnets" \
   --subnet-ids <PrivateSubnet1Id> <PrivateSubnet2Id>
 
 # Create Redis cluster
 aws elasticache create-cache-cluster \
-  --cache-cluster-id nayya-redis-qa \
+  --cache-cluster-id neyya-redis-qa \
   --engine redis \
   --engine-version 7.0 \
   --cache-node-type cache.t3.micro \
   --num-cache-nodes 1 \
-  --cache-subnet-group-name nayya-qa-redis-subnet \
+  --cache-subnet-group-name neyya-qa-redis-subnet \
   --security-group-ids <RedisSecurityGroupId>
 ```
 
@@ -330,18 +330,18 @@ aws elasticache create-cache-cluster \
 
 ```bash
 # Web app static assets
-aws s3 mb s3://nayya-web-qa --region eu-west-1
-aws s3 mb s3://nayya-web-staging --region eu-west-1
-aws s3 mb s3://nayya-web-production --region eu-west-1
+aws s3 mb s3://neyya-web-qa --region eu-west-1
+aws s3 mb s3://neyya-web-staging --region eu-west-1
+aws s3 mb s3://neyya-web-production --region eu-west-1
 
 # Document storage
-aws s3 mb s3://nayya-docs-qa --region eu-west-1
-aws s3 mb s3://nayya-docs-staging --region eu-west-1
-aws s3 mb s3://nayya-docs-production --region eu-west-1
+aws s3 mb s3://neyya-docs-qa --region eu-west-1
+aws s3 mb s3://neyya-docs-staging --region eu-west-1
+aws s3 mb s3://neyya-docs-production --region eu-west-1
 
 # Enable versioning on document buckets
 aws s3api put-bucket-versioning \
-  --bucket nayya-docs-production \
+  --bucket neyya-docs-production \
   --versioning-configuration Status=Enabled
 ```
 
@@ -350,19 +350,19 @@ aws s3api put-bucket-versioning \
 Create via Console or CLI. Key settings:
 
 ```
-Origin: s3://nayya-web-qa.s3.amazonaws.com
-Alternate Domain Names (CNAME): qa.nayya.ai
+Origin: s3://neyya-web-qa.s3.amazonaws.com
+Alternate Domain Names (CNAME): qa.neyya.ai
 SSL Certificate: Select the ACM wildcard cert
 Default Root Object: index.html
 Custom Error Response: 404 → /index.html (for SPA routing)
-Comment: nayya-qa
+Comment: neyya-qa
 ```
 
 ### Step 9: ECS Cluster & Service (per environment)
 
 ```bash
 # Create cluster
-aws ecs create-cluster --cluster-name nayya-qa
+aws ecs create-cluster --cluster-name neyya-qa
 
 # Register task definition (see packages/api/ecs-task-def.json)
 aws ecs register-task-definition --cli-input-json file://infrastructure/ecs-task-def-qa.json
@@ -370,9 +370,9 @@ aws ecs register-task-definition --cli-input-json file://infrastructure/ecs-task
 # Create ALB, target group, and listener (via Console recommended)
 # Then create the service:
 aws ecs create-service \
-  --cluster nayya-qa \
-  --service-name nayya-api-qa \
-  --task-definition nayya-api-qa \
+  --cluster neyya-qa \
+  --service-name neyya-api-qa \
+  --task-definition neyya-api-qa \
   --desired-count 1 \
   --launch-type FARGATE \
   --network-configuration "awsvpcConfiguration={subnets=[<PrivateSubnet1>,<PrivateSubnet2>],securityGroups=[<ECSSecurityGroupId>],assignPublicIp=DISABLED}" \
@@ -383,7 +383,7 @@ aws ecs create-service \
 
 ```bash
 aws cognito-idp create-user-pool \
-  --pool-name nayya-qa \
+  --pool-name neyya-qa \
   --auto-verified-attributes email \
   --username-attributes email \
   --policies "PasswordPolicy={MinimumLength=8,RequireUppercase=true,RequireLowercase=true,RequireNumbers=true,RequireSymbols=false}" \
@@ -392,7 +392,7 @@ aws cognito-idp create-user-pool \
 # Create app client
 aws cognito-idp create-user-pool-client \
   --user-pool-id <UserPoolId> \
-  --client-name nayya-web-qa \
+  --client-name neyya-web-qa \
   --no-generate-secret \
   --explicit-auth-flows ALLOW_USER_PASSWORD_AUTH ALLOW_REFRESH_TOKEN_AUTH
 ```
@@ -402,12 +402,12 @@ aws cognito-idp create-user-pool-client \
 ```bash
 # Email processing queue
 aws sqs create-queue \
-  --queue-name nayya-email-processing-qa.fifo \
+  --queue-name neyya-email-processing-qa.fifo \
   --attributes "FifoQueue=true,ContentBasedDeduplication=true,VisibilityTimeout=120"
 
 # Notification queue
 aws sqs create-queue \
-  --queue-name nayya-notifications-qa \
+  --queue-name neyya-notifications-qa \
   --attributes "VisibilityTimeout=30"
 ```
 
@@ -417,19 +417,19 @@ Store all sensitive values:
 
 ```bash
 aws secretsmanager create-secret \
-  --name nayya/qa/database \
-  --secret-string '{"host":"<RDS_ENDPOINT>","port":5432,"username":"nayya_admin","password":"<PASSWORD>","database":"nayya"}'
+  --name neyya/qa/database \
+  --secret-string '{"host":"<RDS_ENDPOINT>","port":5432,"username":"neyya_admin","password":"<PASSWORD>","database":"neyya"}'
 
 aws secretsmanager create-secret \
-  --name nayya/qa/redis \
+  --name neyya/qa/redis \
   --secret-string '{"url":"redis://<REDIS_ENDPOINT>:6379"}'
 
 aws secretsmanager create-secret \
-  --name nayya/qa/cognito \
+  --name neyya/qa/cognito \
   --secret-string '{"userPoolId":"<POOL_ID>","clientId":"<CLIENT_ID>","region":"us-east-1"}'
 
 aws secretsmanager create-secret \
-  --name nayya/qa/api-keys \
+  --name neyya/qa/api-keys \
   --secret-string '{"googlePlacesApiKey":"","openExchangeRatesKey":"","openWeatherMapKey":""}'
 ```
 
@@ -447,14 +447,14 @@ Each ECS task needs these environment variables:
     { "name": "NODE_ENV", "value": "production" },
     { "name": "PORT", "value": "3000" },
     { "name": "HOST", "value": "0.0.0.0" },
-    { "name": "CORS_ORIGIN", "value": "https://qa.nayya.ai" },
+    { "name": "CORS_ORIGIN", "value": "https://qa.neyya.ai" },
     { "name": "LOG_LEVEL", "value": "info" }
   ],
   "secrets": [
-    { "name": "DATABASE_URL", "valueFrom": "arn:aws:secretsmanager:...:nayya/qa/database" },
-    { "name": "REDIS_URL", "valueFrom": "arn:aws:secretsmanager:...:nayya/qa/redis" },
-    { "name": "COGNITO_USER_POOL_ID", "valueFrom": "arn:aws:secretsmanager:...:nayya/qa/cognito:userPoolId" },
-    { "name": "COGNITO_CLIENT_ID", "valueFrom": "arn:aws:secretsmanager:...:nayya/qa/cognito:clientId" }
+    { "name": "DATABASE_URL", "valueFrom": "arn:aws:secretsmanager:...:neyya/qa/database" },
+    { "name": "REDIS_URL", "valueFrom": "arn:aws:secretsmanager:...:neyya/qa/redis" },
+    { "name": "COGNITO_USER_POOL_ID", "valueFrom": "arn:aws:secretsmanager:...:neyya/qa/cognito:userPoolId" },
+    { "name": "COGNITO_CLIENT_ID", "valueFrom": "arn:aws:secretsmanager:...:neyya/qa/cognito:clientId" }
   ]
 }
 ```
@@ -478,7 +478,7 @@ Go to: GitHub → Repository → Settings → Secrets and Variables → Actions
 | Variable Name | Value |
 |---------------|-------|
 | `AWS_REGION` | eu-west-1 |
-| `ECR_REPOSITORY` | nayya-api |
+| `ECR_REPOSITORY` | neyya-api |
 
 ### GitHub Environments
 
@@ -519,26 +519,26 @@ After Route 53 hosted zone is active, create these records:
 
 | Record | Type | Value | Purpose |
 |--------|------|-------|---------|
-| `nayya.ai` | A (Alias) | CloudFront distribution (prod) | Production web |
-| `www.nayya.ai` | CNAME | `nayya.ai` | www redirect |
-| `qa.nayya.ai` | CNAME | CloudFront distribution (qa) | QA web |
-| `staging.nayya.ai` | CNAME | CloudFront distribution (staging) | Staging web |
-| `api.nayya.ai` | A (Alias) | ALB (prod) | Production API |
-| `api-qa.nayya.ai` | CNAME | ALB DNS (qa) | QA API |
-| `api-staging.nayya.ai` | CNAME | ALB DNS (staging) | Staging API |
+| `neyya.ai` | A (Alias) | CloudFront distribution (prod) | Production web |
+| `www.neyya.ai` | CNAME | `neyya.ai` | www redirect |
+| `qa.neyya.ai` | CNAME | CloudFront distribution (qa) | QA web |
+| `staging.neyya.ai` | CNAME | CloudFront distribution (staging) | Staging web |
+| `api.neyya.ai` | A (Alias) | ALB (prod) | Production API |
+| `api-qa.neyya.ai` | CNAME | ALB DNS (qa) | QA API |
+| `api-staging.neyya.ai` | CNAME | ALB DNS (staging) | Staging API |
 
 ### MX Records (if using SES for email)
 
 | Record | Type | Priority | Value |
 |--------|------|----------|-------|
-| `nayya.ai` | MX | 10 | `inbound-smtp.eu-west-1.amazonaws.com` |
+| `neyya.ai` | MX | 10 | `inbound-smtp.eu-west-1.amazonaws.com` |
 
 ### TXT Records
 
 | Record | Type | Value | Purpose |
 |--------|------|-------|---------|
-| `nayya.ai` | TXT | `v=spf1 include:amazonses.com ~all` | SPF for SES |
-| `_dmarc.nayya.ai` | TXT | `v=DMARC1; p=quarantine; rua=mailto:admin@nayya.ai` | DMARC |
+| `neyya.ai` | TXT | `v=spf1 include:amazonses.com ~all` | SPF for SES |
+| `_dmarc.neyya.ai` | TXT | `v=DMARC1; p=quarantine; rua=mailto:admin@neyya.ai` | DMARC |
 
 ---
 
@@ -547,7 +547,7 @@ After Route 53 hosted zone is active, create these records:
 ### ACM Certificate
 
 - **Type:** Wildcard
-- **Domains covered:** `nayya.ai`, `*.nayya.ai`
+- **Domains covered:** `neyya.ai`, `*.neyya.ai`
 - **Validation:** DNS (add CNAME to Route 53)
 - **Auto-renewal:** Yes (ACM handles this automatically)
 - **Used by:** CloudFront distributions + ALBs
@@ -575,7 +575,7 @@ aws acm describe-certificate \
 ```bash
 # API 5xx errors > 5 in 5 minutes
 aws cloudwatch put-metric-alarm \
-  --alarm-name nayya-qa-api-5xx \
+  --alarm-name neyya-qa-api-5xx \
   --metric-name HTTPCode_Target_5XX_Count \
   --namespace AWS/ApplicationELB \
   --statistic Sum \
@@ -586,7 +586,7 @@ aws cloudwatch put-metric-alarm \
 
 # RDS CPU > 80%
 aws cloudwatch put-metric-alarm \
-  --alarm-name nayya-qa-db-cpu \
+  --alarm-name neyya-qa-db-cpu \
   --metric-name CPUUtilization \
   --namespace AWS/RDS \
   --statistic Average \
@@ -600,9 +600,9 @@ aws cloudwatch put-metric-alarm \
 
 | Log Group | Source |
 |-----------|--------|
-| `/ecs/nayya-api-qa` | API container logs |
-| `/ecs/nayya-api-staging` | API container logs |
-| `/ecs/nayya-api-production` | API container logs |
+| `/ecs/neyya-api-qa` | API container logs |
+| `/ecs/neyya-api-staging` | API container logs |
+| `/ecs/neyya-api-production` | API container logs |
 
 ---
 
@@ -642,24 +642,24 @@ aws cloudwatch put-metric-alarm \
 ### Domain not resolving after NS change
 
 - Wait 48 hours for full propagation
-- Check with: `dig NS nayya.ai @8.8.8.8`
+- Check with: `dig NS neyya.ai @8.8.8.8`
 - Verify nameservers match Route 53 values exactly
 
 ### SSL certificate stuck in "Pending validation"
 
 - Ensure the CNAME validation record exists in Route 53
-- Check: `dig CNAME _abc123.nayya.ai` should return the ACM validation value
+- Check: `dig CNAME _abc123.neyya.ai` should return the ACM validation value
 - Can take up to 30 minutes after adding the record
 
 ### ECS deployment failing
 
 ```bash
 # Check service events
-aws ecs describe-services --cluster nayya-qa --services nayya-api-qa \
+aws ecs describe-services --cluster neyya-qa --services neyya-api-qa \
   --query "services[0].events[:5]"
 
 # Check task stopped reason
-aws ecs describe-tasks --cluster nayya-qa --tasks <task-arn> \
+aws ecs describe-tasks --cluster neyya-qa --tasks <task-arn> \
   --query "tasks[0].stoppedReason"
 ```
 
@@ -696,6 +696,6 @@ aws ecs describe-tasks --cluster nayya-qa --tasks <task-arn> \
 15. ☐ Add DNS records (A/CNAME for all subdomains)
 16. ☐ Configure GitHub secrets and environments
 17. ☐ Push to `develop` → verify QA deployment
-18. ☐ Run E2E tests against qa.nayya.ai
+18. ☐ Run E2E tests against qa.neyya.ai
 19. ☐ Create `release/1.0` branch → verify staging
 20. ☐ Merge to `main` with approval → verify production

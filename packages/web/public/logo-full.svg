@@ -9,8 +9,8 @@
   <!-- Small leaf accents -->
   <path d="M50 40 C52 38 55 38 56 40 C55 42 52 42 50 40Z" fill="#609550"/>
   <path d="M52 36 C53 34 56 34 57 36 C56 38 53 38 52 36Z" fill="#32CD32"/>
-  <!-- NAYYA text -->
-  <text x="70" y="35" font-family="Arial, sans-serif" font-weight="bold" font-size="28" fill="#2D2D2D" letter-spacing="2">NAYYA</text>
+  <!-- NEYYA text -->
+  <text x="70" y="35" font-family="Arial, sans-serif" font-weight="bold" font-size="28" fill="#2D2D2D" letter-spacing="2">NEYYA</text>
   <!-- Tagline -->
   <text x="70" y="52" font-family="Arial, sans-serif" font-size="10" fill="#609550" letter-spacing="0.5">Your Complete Travel Companion</text>
 </svg>

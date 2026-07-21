@@ -191,7 +191,7 @@ export async function registerSourceAttachmentsRoute(
           source_type: 'receipt_scan',
           mime_type: mimeType ?? 'image/jpeg',
           s3_key: `receipts/${userId}/${expenseId}/${fileName ?? 'receipt.jpg'}`,
-          s3_bucket: 'nayya-attachments',
+          s3_bucket: 'neyya-attachments',
         })
         .returning(['id', 'source_type', 'mime_type', 's3_key', 'created_at'])
         .executeTakeFirstOrThrow();

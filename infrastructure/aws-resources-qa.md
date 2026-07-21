@@ -21,7 +21,7 @@ ns-1614.awsdns-09.co.uk
 ns-1422.awsdns-49.org
 ```
 
-### Network (CloudFormation: nayya-qa-network)
+### Network (CloudFormation: neyya-qa-network)
 
 | Resource | ID |
 |----------|-----|
@@ -39,13 +39,13 @@ ns-1422.awsdns-49.org
 
 | Resource | Value |
 |----------|-------|
-| Instance ID | `nayya-db-qa` |
+| Instance ID | `neyya-db-qa` |
 | Engine | PostgreSQL 16.14 |
 | Instance Class | db.t3.micro |
 | Storage | 20 GB gp3 |
-| Master Username | `nayya_admin` |
-| Master Password | `NayyaQA2026SecurePass1` |
-| Database Name | `nayya` |
+| Master Username | `neyya_admin` |
+| Master Password | `NeyyaQA2026SecurePass1` |
+| Database Name | `neyya` |
 | Endpoint | *(available after creation — check with `aws rds describe-db-instances`)* |
 | Port | 5432 |
 
@@ -53,7 +53,7 @@ ns-1422.awsdns-49.org
 
 | Resource | Value |
 |----------|-------|
-| Cluster ID | `nayya-redis-qa` |
+| Cluster ID | `neyya-redis-qa` |
 | Engine | Redis 7.1 |
 | Node Type | cache.t3.micro |
 | Endpoint | *(available after creation)* |
@@ -63,8 +63,8 @@ ns-1422.awsdns-49.org
 
 | Resource | Value |
 |----------|-------|
-| Cluster | `nayya-qa` |
-| ECR Repository | `824050487639.dkr.ecr.eu-west-1.amazonaws.com/nayya-api` |
+| Cluster | `neyya-qa` |
+| ECR Repository | `824050487639.dkr.ecr.eu-west-1.amazonaws.com/neyya-api` |
 
 ### Auth (Cognito)
 
@@ -77,17 +77,17 @@ ns-1422.awsdns-49.org
 
 | Bucket | Purpose |
 |--------|---------|
-| `nayya-web-qa` | Web static assets |
-| `nayya-docs-qa` | Document storage |
-| `nayya-web-production` | Production web assets |
-| `nayya-docs-production` | Production documents |
+| `neyya-web-qa` | Web static assets |
+| `neyya-docs-qa` | Document storage |
+| `neyya-web-production` | Production web assets |
+| `neyya-docs-production` | Production documents |
 
 ### Queues (SQS)
 
 | Queue | URL |
 |-------|-----|
-| Email Processing (FIFO) | `https://sqs.eu-west-1.amazonaws.com/824050487639/nayya-email-processing-qa.fifo` |
-| Notifications | `https://sqs.eu-west-1.amazonaws.com/824050487639/nayya-notifications-qa` |
+| Email Processing (FIFO) | `https://sqs.eu-west-1.amazonaws.com/824050487639/neyya-email-processing-qa.fifo` |
+| Notifications | `https://sqs.eu-west-1.amazonaws.com/824050487639/neyya-notifications-qa` |
 
 ## Pending Actions
 
@@ -98,7 +98,7 @@ ns-1422.awsdns-49.org
 - [ ] Push Docker image to ECR (via GitHub Actions on `develop` branch)
 - [x] Create ALB + Target Group + HTTP Listener
 - [x] Create ECS Task Definition + Service
-- [x] Add DNS record (api-qa.nayya.ai → ALB)
+- [x] Add DNS record (api-qa.neyya.ai → ALB)
 - [x] Create IAM deploy user + GitHub secrets
 - [x] Create `develop` branch for QA deploys
 
@@ -106,9 +106,9 @@ ns-1422.awsdns-49.org
 
 | Resource | Value |
 |----------|-------|
-| ALB ARN | `arn:aws:elasticloadbalancing:eu-west-1:824050487639:loadbalancer/app/nayya-api-qa/41a6482757186d7f` |
-| ALB DNS | `nayya-api-qa-356525978.eu-west-1.elb.amazonaws.com` |
-| Target Group ARN | `arn:aws:elasticloadbalancing:eu-west-1:824050487639:targetgroup/nayya-api-qa-tg/1837469d0569f106` |
+| ALB ARN | `arn:aws:elasticloadbalancing:eu-west-1:824050487639:loadbalancer/app/neyya-api-qa/41a6482757186d7f` |
+| ALB DNS | `neyya-api-qa-356525978.eu-west-1.elb.amazonaws.com` |
+| Target Group ARN | `arn:aws:elasticloadbalancing:eu-west-1:824050487639:targetgroup/neyya-api-qa-tg/1837469d0569f106` |
 
 ### GitHub Secrets Configured
 
@@ -123,4 +123,4 @@ ns-1422.awsdns-49.org
 | Variable | Value |
 |----------|-------|
 | `AWS_REGION` | eu-west-1 |
-| `ECR_REPOSITORY` | nayya-api |
+| `ECR_REPOSITORY` | neyya-api |

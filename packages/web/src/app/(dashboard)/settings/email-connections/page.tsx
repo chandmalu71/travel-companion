@@ -132,7 +132,7 @@ export default function EmailConnectionsPage() {
     if (process.env.NODE_ENV === 'development' || !process.env.NEXT_PUBLIC_OAUTH_CONFIGURED) {
       setMessage({
         type: 'error',
-        text: `${providerName} OAuth is not configured yet. To connect ${providerName}, the app needs API credentials registered with the provider. See docs/oauth-provider-setup.md for setup instructions. For now, use the IMAP option or forward emails to trips@nayya.ai.`,
+        text: `${providerName} OAuth is not configured yet. To connect ${providerName}, the app needs API credentials registered with the provider. See docs/oauth-provider-setup.md for setup instructions. For now, use the IMAP option or forward emails to trips@neyya.ai.`,
       });
       setConnectStep(null);
       return;
@@ -224,7 +224,7 @@ export default function EmailConnectionsPage() {
           Only booking details are extracted — we never store your full emails.
         </p>
         <p className="text-xs text-primary-600 mt-2">
-          Alternative: Forward bookings directly to <strong>trips@nayya.ai</strong> from any email address.
+          Alternative: Forward bookings directly to <strong>trips@neyya.ai</strong> from any email address.
         </p>
       </div>
 
@@ -499,10 +499,10 @@ export default function EmailConnectionsPage() {
         </p>
         <div className="flex items-center gap-2">
           <code className="rounded bg-white px-3 py-2 text-sm font-mono border border-gray-200">
-            trips@nayya.ai
+            trips@neyya.ai
           </code>
           <button
-            onClick={() => { navigator.clipboard.writeText('trips@nayya.ai'); setMessage({ type: 'success', text: 'Copied to clipboard!' }); }}
+            onClick={() => { navigator.clipboard.writeText('trips@neyya.ai'); setMessage({ type: 'success', text: 'Copied to clipboard!' }); }}
             className="rounded-md bg-gray-200 px-2 py-1 text-xs hover:bg-gray-300"
           >
             Copy

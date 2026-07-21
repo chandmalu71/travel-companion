@@ -1,7 +1,7 @@
 /**
  * Booking Ingestion Service
  *
- * Handles the full flow when a booking email is forwarded to trips@nayya.ai:
+ * Handles the full flow when a booking email is forwarded to trips@neyya.ai:
  * 1. Identify user by "From" email
  * 2. Extract booking details
  * 3. Deduplicate against existing bookings
@@ -55,7 +55,7 @@ export interface TripMatchResult {
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const UNCLAIMED_EXPIRY_DAYS = 60;
-const FORWARDING_ADDRESS = 'trips@nayya.ai';
+const FORWARDING_ADDRESS = 'trips@neyya.ai';
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 
@@ -64,7 +64,7 @@ export class BookingIngestionService {
 
   /**
    * Main ingestion entry point.
-   * Called when an email is received at trips@nayya.ai.
+   * Called when an email is received at trips@neyya.ai.
    */
   async processForwardedBooking(
     fromEmail: string,
@@ -382,8 +382,8 @@ export class BookingIngestionService {
     const bookingType = extracted.type === 'flight' ? 'flight' :
       extracted.type === 'hotel' ? 'hotel reservation' : 'car rental';
 
-    const signupUrl = `https://nayya.ai/register?claim=${claimToken}`;
-    const loginUrl = `https://nayya.ai/login?claim=${claimToken}`;
+    const signupUrl = `https://neyya.ai/register?claim=${claimToken}`;
+    const loginUrl = `https://neyya.ai/login?claim=${claimToken}`;
 
     // In production, this would send via SES or queue to SQS
     console.log(`[BookingIngestion] Invitation email queued for ${email}:`);
@@ -402,7 +402,7 @@ export class BookingIngestionService {
         fire_at: new Date(), // send immediately
         payload: JSON.stringify({
           to: email,
-          subject: `Your ${bookingType} to ${destination} is waiting on Nayya`,
+          subject: `Your ${bookingType} to ${destination} is waiting on Neyya`,
           body: {
             bookingType,
             destination,

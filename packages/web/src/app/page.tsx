@@ -94,8 +94,8 @@ export default function LandingPage() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <img src="/logo-header.svg" alt="Nayya" className="h-10 hidden sm:block" />
-              <img src="/logo-icon.svg" alt="Nayya" className="h-9 sm:hidden" />
+              <img src="/logo-header.svg" alt="Neyya" className="h-10 hidden sm:block" />
+              <img src="/logo-icon.svg" alt="Neyya" className="h-9 sm:hidden" />
             </div>
 
             {/* Desktop Nav */}
@@ -234,7 +234,7 @@ export default function LandingPage() {
               Everything You Need for Seamless Travel
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              From planning to sharing memories, Nayya handles every aspect of your journey.
+              From planning to sharing memories, Neyya handles every aspect of your journey.
             </p>
           </div>
 
@@ -291,12 +291,12 @@ export default function LandingPage() {
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-4">About Us</h2>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                Nayya was born from a simple frustration: planning trips shouldn't require
+                Neyya was born from a simple frustration: planning trips shouldn't require
                 a dozen apps and spreadsheets. We built an all-in-one platform that uses AI to make
                 travel planning effortless.
               </p>
               <p className="text-gray-600 mb-4 leading-relaxed">
-                The name "Nayya" comes from Sanskrit, meaning "to guide." Our mission is to give 
+                The name "Neyya" comes from Sanskrit, meaning "to guide." Our mission is to give 
                 every traveler a personal AI guide that understands their preferences, handles the 
                 logistics, and lets them focus on what matters most — enjoying the experience.
               </p>
@@ -348,7 +348,7 @@ export default function LandingPage() {
 
           <div className="space-y-4">
             {[
-              { q: 'Is Nayya free?', a: 'Yes! We offer a generous free tier with all core features. Premium plans add advanced AI features and priority support.' },
+              { q: 'Is Neyya free?', a: 'Yes! We offer a generous free tier with all core features. Premium plans add advanced AI features and priority support.' },
               { q: 'How do you import my bookings?', a: 'Connect your Gmail or Outlook and we scan for booking confirmation emails. We extract flight, hotel, and car rental details automatically.' },
               { q: 'Is my data secure?', a: 'Absolutely. We use end-to-end encryption for sensitive data, comply with GDPR, and never sell your information to third parties.' },
               { q: 'Can I use it offline?', a: 'Yes! Select up to 10 trips for offline access. Your data syncs automatically when you reconnect.' },
@@ -393,7 +393,7 @@ export default function LandingPage() {
             {/* Brand */}
             <div>
               <div className="mb-4">
-                <img src="/logo-white.svg" alt="Nayya" className="h-10" />
+                <img src="/logo-white.svg" alt="Neyya" className="h-10" />
               </div>
               <p className="text-sm text-gray-400 leading-relaxed">
                 AI-powered travel planning that adapts to your style. Plan, book, and explore with confidence.
@@ -437,7 +437,7 @@ export default function LandingPage() {
           {/* Bottom bar */}
           <div className="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-gray-500">
-              &copy; {new Date().getFullYear()} Nayya. All rights reserved.
+              &copy; {new Date().getFullYear()} Neyya. All rights reserved.
             </p>
             <div className="flex items-center gap-4">
               <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">

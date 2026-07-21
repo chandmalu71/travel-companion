@@ -6,11 +6,11 @@ All demo accounts use password: **`Demo1234`**
 
 | Name | Email | Role | Trips | Bookings | Expenses | Connections |
 |------|-------|------|-------|----------|----------|-------------|
-| Alice Johnson | alice@demo.nayya.ai | super-admin | 3 | 4 | 6 | 4 |
-| Bob Smith | bob@demo.nayya.ai | user | 2 | 5 | 4 | 3 |
-| Charlie Brown | charlie@demo.nayya.ai | user | 1 | 1 | 1 | 2 |
-| Dana Wilson | dana@demo.nayya.ai | support | 2 | 5 | 5 | 0 |
-| Eve Martinez | eve@demo.nayya.ai | user | 2 | 2 | 5 | 0 |
+| Alice Johnson | alice@demo.neyya.ai | super-admin | 3 | 4 | 6 | 4 |
+| Bob Smith | bob@demo.neyya.ai | user | 2 | 5 | 4 | 3 |
+| Charlie Brown | charlie@demo.neyya.ai | user | 1 | 1 | 1 | 2 |
+| Dana Wilson | dana@demo.neyya.ai | support | 2 | 5 | 5 | 0 |
+| Eve Martinez | eve@demo.neyya.ai | user | 2 | 2 | 5 | 0 |
 
 **Super Admin:** chand.malu@gmail.com / SuperAdmin2026! (no test data — clean account)
 

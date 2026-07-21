@@ -17,7 +17,7 @@ interface EmailConnectPromptProps {
   loginProvider?: 'google' | 'microsoft' | 'email' | null;
 }
 
-const PROMPT_DISMISSED_KEY = 'nayya_email_prompt_dismissed';
+const PROMPT_DISMISSED_KEY = 'neyya_email_prompt_dismissed';
 
 export function EmailConnectPrompt({ loginProvider }: EmailConnectPromptProps) {
   const [visible, setVisible] = useState(false);

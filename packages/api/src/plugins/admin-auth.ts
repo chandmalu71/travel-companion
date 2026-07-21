@@ -72,7 +72,7 @@ async function adminAuthPlugin(app: FastifyInstance, options: AdminAuthOptions):
       return reply.status(403).send({
         statusCode: 403,
         error: 'SUSPENDED',
-        message: 'Your account has been suspended. Contact support@nayya.ai for assistance.',
+        message: 'Your account has been suspended. Contact support@neyya.ai for assistance.',
       });
     }
 

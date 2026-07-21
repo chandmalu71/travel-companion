@@ -1,12 +1,12 @@
-# Nayya Brand & Color Scheme
+# Neyya Brand & Color Scheme
 
-This steering file defines the official brand colors, typography, and logo usage for the Nayya application. All UI components MUST use these colors consistently.
+This steering file defines the official brand colors, typography, and logo usage for the Neyya application. All UI components MUST use these colors consistently.
 
 ## Brand Identity
 
-- **Name:** Nayya
+- **Name:** Neyya
 - **Tagline:** Your Complete Travel Companion
-- **Domain:** nayya.ai
+- **Domain:** neyya.ai
 - **Logo mark:** Compass with AI, cityscape, leaves, and orange/green navigation arrows
 
 ## Color Palette
@@ -98,14 +98,14 @@ This steering file defines the official brand colors, typography, and logo usage
 |---------|------|--------|
 | Browser favicon | `/favicon.svg` | 32x32 (rounded square, green N) |
 | Mobile header / small | `/logo-icon.svg` | 36-48px (green circle with N + compass dots) |
-| Desktop header / sidebar | `/logo-header.svg` | h-10 to h-12 (compass mark + NAYYA + tagline) |
+| Desktop header / sidebar | `/logo-header.svg` | h-10 to h-12 (compass mark + NEYYA + tagline) |
 | Hero / marketing | `/logo-full.svg` | Full width (detailed compass + text) |
 | Dark backgrounds (footer) | `/logo-white.svg` | Same as header but white text + lighter greens |
 
 ### Logo Elements
 
 The logo mark contains these symbolic elements:
-- **Compass arrows (green):** Navigation, guidance (the meaning of "Nayya")
+- **Compass arrows (green):** Navigation, guidance (the meaning of "Neyya")
 - **Orange arrow tips:** Energy, adventure, warmth
 - **AI text:** Intelligence powering the experience
 - **Cityscape:** Urban travel and destinations
@@ -119,7 +119,7 @@ The logo mark contains these symbolic elements:
 - **Headings:** font-weight 700-800, text-gray-900
 - **Body text:** font-weight 400, text-gray-600
 - **Tagline:** font-weight 400, text-forest-500 or text-accent-200 (on dark)
-- **Brand name "NAYYA":** font-weight 800, letter-spacing 1.5-2px
+- **Brand name "NEYYA":** font-weight 800, letter-spacing 1.5-2px
 
 ## Do's and Don'ts
 

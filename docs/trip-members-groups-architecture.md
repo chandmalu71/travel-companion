@@ -2,7 +2,7 @@
 
 ## Overview
 
-Every trip has a list of travellers organized into groups (families, friend circles, etc.). Members can be registered Nayya users, invited via email/phone/WhatsApp, or non-account travellers (kids, elderly). Groups are hierarchical and affect both visual display and expense splitting.
+Every trip has a list of travellers organized into groups (families, friend circles, etc.). Members can be registered Neyya users, invited via email/phone/WhatsApp, or non-account travellers (kids, elderly). Groups are hierarchical and affect both visual display and expense splitting.
 
 ---
 
@@ -106,7 +106,7 @@ Trip: "Bali Group Retreat"
 ### Invitation Flow
 
 1. Owner clicks "Invite Member" → enters email/phone/generates link
-2. System checks if email/phone matches existing Nayya user
+2. System checks if email/phone matches existing Neyya user
    - **If yes**: show "User found" indicator, send in-app notification + email
    - **If no**: send invitation email/SMS with signup link
 3. Recipient clicks link → 

@@ -1,7 +1,7 @@
 /**
  * Booking Forward Ingestion Route
  *
- * Handles emails forwarded to trips@nayya.ai.
+ * Handles emails forwarded to trips@neyya.ai.
  * This endpoint is called by SES (inbound email → Lambda → API) or
  * directly by users via the POST /api/bookings/forward endpoint.
  *
