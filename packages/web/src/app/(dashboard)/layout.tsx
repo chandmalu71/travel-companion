@@ -14,6 +14,7 @@ const navItems = [
   { href: '/messages', label: 'Messages', icon: '💬' },
   { href: '/search', label: 'Search', icon: '🔍' },
   { href: '/settings', label: 'Settings', icon: '⚙️' },
+  { href: '/pricing', label: 'Upgrade', icon: '💎' },
 ];
 
 export default function DashboardLayout({

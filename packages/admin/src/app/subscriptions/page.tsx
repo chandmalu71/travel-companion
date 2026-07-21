@@ -42,6 +42,14 @@ export default function SubscriptionsPage() {
 }
 
 function PlansTab() {
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<any>({});
+
+  const startEdit = (plan: any) => {
+    setEditing(plan.slug);
+    setEditValues({ ...plan });
+  };
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-gray-400">Configure plan pricing and feature limits. Changes apply immediately to new subscriptions.</p>
@@ -54,23 +62,40 @@ function PlansTab() {
               {plan.monthlyEur === 0 ? 'Free' : `€${plan.monthlyEur}/mo`}
             </p>
 
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between"><span className="text-gray-400">Annual</span><span className="text-white">€{plan.annualEur}/yr</span></div>
-              {plan.familyMonthly && <div className="flex justify-between"><span className="text-gray-400">Family (monthly)</span><span className="text-white">€{plan.familyMonthly}/mo</span></div>}
-              {plan.familyAnnual && <div className="flex justify-between"><span className="text-gray-400">Family (annual)</span><span className="text-white">€{plan.familyAnnual}/yr</span></div>}
-              <hr className="border-gray-700 my-2" />
-              <div className="flex justify-between"><span className="text-gray-400">Active Trips</span><span className="text-white">{plan.maxTrips ?? '∞'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Expenses/mo</span><span className="text-white">{plan.maxExpenses ?? '∞'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Storage</span><span className="text-white">{plan.maxStorage >= 1024 ? `${(plan.maxStorage / 1024).toFixed(0)}GB` : `${plan.maxStorage}MB`}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Network</span><span className="text-white">{plan.maxNetwork}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Family</span><span className="text-white">{plan.maxFamily}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Aliases</span><span className="text-white">{plan.maxAliases}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Weather</span><span className="text-white">{plan.weather}-day</span></div>
-            </div>
+            {editing === plan.slug ? (
+              <div className="space-y-2 text-xs">
+                <div><label className="text-gray-400">Monthly (€)</label><input type="number" step="0.01" value={editValues.monthlyEur} onChange={e => setEditValues({...editValues, monthlyEur: e.target.value})} className="w-full mt-0.5 rounded bg-gray-700 border border-gray-600 px-2 py-1 text-white" /></div>
+                <div><label className="text-gray-400">Annual (€)</label><input type="number" step="0.01" value={editValues.annualEur} onChange={e => setEditValues({...editValues, annualEur: e.target.value})} className="w-full mt-0.5 rounded bg-gray-700 border border-gray-600 px-2 py-1 text-white" /></div>
+                <div><label className="text-gray-400">Max Trips</label><input type="number" value={editValues.maxTrips ?? ''} onChange={e => setEditValues({...editValues, maxTrips: e.target.value})} placeholder="∞" className="w-full mt-0.5 rounded bg-gray-700 border border-gray-600 px-2 py-1 text-white" /></div>
+                <div><label className="text-gray-400">Max Storage (MB)</label><input type="number" value={editValues.maxStorage} onChange={e => setEditValues({...editValues, maxStorage: e.target.value})} className="w-full mt-0.5 rounded bg-gray-700 border border-gray-600 px-2 py-1 text-white" /></div>
+                <div><label className="text-gray-400">Max Network</label><input type="number" value={editValues.maxNetwork} onChange={e => setEditValues({...editValues, maxNetwork: e.target.value})} className="w-full mt-0.5 rounded bg-gray-700 border border-gray-600 px-2 py-1 text-white" /></div>
+                <div><label className="text-gray-400">Max Family</label><input type="number" value={editValues.maxFamily} onChange={e => setEditValues({...editValues, maxFamily: e.target.value})} className="w-full mt-0.5 rounded bg-gray-700 border border-gray-600 px-2 py-1 text-white" /></div>
+                <div className="flex gap-2 pt-2">
+                  <button onClick={() => { alert('Saved! (In production: calls PUT /api/admin/plans/' + plan.slug); setEditing(null); }} className="flex-1 rounded bg-primary-600 px-2 py-1 text-white hover:bg-primary-500">Save</button>
+                  <button onClick={() => setEditing(null)} className="flex-1 rounded bg-gray-700 px-2 py-1 text-white hover:bg-gray-600">Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between"><span className="text-gray-400">Annual</span><span className="text-white">€{plan.annualEur}/yr</span></div>
+                  {plan.familyMonthly && <div className="flex justify-between"><span className="text-gray-400">Family (monthly)</span><span className="text-white">€{plan.familyMonthly}/mo</span></div>}
+                  {plan.familyAnnual && <div className="flex justify-between"><span className="text-gray-400">Family (annual)</span><span className="text-white">€{plan.familyAnnual}/yr</span></div>}
+                  <hr className="border-gray-700 my-2" />
+                  <div className="flex justify-between"><span className="text-gray-400">Active Trips</span><span className="text-white">{plan.maxTrips ?? '∞'}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Expenses/mo</span><span className="text-white">{plan.maxExpenses ?? '∞'}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Storage</span><span className="text-white">{plan.maxStorage >= 1024 ? `${(plan.maxStorage / 1024).toFixed(0)}GB` : `${plan.maxStorage}MB`}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Network</span><span className="text-white">{plan.maxNetwork}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Family</span><span className="text-white">{plan.maxFamily}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Aliases</span><span className="text-white">{plan.maxAliases}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Weather</span><span className="text-white">{plan.weather}-day</span></div>
+                </div>
 
-            <button className="mt-4 w-full rounded-md bg-gray-700 px-3 py-1.5 text-xs text-white hover:bg-gray-600">
-              Edit Plan
-            </button>
+                <button onClick={() => startEdit(plan)} className="mt-4 w-full rounded-md bg-gray-700 px-3 py-1.5 text-xs text-white hover:bg-gray-600">
+                  Edit Plan
+                </button>
+              </>
+            )}
           </div>
         ))}
       </div>
