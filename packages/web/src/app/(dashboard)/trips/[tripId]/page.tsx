@@ -27,7 +27,7 @@ interface Booking {
   checked_in: boolean;
 }
 
-type TabId = 'overview' | 'timeline' | 'map' | 'expenses' | 'members' | 'documents' | 'tips';
+type TabId = 'overview' | 'timeline' | 'map' | 'expenses' | 'members' | 'tips' | 'weather' | 'documents';
 
 const CATEGORY_ICONS: Record<string, string> = {
   food_dining: '🍕', transportation: '🚗', accommodation: '🏨',
@@ -72,6 +72,7 @@ export default function TripDetailPage() {
     { id: 'expenses', label: 'Expenses', icon: '💰' },
     { id: 'members', label: 'Members', icon: '👥' },
     { id: 'tips', label: 'AI Tips', icon: '💡' },
+    { id: 'weather', label: 'Weather', icon: '🌤️' },
     { id: 'documents', label: 'Documents', icon: '📄' },
   ];
 
@@ -121,6 +122,7 @@ export default function TripDetailPage() {
       {activeTab === 'expenses' && <ExpensesTab tripId={tripId} />}
       {activeTab === 'members' && <MembersTab tripId={tripId} />}
       {activeTab === 'tips' && <TipsTab tripId={tripId} />}
+      {activeTab === 'weather' && <WeatherTab tripId={tripId} />}
       {activeTab === 'documents' && <DocumentsTab tripId={tripId} />}
     </div>
   );
@@ -130,6 +132,15 @@ function OverviewTab({ trip, bookings }: { trip: TripDetail; bookings: Booking[]
   const flights = bookings.filter((b) => b.type === 'flight');
   const hotels = bookings.filter((b) => b.type === 'hotel');
   const cars = bookings.filter((b) => b.type === 'car_rental');
+  const [weatherPreview, setWeatherPreview] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (trip?.id) {
+      api.get<{ data: { forecast: any[] } }>(`/api/trips/${trip.id}/weather`)
+        .then(res => setWeatherPreview((res.data?.forecast ?? []).slice(0, 5)))
+        .catch(() => {});
+    }
+  }, [trip?.id]);
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -166,6 +177,30 @@ function OverviewTab({ trip, bookings }: { trip: TripDetail; bookings: Booking[]
           <p className="text-sm text-gray-500">No budget set</p>
         )}
       </div>
+
+      {/* Weather preview widget */}
+      {weatherPreview.length > 0 && (
+        <div className="rounded-lg bg-white p-6 border border-gray-200 shadow-sm lg:col-span-2">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-gray-900">🌤️ Weather Forecast</h3>
+            <span className="text-[10px] text-gray-400">First {weatherPreview.length} days</span>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1">
+            {weatherPreview.map((day: any) => {
+              const d = new Date(day.date);
+              return (
+                <div key={day.date} className="flex flex-col items-center min-w-[64px] rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                  <span className="text-[10px] text-gray-500 font-medium">{d.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                  <span className="text-xl my-1">{day.icon}</span>
+                  <span className="text-xs font-bold text-gray-900">{day.tempHigh}°</span>
+                  <span className="text-[10px] text-gray-400">{day.tempLow}°</span>
+                  {day.precipitation > 30 && <span className="text-[9px] text-blue-500 mt-0.5">💧{day.precipitation}%</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Gap alerts placeholder */}
       <div className="rounded-lg bg-white p-6 border border-gray-200 shadow-sm lg:col-span-2">
@@ -1381,6 +1416,149 @@ function TipsTab({ tripId }: { tripId: string }) {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Weather Tab ─────────────────────────────────────────────────────────────
+
+function WeatherTab({ tripId }: { tripId: string }) {
+  const [weather, setWeather] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [liveWeather, setLiveWeather] = useState<any>(null);
+  const [loadingLive, setLoadingLive] = useState(false);
+
+  useEffect(() => {
+    api.get<{ data: any }>(`/api/trips/${tripId}/weather`)
+      .then(res => setWeather(res.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [tripId]);
+
+  const handleGetLiveWeather = () => {
+    if (!navigator.geolocation) { alert('Geolocation not supported'); return; }
+    setLoadingLive(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const res = await api.get<{ data: any }>(`/api/weather/location?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
+          setLiveWeather(res.data);
+        } catch { /* error */ }
+        finally { setLoadingLive(false); }
+      },
+      () => { alert('Location access denied'); setLoadingLive(false); },
+    );
+  };
+
+  if (loading) return <div className="animate-pulse space-y-4">{[1, 2, 3].map(i => <div key={i} className="h-20 bg-gray-200 rounded-lg" />)}</div>;
+  if (!weather) return <div className="text-center text-gray-500 py-8">Weather data unavailable</div>;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-gray-900">Weather Forecast</h3>
+          <p className="text-xs text-gray-500">{weather.destination} • {weather.forecast?.length} days</p>
+        </div>
+        <button onClick={handleGetLiveWeather} disabled={loadingLive}
+          className="rounded-md border border-gray-300 px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50">
+          {loadingLive ? '📍 Getting...' : '📍 Live Weather'}
+        </button>
+      </div>
+
+      {/* Live weather (GPS) */}
+      {liveWeather && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <p className="text-xs font-medium text-blue-700 mb-1">📍 Current Location Weather</p>
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">{liveWeather.icon}</span>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{liveWeather.temperature}°C</p>
+              <p className="text-xs text-gray-500">{liveWeather.description} • Feels like {liveWeather.feelsLike}°C</p>
+              <p className="text-[10px] text-gray-400">Humidity: {liveWeather.humidity}% • Wind: {liveWeather.windSpeed} km/h • UV: {liveWeather.uvIndex}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Alerts */}
+      {weather.alerts?.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-gray-700 uppercase">Weather Alerts</p>
+          {weather.alerts.map((alert: any, idx: number) => (
+            <div key={idx} className={`rounded-lg border p-3 ${
+              alert.severity === 'severe' ? 'border-red-300 bg-red-50' :
+              alert.severity === 'warning' ? 'border-amber-300 bg-amber-50' :
+              'border-blue-200 bg-blue-50'
+            }`}>
+              <div className="flex items-start gap-2">
+                <span className="text-sm">{alert.type === 'rain' ? '🌧️' : alert.type === 'heat' ? '🔥' : alert.type === 'cold' ? '❄️' : '💨'}</span>
+                <div>
+                  <p className={`text-xs font-medium ${alert.severity === 'severe' ? 'text-red-700' : alert.severity === 'warning' ? 'text-amber-700' : 'text-blue-700'}`}>
+                    {alert.message}
+                  </p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">{alert.suggestion}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Day-by-day forecast */}
+      <div>
+        <p className="text-xs font-semibold text-gray-700 uppercase mb-3">Daily Forecast</p>
+        <div className="grid gap-2">
+          {weather.forecast?.map((day: any) => {
+            const date = new Date(day.date);
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+            const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            return (
+              <div key={day.date} className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white px-4 py-3 hover:bg-gray-50">
+                {/* Day */}
+                <div className="w-16 flex-shrink-0">
+                  <p className="text-sm font-semibold text-gray-900">{dayName}</p>
+                  <p className="text-[10px] text-gray-400">{dateStr}</p>
+                </div>
+                {/* Icon + condition */}
+                <div className="flex items-center gap-2 w-32 flex-shrink-0">
+                  <span className="text-2xl">{day.icon}</span>
+                  <span className="text-xs text-gray-600">{day.description}</span>
+                </div>
+                {/* Temp */}
+                <div className="flex items-center gap-1 w-20 flex-shrink-0">
+                  <span className="text-sm font-bold text-gray-900">{day.tempHigh}°</span>
+                  <span className="text-xs text-gray-400">/ {day.tempLow}°</span>
+                </div>
+                {/* Details */}
+                <div className="flex items-center gap-3 text-[10px] text-gray-400 flex-1">
+                  <span>💧 {day.precipitation}%</span>
+                  <span>💨 {day.windSpeed} km/h</span>
+                  <span>☀️ UV {day.uvIndex}</span>
+                  <span>💦 {day.humidity}%</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Home weather comparison */}
+      {weather.homeWeather && (
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <p className="text-xs font-medium text-gray-600 mb-1">🏠 At Home</p>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">{weather.homeWeather.icon}</span>
+            <span className="text-sm font-medium text-gray-700">{weather.homeWeather.temperature}°C</span>
+            <span className="text-xs text-gray-400">{weather.homeWeather.location}</span>
+          </div>
+        </div>
+      )}
+
+      <p className="text-[10px] text-gray-400 text-center">
+        Data source: {weather.source} • Last updated: {new Date(weather.lastUpdated).toLocaleString()}
+      </p>
     </div>
   );
 }

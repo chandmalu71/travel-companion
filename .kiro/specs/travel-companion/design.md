@@ -1876,3 +1876,61 @@ Return assistant message
 | transport | 🚌 | Getting Around |
 | budget | 💰 | Budget & Costs |
 | documents | 📋 | Documents & Visas |
+
+
+---
+
+## Component 39: Weather Integration
+
+**Responsibility**: Trip weather forecasts, alerts, live GPS weather, packing guidance
+
+### API Endpoints
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | /api/trips/:tripId/weather | Full forecast + alerts + home weather |
+| GET | /api/weather/location?lat&lng | Current weather at GPS coordinates |
+| GET | /api/weather/alerts/:tripId | Weather alerts/warnings only |
+
+### Data Flow
+
+```
+GET /api/trips/:tripId/weather
+  ↓
+Fetch trip (destination, dates)
+  ↓
+Dev: generateMockForecast(destination, dates)
+Prod: OpenWeatherMap 5-day/16-day API call
+  ↓
+Generate alerts (rain >60%, temp >35°C, cold <5°C, wind >30km/h)
+  ↓
+Fetch home weather for comparison
+  ↓
+Return { forecast[], alerts[], homeWeather }
+```
+
+### Weather Conditions
+
+| Condition | Icon | Trigger |
+|-----------|------|---------|
+| sunny | ☀️ | Clear sky |
+| partly_cloudy | ⛅ | Some clouds |
+| cloudy | ☁️ | Overcast |
+| rain | 🌧️ | Light-moderate rain |
+| heavy_rain | ⛈️ | Heavy precipitation |
+| thunderstorm | 🌩️ | Lightning + rain |
+| snow | ❄️ | Snowfall |
+| fog | 🌫️ | Low visibility |
+| wind | 💨 | Strong winds |
+
+### UI Components
+
+- **WeatherTab**: Full forecast page (day cards, alerts, live GPS, home comparison)
+- **Weather Widget** (Overview): Compact 5-day horizontal strip
+- **Alert Cards**: Color-coded (blue=info, amber=warning, red=severe) with action suggestions
+
+### Configuration
+
+- `OPENWEATHERMAP_API_KEY` — production API key
+- Free tier: 1000 calls/day, 5-day/3h forecast
+- Paid tier: 16-day daily forecast + historical data
