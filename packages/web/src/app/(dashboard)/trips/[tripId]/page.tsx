@@ -7,6 +7,8 @@ import { SourceIndicator } from '@/components/source-indicator';
 import { QuickActions } from '@/components/quick-actions';
 import { SettlementView } from '@/components/settlement-view';
 import { AddExpenseModal } from '@/components/add-expense-modal';
+import { useUserCurrency } from '@/hooks/use-user-currency';
+import { useTranslation } from '@/i18n';
 
 interface TripDetail {
   id: string;
@@ -388,6 +390,8 @@ function ExpensesTab({ tripId }: { tripId: string }) {
   const [loading, setLoading] = useState(true);
   const [subTab, setSubTab] = useState<'expenses' | 'settlements'>('expenses');
   const [showAddExpense, setShowAddExpense] = useState(false);
+  const { primaryCurrency } = useUserCurrency();
+  const { formatCurrency } = useTranslation();
 
   const loadExpenses = () => {
     api.get<{ data?: any[]; statusCode?: number }>(`/api/expenses?tripId=${tripId}`)
@@ -430,7 +434,7 @@ function ExpensesTab({ tripId }: { tripId: string }) {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-lg bg-white p-4 border border-gray-200">
               <p className="text-xs text-gray-500">Total Spent</p>
-              <p className="text-xl font-bold">${totalSpent.toFixed(2)}</p>
+              <p className="text-xl font-bold">{formatCurrency(totalSpent, primaryCurrency)}</p>
             </div>
             <div className="rounded-lg bg-white p-4 border border-gray-200">
               <p className="text-xs text-gray-500">Expenses</p>
@@ -461,7 +465,10 @@ function ExpensesTab({ tripId }: { tripId: string }) {
                     {expense.notes && <p className="text-[11px] text-gray-400 truncate">{expense.notes}</p>}
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="font-semibold text-gray-900 text-sm">{expense.currency} {Number(expense.amount).toFixed(2)}</p>
+                    <p className="font-semibold text-gray-900 text-sm">{formatCurrency(Number(expense.amount), expense.currency)}</p>
+                    {expense.converted_amount && expense.currency !== primaryCurrency && (
+                      <p className="text-[10px] text-gray-400">≈ {formatCurrency(Number(expense.converted_amount), primaryCurrency)}</p>
+                    )}
                   </div>
                 </div>
               ))}

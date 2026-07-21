@@ -3,6 +3,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { api } from '@/lib/api';
 import { DocumentPreview } from '@/components/document-preview';
+import { useUserCurrency } from '@/hooks/use-user-currency';
+import { useTranslation } from '@/i18n';
 
 interface SourceAttachment {
   id: string;
@@ -53,6 +55,8 @@ export default function ExpensesPage() {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
   const [movingExpense, setMovingExpense] = useState<Expense | null>(null);
+  const { primaryCurrency } = useUserCurrency();
+  const { formatCurrency } = useTranslation();
 
   const loadExpenses = () => {
     api.get<{ data?: Expense[]; statusCode?: number }>('/api/expenses')
@@ -126,7 +130,7 @@ export default function ExpensesPage() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-500">Total Expenses</p>
-            <p className="text-3xl font-bold text-gray-900">${totalSpent.toFixed(2)}</p>
+            <p className="text-3xl font-bold text-gray-900">{formatCurrency(totalSpent, primaryCurrency)}</p>
           </div>
           <p className="text-sm text-gray-500">{expenses.length} expenses</p>
         </div>
@@ -171,9 +175,9 @@ export default function ExpensesPage() {
                 )}
               </div>
               <div className="text-right flex-shrink-0 ml-2">
-                <p className="font-semibold text-gray-900 text-sm">{expense.currency} {Number(expense.amount).toFixed(2)}</p>
-                {expense.converted_amount && expense.currency !== 'USD' && (
-                  <p className="text-[10px] text-gray-400">≈ ${Number(expense.converted_amount).toFixed(2)}</p>
+                <p className="font-semibold text-gray-900 text-sm">{formatCurrency(Number(expense.amount), expense.currency)}</p>
+                {expense.converted_amount && expense.currency !== primaryCurrency && (
+                  <p className="text-[10px] text-gray-400">≈ {formatCurrency(Number(expense.converted_amount), primaryCurrency)}</p>
                 )}
               </div>
               {/* Actions menu */}
