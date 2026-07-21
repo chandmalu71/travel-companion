@@ -532,7 +532,9 @@ function EmailAliasesSection() {
     try {
       await api.delete(`/api/email-aliases/${id}`);
       setAliases(prev => prev.filter(a => a.id !== id));
-    } catch { /* error */ }
+    } catch (err: any) {
+      alert(err?.message ?? 'Failed to remove alias');
+    }
   };
 
   return (
