@@ -636,32 +636,15 @@ function MembersTab({ tripId }: { tripId: string }) {
 
       {/* Add Member Form */}
       {showAddForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddForm(false)}>
-          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold mb-4">Add Traveller</h3>
-            <div className="space-y-3">
-              <div><label className="block text-xs font-medium text-gray-700 mb-1">Name *</label><input type="text" value={newName} onChange={e => setNewName(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" autoFocus /></div>
-              <div><label className="block text-xs font-medium text-gray-700 mb-1">Email</label><input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="Optional" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
-              <div><label className="block text-xs font-medium text-gray-700 mb-1">Type</label>
-                <select value={newType} onChange={e => setNewType(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                  <option value="adult">👤 Adult</option><option value="child">👦 Child (2-17)</option><option value="infant">👶 Infant (0-2)</option>
-                </select>
-              </div>
-              {data?.groups?.length > 0 && (
-                <div><label className="block text-xs font-medium text-gray-700 mb-1">Group</label>
-                  <select value={newGroupId} onChange={e => setNewGroupId(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                    <option value="">No group</option>
-                    {data.groups.map((g: any) => <option key={g.id} value={g.id}>{g.name}</option>)}
-                  </select>
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setShowAddForm(false)} className="rounded-md border border-gray-300 px-4 py-2 text-sm">Cancel</button>
-              <button onClick={handleAddTraveller} className="rounded-md bg-primary-600 px-4 py-2 text-sm text-white font-medium">Add</button>
-            </div>
-          </div>
-        </div>
+        <AddMemberWithAutocomplete
+          groups={data?.groups ?? []}
+          onClose={() => setShowAddForm(false)}
+          onAdd={handleAddTraveller}
+          newName={newName} setNewName={setNewName}
+          newEmail={newEmail} setNewEmail={setNewEmail}
+          newType={newType} setNewType={setNewType}
+          newGroupId={newGroupId} setNewGroupId={setNewGroupId}
+        />
       )}
 
       {/* Create Group Form */}
@@ -764,6 +747,124 @@ function MembersTab({ tripId }: { tripId: string }) {
 }
 
 // ─── Invite Modal ────────────────────────────────────────────────────────────
+
+// ─── Add Member with Autocomplete ────────────────────────────────────────────
+
+function AddMemberWithAutocomplete({ groups, onClose, onAdd, newName, setNewName, newEmail, setNewEmail, newType, setNewType, newGroupId, setNewGroupId }: {
+  groups: any[]; onClose: () => void; onAdd: () => void;
+  newName: string; setNewName: (v: string) => void;
+  newEmail: string; setNewEmail: (v: string) => void;
+  newType: string; setNewType: (v: string) => void;
+  newGroupId: string; setNewGroupId: (v: string) => void;
+}) {
+  const [suggestions, setSuggestions] = useState<Array<{ name: string; email: string | null; source: string; relationship?: string }>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [allContacts, setAllContacts] = useState<Array<{ name: string; email: string | null; source: string; relationship?: string }>>([]);
+
+  // Fetch network + family on mount
+  useEffect(() => {
+    Promise.all([
+      api.get<{ data: Array<{ name: string; email: string | null; label: string | null }> }>('/api/connections/suggest').catch(() => ({ data: [] })),
+      api.get<{ data: Array<{ firstName: string; lastName: string | null; relationship: string }> }>('/api/family-members/for-trip').catch(() => ({ data: [] })),
+    ]).then(([connRes, famRes]) => {
+      const contacts: Array<{ name: string; email: string | null; source: string; relationship?: string }> = [];
+      for (const c of (connRes as any).data ?? []) {
+        contacts.push({ name: c.name, email: c.email, source: 'network' });
+      }
+      for (const f of (famRes as any).data ?? []) {
+        contacts.push({ name: `${f.firstName} ${f.lastName ?? ''}`.trim(), email: null, source: 'family', relationship: f.relationship });
+      }
+      setAllContacts(contacts);
+    });
+  }, []);
+
+  const handleNameChange = (value: string) => {
+    setNewName(value);
+    if (value.length >= 1) {
+      const matches = allContacts.filter(c => c.name.toLowerCase().includes(value.toLowerCase()));
+      setSuggestions(matches.slice(0, 6));
+      setShowSuggestions(matches.length > 0);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  const selectSuggestion = (contact: { name: string; email: string | null; source: string; relationship?: string }) => {
+    setNewName(contact.name);
+    if (contact.email) setNewEmail(contact.email);
+    if (contact.relationship === 'child') setNewType('child');
+    setShowSuggestions(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-semibold mb-4">Add Traveller</h3>
+        <div className="space-y-3">
+          {/* Name with autocomplete */}
+          <div className="relative">
+            <label className="block text-xs font-medium text-gray-700 mb-1">Name *</label>
+            <input
+              type="text"
+              value={newName}
+              onChange={e => handleNameChange(e.target.value)}
+              onFocus={() => { if (newName.length >= 1 && suggestions.length > 0) setShowSuggestions(true); }}
+              placeholder="Start typing to search contacts..."
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              autoFocus
+            />
+            {/* Suggestions dropdown */}
+            {showSuggestions && (
+              <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg max-h-48 overflow-y-auto">
+                {suggestions.map((s, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => selectSuggestion(s)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-primary-50 transition-colors border-b border-gray-50 last:border-0"
+                  >
+                    <span className="text-sm flex-shrink-0">
+                      {s.source === 'family' ? '👨‍👩‍👧' : '👥'}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-900 truncate">{s.name}</p>
+                      <p className="text-[10px] text-gray-400 truncate">
+                        {s.email ?? (s.relationship ? `Family: ${s.relationship}` : 'No email')}
+                      </p>
+                    </div>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 flex-shrink-0">
+                      {s.source === 'family' ? 'Family' : 'Network'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div><label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
+            <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="Optional — auto-filled from contacts" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+          <div><label className="block text-xs font-medium text-gray-700 mb-1">Type</label>
+            <select value={newType} onChange={e => setNewType(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <option value="adult">👤 Adult</option><option value="child">👦 Child (2-17)</option><option value="infant">👶 Infant (0-2)</option>
+            </select>
+          </div>
+          {groups.length > 0 && (
+            <div><label className="block text-xs font-medium text-gray-700 mb-1">Group</label>
+              <select value={newGroupId} onChange={e => setNewGroupId(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="">No group</option>
+                {groups.map((g: any) => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+            </div>
+          )}
+        </div>
+        <div className="flex justify-end gap-2 mt-4">
+          <button onClick={onClose} className="rounded-md border border-gray-300 px-4 py-2 text-sm">Cancel</button>
+          <button onClick={onAdd} className="rounded-md bg-primary-600 px-4 py-2 text-sm text-white font-medium">Add</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function InviteModal({ tripId, groups, onClose, onInvited }: { tripId: string; groups: any[]; onClose: () => void; onInvited: () => void }) {
   const [channel, setChannel] = useState<'email' | 'phone' | 'whatsapp' | 'link'>('email');
