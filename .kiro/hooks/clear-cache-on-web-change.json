@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Clear .next cache on web file change",
+      "trigger": "PostFileSave",
+      "description": "Clears .next cache after any web source file is created or modified, preventing stale asset errors",
+      "matcher": "packages/web/src/",
+      "action": {
+        "type": "command",
+        "command": "rm -rf /Users/k64149367/Documents/DevProjects/travel-companion/packages/web/.next 2>/dev/null; echo \"Cleared .next cache\""
+      }
+    }
+  ]
+}
