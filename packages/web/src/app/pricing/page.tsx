@@ -43,12 +43,17 @@ export default function PricingPage() {
   const [annual, setAnnual] = useState(false);
   const [campaign, setCampaign] = useState('');
   const [discount, setDiscount] = useState<{ code: string; percent: number } | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     fetch('http://localhost:3000/api/plans')
       .then(r => r.json())
       .then(d => setPlans(d.data ?? []))
       .catch(() => {});
+    // Check if user is logged in
+    if (typeof window !== 'undefined' && localStorage.getItem('accessToken')) {
+      setIsLoggedIn(true);
+    }
   }, []);
 
   const applyCampaign = async () => {
@@ -78,8 +83,8 @@ export default function PricingPage() {
           <Link href="/" className="flex items-center gap-2">
             <img src="/logo-header.svg" alt="Neyya" className="h-9" />
           </Link>
-          <Link href="/login" className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500">
-            Log In
+          <Link href={isLoggedIn ? '/dashboard' : '/login'} className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500">
+            {isLoggedIn ? 'Dashboard' : 'Log In'}
           </Link>
         </div>
       </header>
@@ -150,11 +155,11 @@ export default function PricingPage() {
                   </p>
                 )}
 
-                <Link href={plan.slug === 'free' ? '/register' : '/register'}
+                <Link href={isLoggedIn ? '/settings#subscription' : '/register'}
                   className={`mt-6 block w-full text-center rounded-lg py-2.5 text-sm font-semibold ${
                     isPopular ? 'bg-primary-600 text-white hover:bg-primary-500' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                   }`}>
-                  {plan.slug === 'free' ? 'Start Free Trial' : `Get ${plan.name}`}
+                  {isLoggedIn ? (plan.slug === 'free' ? 'Current Plan' : `Upgrade to ${plan.name}`) : (plan.slug === 'free' ? 'Start Free Trial' : `Get ${plan.name}`)}
                 </Link>
 
                 <div className="mt-6 space-y-2">
