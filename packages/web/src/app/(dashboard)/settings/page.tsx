@@ -388,35 +388,6 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* ─── Display Units ──────────────────────────────────────────── */}
-      <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Display Units</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Temperature</label>
-            <select
-              value={preferences.temperatureUnit}
-              onChange={(e) => setPreferences({ ...preferences, temperatureUnit: e.target.value })}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            >
-              <option value="celsius">Celsius (°C)</option>
-              <option value="fahrenheit">Fahrenheit (°F)</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Distance</label>
-            <select
-              value={preferences.distanceUnit}
-              onChange={(e) => setPreferences({ ...preferences, distanceUnit: e.target.value })}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            >
-              <option value="km">Kilometers (km)</option>
-              <option value="miles">Miles (mi)</option>
-            </select>
-          </div>
-        </div>
-      </section>
-
       {/* ─── Language & Region ──────────────────────────────────────── */}
       <LanguageRegionSection preferences={preferences} onChange={(updates) => setPreferences({ ...preferences, ...updates })} />
 
