@@ -92,17 +92,27 @@ export default function SettingsPage() {
       .catch(() => {});
   }, []);
 
+  const [saveError, setSaveError] = useState('');
+
   async function handleSave() {
     setSaving(true);
     setSaved(false);
+    setSaveError('');
     try {
-      await api.put('/api/users/me/preferences', preferences);
+      await api.put('/api/users/me/preferences', {
+        interests: preferences.interests,
+        dietaryPreferences: preferences.dietaryPreferences,
+        allergies: preferences.allergies,
+        language: preferences.language,
+        displayCurrencies: preferences.displayCurrencies,
+      });
       // Also save locale preferences
       await api.put('/api/users/me/locale', { language: preferences.language }).catch(() => {});
       setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } catch {
-      // Error handling
+      setTimeout(() => setSaved(false), 5000);
+    } catch (err: any) {
+      setSaveError(err?.message ?? 'Failed to save preferences. Please try again.');
+      setTimeout(() => setSaveError(''), 5000);
     } finally {
       setSaving(false);
     }
@@ -400,7 +410,8 @@ export default function SettingsPage() {
         >
           {saving ? 'Saving...' : 'Save Preferences'}
         </button>
-        {saved && <span className="text-sm text-green-600">Saved successfully!</span>}
+        {saved && <span className="text-sm text-green-600 font-medium">✅ Saved successfully!</span>}
+        {saveError && <span className="text-sm text-red-600 font-medium">❌ {saveError}</span>}
       </div>
     </div>
   );

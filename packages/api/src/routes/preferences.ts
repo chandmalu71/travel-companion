@@ -202,19 +202,19 @@ export async function registerPreferencesRoutes(
       };
 
       if (body.interests !== undefined) {
-        updateValues['interests'] = JSON.stringify(body.interests);
+        updateValues['interests'] = body.interests;
       }
       if (body.dietaryPreferences !== undefined) {
-        updateValues['dietary_preferences'] = JSON.stringify(body.dietaryPreferences);
+        updateValues['dietary_preferences'] = body.dietaryPreferences;
       }
       if (body.allergies !== undefined) {
-        updateValues['allergies'] = JSON.stringify(body.allergies);
+        updateValues['allergies'] = body.allergies;
       }
       if (body.language !== undefined) {
         updateValues['language'] = body.language;
       }
       if (body.displayCurrencies !== undefined) {
-        updateValues['display_currencies'] = JSON.stringify(body.displayCurrencies);
+        updateValues['display_currencies'] = body.displayCurrencies;
       }
       if (body.temperatureUnit !== undefined) {
         updateValues['temperature_unit'] = body.temperatureUnit;
