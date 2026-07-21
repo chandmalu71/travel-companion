@@ -27,7 +27,7 @@ import { registerAdminAuth } from './plugins/admin-auth.js';
 import { registerExpenseRoutes } from './routes/expenses.js';
 import { registerExpenseGroupRoutes } from './routes/expense-groups.js';
 import { registerExpenseSplittingRoutes } from './routes/expense-splitting.js';
-import { registerI18nRoutes } from './routes/i18n.js';
+import { registerI18nRoutes, registerPreferenceOptionsRoutes } from './routes/i18n.js';
 import { registerTripMembersRoutes, registerTripInvitationRoutes, registerAdminTripMembershipRoutes } from './routes/trip-members.js';
 import { registerDocumentRoutes } from './routes/documents.js';
 import { registerHighlightRoutes } from './routes/highlights.js';
@@ -157,6 +157,7 @@ export async function buildApp(
     await registerExpenseGroupRoutes(app, { db: options.db });
     await registerExpenseSplittingRoutes(app, { db: options.db });
     await registerI18nRoutes(app, { db: options.db });
+    await registerPreferenceOptionsRoutes(app, { db: options.db });
     await registerTripMembersRoutes(app, { db: options.db });
     await registerTripInvitationRoutes(app, { db: options.db });
     await registerAdminTripMembershipRoutes(app, { db: options.db });

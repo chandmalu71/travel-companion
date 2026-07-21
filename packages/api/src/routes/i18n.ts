@@ -306,3 +306,66 @@ export async function registerI18nRoutes(
     },
   );
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ADMIN-MANAGED PREFERENCE OPTIONS (interests, dietary, allergies)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export async function registerPreferenceOptionsRoutes(app: any, options: { db: any }): Promise<void> {
+  const { db } = options;
+
+  // Public: get enabled options
+  app.get('/api/preferences/interests', async (_req: any, reply: any) => {
+    const items = await db.selectFrom('supported_interests').selectAll().where('enabled', '=', true).orderBy('display_order', 'asc').execute();
+    return reply.send({ statusCode: 200, data: items });
+  });
+
+  app.get('/api/preferences/dietary', async (_req: any, reply: any) => {
+    const items = await db.selectFrom('supported_dietary').selectAll().where('enabled', '=', true).orderBy('display_order', 'asc').execute();
+    return reply.send({ statusCode: 200, data: items });
+  });
+
+  app.get('/api/preferences/allergies', async (_req: any, reply: any) => {
+    const items = await db.selectFrom('supported_allergies').selectAll().where('enabled', '=', true).orderBy('display_order', 'asc').execute();
+    return reply.send({ statusCode: 200, data: items });
+  });
+
+  // Admin: get all (including disabled)
+  app.get('/api/admin/preferences/interests', async (_req: any, reply: any) => {
+    const items = await db.selectFrom('supported_interests').selectAll().orderBy('display_order', 'asc').execute();
+    return reply.send({ statusCode: 200, data: items });
+  });
+
+  app.get('/api/admin/preferences/dietary', async (_req: any, reply: any) => {
+    const items = await db.selectFrom('supported_dietary').selectAll().orderBy('display_order', 'asc').execute();
+    return reply.send({ statusCode: 200, data: items });
+  });
+
+  app.get('/api/admin/preferences/allergies', async (_req: any, reply: any) => {
+    const items = await db.selectFrom('supported_allergies').selectAll().orderBy('display_order', 'asc').execute();
+    return reply.send({ statusCode: 200, data: items });
+  });
+
+  // Admin: toggle enable/disable
+  app.put('/api/admin/preferences/interests/:key', async (req: any, reply: any) => {
+    const { key } = req.params;
+    const { enabled } = req.body;
+    await db.updateTable('supported_interests').set({ enabled }).where('key', '=', key).execute();
+    return reply.send({ statusCode: 200, message: 'Updated' });
+  });
+
+  app.put('/api/admin/preferences/dietary/:key', async (req: any, reply: any) => {
+    const { key } = req.params;
+    const { enabled } = req.body;
+    await db.updateTable('supported_dietary').set({ enabled }).where('key', '=', key).execute();
+    return reply.send({ statusCode: 200, message: 'Updated' });
+  });
+
+  app.put('/api/admin/preferences/allergies/:key', async (req: any, reply: any) => {
+    const { key } = req.params;
+    const { enabled } = req.body;
+    await db.updateTable('supported_allergies').set({ enabled }).where('key', '=', key).execute();
+    return reply.send({ statusCode: 200, message: 'Updated' });
+  });
+}

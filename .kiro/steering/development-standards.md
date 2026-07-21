@@ -358,3 +358,57 @@ When creating admin panel pages, use these color classes:
 | Active/selected | `bg-gray-700 text-white` |
 | Input fields | `bg-gray-700 border-gray-600 text-white` |
 | Buttons (primary) | Same as web app (`bg-primary-600`) |
+
+
+## 16. Confluence Documentation Sync
+
+When making changes that affect requirements, design, or architecture:
+
+### Auto-Update Triggers
+
+Update the Confluence space (`Nayyaai`) when any of the following change:
+- New requirement added (update Features page)
+- API endpoints added/changed (update API Reference page)
+- Database migration created (update Database Schema page)
+- New admin page created (update Admin Panel Guide page)
+- Architecture decision made (update Project Overview page)
+- Test coverage changes significantly (update Test Coverage page)
+
+### Confluence Space Details
+
+- **Space Key:** `Nayyaai`
+- **URL:** https://chandmalu.atlassian.net/wiki/spaces/Nayyaai
+- **Root Page ID:** `2916520`
+- **Key Page IDs:**
+  - Project Overview: `3112961`
+  - Features: `3047429`
+  - API Reference: `3145729`
+  - Database Schema: `3178497`
+  - Development Guide: `3014660`
+  - Deployment & Infrastructure: `3244033`
+  - Admin Panel Guide: `3145749`
+  - Test Coverage: `3211265`
+
+### Update Process
+
+After implementing a feature or fix that affects documentation:
+1. Update the relevant Confluence page(s) via the MCP Confluence tools
+2. Use `mcp_atlassian_confluence_update_page` with the page ID and new content
+3. Keep content concise and structured (markdown format)
+4. Include the date of last update in the content
+
+## 17. Admin-Managed Configuration Pattern
+
+All user-facing option lists (interests, dietary preferences, allergies, currencies, languages, locales) MUST be:
+
+1. **Stored in the database** — not hardcoded in source code
+2. **Managed via Admin panel** — add/edit/remove/enable/disable
+3. **Fetched via API** — user-facing pages call an API to get available options
+4. **Cacheable** — options rarely change, cache in Redis with 1h TTL
+
+When adding a new "pick from list" feature:
+- Create a DB table: `supported_{feature}` with id, name, icon, enabled, display_order
+- Create admin API: GET all, PUT enable/disable
+- Create public API: GET enabled only
+- Create admin UI page with toggles
+- User settings/forms fetch from the public API
