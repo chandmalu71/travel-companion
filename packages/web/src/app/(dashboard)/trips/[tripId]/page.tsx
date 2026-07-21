@@ -760,6 +760,7 @@ function AddMemberWithAutocomplete({ groups, onClose, onAdd, newName, setNewName
   const [suggestions, setSuggestions] = useState<Array<{ name: string; email: string | null; source: string; relationship?: string }>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [allContacts, setAllContacts] = useState<Array<{ name: string; email: string | null; source: string; relationship?: string }>>([]);
+  const [selectedContact, setSelectedContact] = useState<{ name: string; email: string | null; source: string; relationship?: string } | null>(null);
 
   // Fetch network + family on mount
   useEffect(() => {
@@ -779,6 +780,12 @@ function AddMemberWithAutocomplete({ groups, onClose, onAdd, newName, setNewName
   }, []);
 
   const handleNameChange = (value: string) => {
+    // If user edits the name after selecting, clear the selection
+    if (selectedContact) {
+      setSelectedContact(null);
+      setNewEmail('');
+      setNewType('adult');
+    }
     setNewName(value);
     if (value.length >= 1) {
       const matches = allContacts.filter(c => c.name.toLowerCase().includes(value.toLowerCase()));
@@ -790,10 +797,18 @@ function AddMemberWithAutocomplete({ groups, onClose, onAdd, newName, setNewName
   };
 
   const selectSuggestion = (contact: { name: string; email: string | null; source: string; relationship?: string }) => {
+    setSelectedContact(contact);
     setNewName(contact.name);
     if (contact.email) setNewEmail(contact.email);
     if (contact.relationship === 'child') setNewType('child');
     setShowSuggestions(false);
+  };
+
+  const clearSelection = () => {
+    setSelectedContact(null);
+    setNewName('');
+    setNewEmail('');
+    setNewType('adult');
   };
 
   return (
@@ -801,53 +816,85 @@ function AddMemberWithAutocomplete({ groups, onClose, onAdd, newName, setNewName
       <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
         <h3 className="text-lg font-semibold mb-4">Add Traveller</h3>
         <div className="space-y-3">
-          {/* Name with autocomplete */}
-          <div className="relative">
-            <label className="block text-xs font-medium text-gray-700 mb-1">Name *</label>
-            <input
-              type="text"
-              value={newName}
-              onChange={e => handleNameChange(e.target.value)}
-              onFocus={() => { if (newName.length >= 1 && suggestions.length > 0) setShowSuggestions(true); }}
-              placeholder="Start typing to search contacts..."
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              autoFocus
-            />
-            {/* Suggestions dropdown */}
-            {showSuggestions && (
-              <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg max-h-48 overflow-y-auto">
-                {suggestions.map((s, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => selectSuggestion(s)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-primary-50 transition-colors border-b border-gray-50 last:border-0"
-                  >
-                    <span className="text-sm flex-shrink-0">
-                      {s.source === 'family' ? '👨‍👩‍👧' : '👥'}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900 truncate">{s.name}</p>
-                      <p className="text-[10px] text-gray-400 truncate">
-                        {s.email ?? (s.relationship ? `Family: ${s.relationship}` : 'No email')}
-                      </p>
-                    </div>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 flex-shrink-0">
-                      {s.source === 'family' ? 'Family' : 'Network'}
-                    </span>
-                  </button>
-                ))}
+
+          {/* Selected contact chip OR name search */}
+          {selectedContact ? (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Selected Contact</label>
+              <div className="flex items-center gap-2 rounded-md border border-primary-200 bg-primary-50 px-3 py-2">
+                <span className="text-sm flex-shrink-0">{selectedContact.source === 'family' ? '👨‍👩‍👧' : '👥'}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{selectedContact.name}</p>
+                  <p className="text-[10px] text-gray-500 truncate">{selectedContact.email ?? (selectedContact.relationship ? `Family: ${selectedContact.relationship}` : '')}</p>
+                </div>
+                <button onClick={clearSelection} className="text-gray-400 hover:text-red-500 text-sm" title="Clear and search again">✕</button>
               </div>
-            )}
+            </div>
+          ) : (
+            <div className="relative">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Name *</label>
+              <input
+                type="text"
+                value={newName}
+                onChange={e => handleNameChange(e.target.value)}
+                onFocus={() => { if (newName.length >= 1 && suggestions.length > 0) setShowSuggestions(true); }}
+                placeholder="Start typing to search contacts..."
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                autoFocus
+              />
+              {/* Suggestions dropdown */}
+              {showSuggestions && (
+                <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg max-h-48 overflow-y-auto">
+                  {suggestions.map((s, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => selectSuggestion(s)}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-primary-50 transition-colors border-b border-gray-50 last:border-0"
+                    >
+                      <span className="text-sm flex-shrink-0">{s.source === 'family' ? '👨‍👩‍👧' : '👥'}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-900 truncate">{s.name}</p>
+                        <p className="text-[10px] text-gray-400 truncate">
+                          {s.email ?? (s.relationship ? `Family: ${s.relationship}` : 'No email')}
+                        </p>
+                      </div>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 flex-shrink-0">
+                        {s.source === 'family' ? 'Family' : 'Network'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Email — read-only when contact is selected */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              value={newEmail}
+              onChange={e => setNewEmail(e.target.value)}
+              placeholder={selectedContact ? '' : 'Optional — auto-filled from contacts'}
+              className={`w-full rounded-md border px-3 py-2 text-sm ${selectedContact ? 'border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
+              readOnly={!!selectedContact}
+            />
           </div>
 
-          <div><label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
-            <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="Optional — auto-filled from contacts" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
-          <div><label className="block text-xs font-medium text-gray-700 mb-1">Type</label>
-            <select value={newType} onChange={e => setNewType(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+          {/* Type — read-only when contact is selected */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Type</label>
+            <select
+              value={newType}
+              onChange={e => setNewType(e.target.value)}
+              className={`w-full rounded-md border px-3 py-2 text-sm ${selectedContact ? 'border-gray-200 bg-gray-50 text-gray-500 pointer-events-none' : 'border-gray-300'}`}
+              disabled={!!selectedContact}
+            >
               <option value="adult">👤 Adult</option><option value="child">👦 Child (2-17)</option><option value="infant">👶 Infant (0-2)</option>
             </select>
           </div>
+
           {groups.length > 0 && (
             <div><label className="block text-xs font-medium text-gray-700 mb-1">Group</label>
               <select value={newGroupId} onChange={e => setNewGroupId(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
