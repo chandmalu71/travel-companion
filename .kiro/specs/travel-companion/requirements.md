@@ -921,3 +921,21 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 - WebSocket: real-time delivery, typing indicators, presence
 - UI: Messages page (sidebar) + Trip Chat tab + notification badges
 - E2E tests covering core messaging flows
+
+
+## Requirement 41: Customizable Dashboard
+
+**User Story:** As a user, I want a dashboard with widgets that give me an at-a-glance view of my trips, expenses, messages, and more, and I want to customize which widgets I see.
+
+### Acceptance Criteria
+
+1. THE Dashboard SHALL be the landing page after login
+2. THE Dashboard SHALL display widgets in a responsive grid (1/2/3 columns based on screen)
+3. Users SHALL be able to customize their widget layout via a "Customize" modal (add/remove from master list)
+4. Widget preferences SHALL be persisted per-user via GET/PUT /api/users/me/dashboard-config
+5. THE Application SHALL provide 10 available widgets: Quick Actions, Upcoming Trips, Recent Expenses, Messages, Network, Weather, AI Tips, Trip Decisions, Bookings, Favorites
+6. Quick Actions widget SHALL provide links to: New Trip, Add Expense, Start Chat, Search, Network, Settings
+7. Each data widget SHALL fetch its own data and provide a "View all →" link to the full page
+8. Admin SHALL be able to enable/disable individual widgets globally (disabled widgets hidden from user customization)
+9. Users SHALL be able to reset to default widget layout
+10. THE default layout SHALL include: Quick Actions, Upcoming Trips, Expenses, Messages, Network, Weather, AI Tips

@@ -840,3 +840,18 @@ This implementation plan builds the Travel Companion application incrementally, 
   - Max message length, max group size, retention policy
   - Notification channels (in-app, email, WhatsApp, SMS)
   - Added messaging_ai to AI Model Configuration
+
+
+## Phase 11: Customizable Dashboard (Req 41)
+
+- [x] 41.1 Create API: GET/PUT /api/users/me/dashboard-config
+  - Stored as JSONB in user_preferences.dashboard_widgets
+  - Default: quick_actions, upcoming_trips, recent_expenses, messages, network, weather, ai_tips
+- [x] 41.2 Create Dashboard page with widget grid
+  - 10 widget components (each fetches own data, links to full page)
+  - Quick Actions bar with 6 links
+  - Customize modal (checkbox grid, save/reset)
+  - Responsive grid (1/2/3 cols)
+- [x] 41.3 Admin configuration
+  - Dashboard Widgets section in Admin → Configuration
+  - Toggle availability of each widget globally

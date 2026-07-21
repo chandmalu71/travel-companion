@@ -31,7 +31,7 @@ import { registerI18nRoutes, registerPreferenceOptionsRoutes } from './routes/i1
 import { registerTripMembersRoutes, registerTripInvitationRoutes, registerAdminTripMembershipRoutes } from './routes/trip-members.js';
 import { registerDocumentRoutes } from './routes/documents.js';
 import { registerHighlightRoutes } from './routes/highlights.js';
-import { registerPreferencesRoutes } from './routes/preferences.js';
+import { registerPreferencesRoutes, registerDashboardConfigRoutes } from './routes/preferences.js';
 import { registerConnectionRoutes } from './routes/connections.js';
 import { registerFamilyMemberRoutes } from './routes/family-members.js';
 import { registerTripTipsRoutes } from './routes/trip-tips.js';
@@ -186,6 +186,7 @@ export async function buildApp(
   // Register user preferences routes
   if (options.db) {
     await registerPreferencesRoutes(app, { db: options.db });
+    await registerDashboardConfigRoutes(app, { db: options.db });
   }
 
   // Register user connections routes

@@ -322,3 +322,53 @@ function parseJsonArray(value: unknown): string[] {
   if (Array.isArray(value)) return value as string[];
   return [];
 }
+
+
+// ─── Dashboard Config Endpoints ──────────────────────────────────────────────
+
+export async function registerDashboardConfigRoutes(
+  app: any,
+  options: { db: any },
+): Promise<void> {
+  const { db } = options;
+
+  const DEFAULT_WIDGETS = ['upcoming_trips', 'recent_expenses', 'messages', 'network', 'weather', 'ai_tips', 'quick_actions'];
+
+  // GET /api/users/me/dashboard-config
+  app.get('/api/users/me/dashboard-config', async (request: any, reply: any) => {
+    const userId = request.userId as string;
+    if (!userId) return reply.status(401).send({ statusCode: 401, error: 'UNAUTHORIZED' });
+
+    const prefs = await db
+      .selectFrom('user_preferences')
+      .select('dashboard_widgets')
+      .where('user_id', '=', userId)
+      .executeTakeFirst();
+
+    const widgets = prefs?.dashboard_widgets ?? DEFAULT_WIDGETS;
+
+    return reply.send({ statusCode: 200, data: { widgets, defaultWidgets: DEFAULT_WIDGETS } });
+  });
+
+  // PUT /api/users/me/dashboard-config
+  app.put('/api/users/me/dashboard-config', async (request: any, reply: any) => {
+    const userId = request.userId as string;
+    if (!userId) return reply.status(401).send({ statusCode: 401, error: 'UNAUTHORIZED' });
+
+    const { widgets } = request.body ?? {};
+    if (!Array.isArray(widgets)) {
+      return reply.status(400).send({ statusCode: 400, error: 'widgets must be an array' });
+    }
+
+    // Upsert
+    await db
+      .insertInto('user_preferences')
+      .values({ user_id: userId, dashboard_widgets: JSON.stringify(widgets) } as any)
+      .onConflict((oc: any) =>
+        oc.column('user_id').doUpdateSet({ dashboard_widgets: JSON.stringify(widgets), updated_at: new Date() } as any),
+      )
+      .execute();
+
+    return reply.send({ statusCode: 200, message: 'Dashboard config saved', data: { widgets } });
+  });
+}
