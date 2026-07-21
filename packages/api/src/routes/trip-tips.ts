@@ -239,6 +239,33 @@ export async function registerTripTipsRoutes(
       return reply.send({ statusCode: 200, data: messages.map(m => ({ role: m.role, message: m.message, createdAt: m.created_at })) });
     },
   );
+
+  // ─── POST /api/trips/:tripId/tips/save-favorite ────────────────────────────
+  // Save a place from AI chat response to the trip's favorites
+  app.post(
+    '/api/trips/:tripId/tips/save-favorite',
+    async (request: FastifyRequest<{ Params: { tripId: string }; Body: any }>, reply: FastifyReply) => {
+      const userId = (request as any).userId as string;
+      if (!userId) return reply.status(401).send({ statusCode: 401, error: 'UNAUTHORIZED', message: 'Not authenticated' });
+
+      const { tripId } = request.params;
+      const { name, category, rating, notes } = request.body as any;
+
+      if (!name) return reply.status(400).send({ statusCode: 400, error: 'Name is required' });
+
+      const favorite = await db.insertInto('favorites').values({
+        user_id: userId,
+        trip_id: tripId,
+        name,
+        category: category ?? 'attraction',
+        rating: rating ?? null,
+        notes: notes ?? 'Added from AI Tips',
+        added_by: userId,
+      }).returningAll().executeTakeFirstOrThrow();
+
+      return reply.status(201).send({ statusCode: 201, data: favorite, message: `"${name}" added to trip favorites` });
+    },
+  );
 }
 
 // ─── Mock AI Generation (dev mode) ──────────────────────────────────────────
@@ -374,21 +401,86 @@ function generateMockTips(context: any, categories: string[]) {
 function generateMockChatResponse(userMessage: string, destination: string): string {
   const lower = userMessage.toLowerCase();
 
-  if (lower.includes('weather') || lower.includes('temperature') || lower.includes('rain')) {
-    return `For ${destination}, I'd recommend checking the weather forecast closer to your travel dates. Generally:\n\n- **Summer**: Warm to hot, pack light clothing and sun protection\n- **Winter**: Can be cool, bring layers and a warm jacket\n- **Spring/Autumn**: Variable weather, pack layers and a rain jacket\n\nI'd suggest downloading a weather app and checking 7 days before departure for the most accurate forecast.`;
+  // Destination-specific knowledge base (in production: LLM + web search)
+  const DESTINATION_DATA: Record<string, { attractions: string[]; restaurants: string[]; activities: string[] }> = {
+    'italy': {
+      attractions: [
+        '📍 Colosseum — Rome | ⭐ 4.8 | Ancient amphitheater, UNESCO World Heritage Site',
+        '📍 Venice Grand Canal — Venice | ⭐ 4.9 | Iconic waterway with gondola rides',
+        '📍 Uffizi Gallery — Florence | ⭐ 4.7 | Renaissance art museum (Botticelli, Da Vinci)',
+        '📍 Pompeii Archaeological Park — Naples | ⭐ 4.6 | Ancient Roman city preserved by volcano',
+        '📍 Amalfi Coast Drive — Salerno | ⭐ 4.9 | Stunning coastal road with cliffside villages',
+        '📍 St. Mark\'s Basilica — Venice | ⭐ 4.8 | Byzantine cathedral with golden mosaics',
+        '📍 Cinque Terre — Liguria | ⭐ 4.8 | Five colorful fishing villages on the coast',
+        '📍 Vatican Museums — Rome | ⭐ 4.7 | Sistine Chapel, Raphael Rooms, ancient sculptures',
+      ],
+      restaurants: [
+        '🍽️ Da Enzo al 29 — Rome, Trastevere | ⭐ 4.7 | Traditional Roman cuisine, cacio e pepe',
+        '🍽️ Trattoria Mario — Florence | ⭐ 4.5 | Family-run since 1953, bistecca fiorentina',
+        '🍽️ Pizzeria Da Michele — Naples | ⭐ 4.6 | Historic pizza since 1870, margherita & marinara only',
+        '🍽️ Osteria Alle Testiere — Venice | ⭐ 4.8 | Intimate seafood, 9 tables, book weeks ahead',
+        '🍽️ Trattoria Sostanza — Florence | ⭐ 4.6 | Butter chicken, artichoke omelette, cash only',
+      ],
+      activities: [
+        '🎯 Cooking class in Tuscany — Learn pasta making from local nonnas | €80-120',
+        '🎯 Gondola ride at sunset — Venice | 30 min | €80 (up to 6 people)',
+        '🎯 Wine tasting in Chianti — Half-day tour from Florence | €65-95',
+        '🎯 Vespa tour of Rome — 3 hours through historic streets | €85',
+        '🎯 Truffle hunting in Umbria — Forest walk + lunch | €120',
+      ],
+    },
+    'default': {
+      attractions: [
+        '📍 Top Historical Landmark — City Center | ⭐ 4.8 | The most visited historical site',
+        '📍 National Museum — Downtown | ⭐ 4.7 | Art and history collection',
+        '📍 Old Town Quarter — Historic District | ⭐ 4.6 | Charming streets and architecture',
+        '📍 Botanical Gardens — South Side | ⭐ 4.5 | 500+ plant species, peaceful walks',
+        '📍 Panoramic Viewpoint — Hilltop | ⭐ 4.9 | Best sunset views of the city',
+      ],
+      restaurants: [
+        '🍽️ The Local Kitchen — City Center | ⭐ 4.7 | Best traditional cuisine in town',
+        '🍽️ Market Food Hall — Old Town | ⭐ 4.5 | Multiple vendors, street food style',
+        '🍽️ Riverside Terrace — Waterfront | ⭐ 4.6 | Scenic dining with local seafood',
+        '🍽️ Hidden Courtyard — Back Street | ⭐ 4.8 | Reservations required, tasting menu',
+      ],
+      activities: [
+        '🎯 Walking tour of Old Town — 2-3 hours | Free (tip-based)',
+        '🎯 Local cooking class — Learn signature dishes | €60-100',
+        '🎯 Day trip to countryside — Nature + villages | €40-80',
+        '🎯 Sunset boat trip — Harbor cruise | €30-50',
+      ],
+    },
+  };
+
+  // Match destination to knowledge base
+  const destKey = Object.keys(DESTINATION_DATA).find(k => destination.toLowerCase().includes(k)) ?? 'default';
+  const data = DESTINATION_DATA[destKey];
+
+  // Detect intent and return structured results
+  if (lower.includes('attraction') || lower.includes('see') || lower.includes('visit') || lower.includes('top') || lower.includes('must') || lower.includes('landmark') || lower.includes('sightseeing')) {
+    return `Here are the **top-rated attractions** near ${destination}:\n\n${data.attractions.map((a, i) => `${i + 1}. ${a}`).join('\n')}\n\n💡 **Tip:** Book tickets online in advance for popular sites to skip the queue.\n\n_Mark any item as ⭐ favorite to add it to your trip._`;
   }
 
-  if (lower.includes('restaurant') || lower.includes('food') || lower.includes('eat')) {
-    return `Great question about dining in ${destination}! Here are my suggestions:\n\n1. **For local cuisine**: Ask your hotel concierge or check Google Maps reviews sorted by "newest"\n2. **Budget-friendly**: Look for lunch specials (menú del día in Spain, set lunch in Asia)\n3. **Reservations**: Popular restaurants should be booked 1-2 weeks in advance\n4. **Street food**: Generally safe where you see locals eating and high turnover\n\nWant me to suggest specific types of cuisine to try?`;
+  if (lower.includes('restaurant') || lower.includes('food') || lower.includes('eat') || lower.includes('dine') || lower.includes('dinner') || lower.includes('lunch')) {
+    return `Here are **highly-rated restaurants** in ${destination}:\n\n${data.restaurants.map((r, i) => `${i + 1}. ${r}`).join('\n')}\n\n💡 **Tip:** Book popular restaurants 1-2 weeks in advance. Lunch menus are usually cheaper.\n\n_Mark any item as ⭐ favorite to add it to your trip._`;
   }
 
-  if (lower.includes('safety') || lower.includes('safe') || lower.includes('danger')) {
-    return `Safety in ${destination}:\n\n**General tips:**\n- Most tourist areas are safe during daytime\n- Use well-lit, populated streets at night\n- Keep valuables in your hotel safe\n- Use official taxis or ride-hailing apps\n\n**Emergency:**\n- Save the local emergency number in your phone\n- Know your hotel address in the local language (for taxi drivers)\n- Register with your embassy for longer stays\n\nIs there a specific safety concern you'd like me to address?`;
+  if (lower.includes('activit') || lower.includes('do') || lower.includes('experience') || lower.includes('tour') || lower.includes('fun')) {
+    return `Here are **recommended activities** in ${destination}:\n\n${data.activities.map((a, i) => `${i + 1}. ${a}`).join('\n')}\n\n💡 **Tip:** Book activities with free cancellation in case your plans change.\n\n_Mark any item as ⭐ favorite to add it to your trip._`;
   }
 
-  if (lower.includes('wifi') || lower.includes('internet') || lower.includes('sim') || lower.includes('data')) {
-    return `Staying connected in ${destination}:\n\n**Options:**\n1. **Local SIM card**: Buy at the airport — usually cheapest for data\n2. **eSIM**: Airalo or Holafly work in most countries\n3. **WiFi**: Hotels, cafes, and restaurants usually have free WiFi\n4. **Portable hotspot**: Rent one if traveling in a group\n\n**Tips:**\n- Download offline maps before you go (Google Maps or Maps.me)\n- Pre-download entertainment and translation packages\n- Use WiFi calling to stay in touch with home`;
+  if (lower.includes('weather') || lower.includes('temperature') || lower.includes('rain') || lower.includes('climate')) {
+    return `**Weather for ${destination}:**\n\n☀️ **Summer (Jun-Aug):** 25-35°C, sunny, occasional thunderstorms\n🍂 **Autumn (Sep-Nov):** 15-25°C, mild, light rain possible\n❄️ **Winter (Dec-Feb):** 5-12°C, cool, rain more frequent\n🌸 **Spring (Mar-May):** 15-22°C, pleasant, perfect for sightseeing\n\n**Pack:** Layers, comfortable shoes, sunscreen, and a light rain jacket.\n\n_Check the forecast 7 days before departure for the latest._`;
   }
 
-  return `That's a great question about ${destination}! Here's what I know:\n\nBased on your trip details, I'd recommend:\n\n1. **Research thoroughly** before your trip — travel blogs and recent YouTube videos are great sources\n2. **Ask locals** once you arrive — hotel staff, shopkeepers, and tour guides often have the best tips\n3. **Stay flexible** — some of the best travel experiences are unplanned\n\nWould you like me to help with something more specific? I can provide advice on:\n- Specific attractions or activities\n- Transportation between locations\n- Cultural customs and etiquette\n- Packing recommendations\n- Budget planning`;
+  if (lower.includes('safety') || lower.includes('safe') || lower.includes('scam') || lower.includes('danger') || lower.includes('avoid')) {
+    return `**Safety tips for ${destination}:**\n\n⚠️ **Be aware of:**\n- Pickpockets in crowded tourist areas and public transport\n- Fake "friendship bracelet" scammers near landmarks\n- Unlicensed taxi drivers overcharging at airports\n- Counterfeit goods sellers on the street\n\n✅ **Stay safe:**\n- Use registered taxis or apps (Uber, Bolt)\n- Keep wallet in front pocket, bag zipped\n- Don't flash expensive items\n- Stick to well-lit streets at night\n\n📞 **Emergency:** Save the local emergency number in your phone before arriving.`;
+  }
+
+  if (lower.includes('budget') || lower.includes('cost') || lower.includes('cheap') || lower.includes('expensive') || lower.includes('money') || lower.includes('price')) {
+    return `**Budget guide for ${destination}:**\n\n💰 **Daily costs (per person):**\n- Budget: €50-80/day (hostel, street food, public transport)\n- Mid-range: €120-200/day (3-star hotel, restaurants, some activities)\n- Luxury: €300+/day (4-5 star, fine dining, private tours)\n\n**Money-saving tips:**\n1. City tourist pass (often includes transport + museums)\n2. Free walking tours (tip-based)\n3. Lunch menus instead of dinner (same food, 40% cheaper)\n4. Cook 1 meal/day if you have a kitchen\n5. Pre-book attractions online (usually 10-20% cheaper)\n\n**Payment:** Credit cards widely accepted. Carry €50 cash for small vendors.`;
+  }
+
+  // Default: show a mix of top picks
+  return `Here are my **top picks** for ${destination}:\n\n**🏛️ Must-See:**\n${data.attractions.slice(0, 3).map((a, i) => `${i + 1}. ${a}`).join('\n')}\n\n**🍽️ Where to Eat:**\n${data.restaurants.slice(0, 3).map((r, i) => `${i + 1}. ${r}`).join('\n')}\n\n**🎯 Things to Do:**\n${data.activities.slice(0, 3).map((a, i) => `${i + 1}. ${a}`).join('\n')}\n\n_Ask me about specific topics: attractions, restaurants, activities, weather, safety, or budget._\n\n_Mark any item as ⭐ favorite to add it to your trip._`;
 }

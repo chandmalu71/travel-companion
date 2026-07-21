@@ -1313,13 +1313,51 @@ function TipsTab({ tripId }: { tripId: string }) {
 
         {/* Chat messages */}
         {chatMessages.length > 0 && (
-          <div className="px-4 py-3 max-h-64 overflow-y-auto space-y-3">
+          <div className="px-4 py-3 max-h-80 overflow-y-auto space-y-3">
             {chatMessages.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
                   msg.role === 'user' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-700'
                 }`}>
-                  <p className="whitespace-pre-line">{msg.message}</p>
+                  {msg.role === 'assistant' ? (
+                    <div className="space-y-1">
+                      {msg.message.split('\n').map((line: string, lineIdx: number) => {
+                        // Detect numbered place items (e.g., "1. 📍 Colosseum — Rome | ⭐ 4.8 | ...")
+                        const placeMatch = line.match(/^\d+\.\s*(📍|🍽️|🎯)\s*(.+?)(?:\s*\|\s*⭐\s*([\d.]+))?\s*\|?\s*(.*)$/);
+                        if (placeMatch) {
+                          const [, icon, name, rating, desc] = placeMatch;
+                          const placeName = name.split('—')[0].trim();
+                          return (
+                            <div key={lineIdx} className="flex items-start gap-2 py-1 group/item">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm">{line}</p>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  api.post(`/api/trips/${tripId}/tips/save-favorite`, {
+                                    name: placeName,
+                                    category: icon === '🍽️' ? 'restaurant' : icon === '🎯' ? 'activity' : 'attraction',
+                                    rating: rating ? parseFloat(rating) : null,
+                                    notes: desc || undefined,
+                                  }).then(() => alert(`⭐ "${placeName}" added to trip favorites!`)).catch(() => {});
+                                }}
+                                className="flex-shrink-0 opacity-0 group-hover/item:opacity-100 text-[10px] px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition-all"
+                                title="Add to trip favorites"
+                              >
+                                ⭐ Save
+                              </button>
+                            </div>
+                          );
+                        }
+                        // Regular line
+                        if (line.startsWith('**') && line.endsWith('**')) return <p key={lineIdx} className="font-semibold mt-1">{line.replace(/\*\*/g, '')}</p>;
+                        if (line.startsWith('_') && line.endsWith('_')) return <p key={lineIdx} className="text-[10px] text-gray-500 italic mt-1">{line.replace(/_/g, '')}</p>;
+                        return <p key={lineIdx}>{line}</p>;
+                      })}
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-line">{msg.message}</p>
+                  )}
                 </div>
               </div>
             ))}
