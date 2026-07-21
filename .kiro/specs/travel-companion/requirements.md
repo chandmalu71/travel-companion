@@ -818,3 +818,6 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 11. Tips SHALL be shareable with trip members (visible to all members on the same trip)
 12. Generated tips SHALL include source attribution (AI model used, generation date)
 13. THE Application SHALL support offline access for previously generated tips (cached)
+14. Each tip card SHALL have a per-card AI interaction: user can type a question specific to that category and get an inline AI response
+15. THE Application SHALL support a "Nearby Tips" mode using the device's current GPS location to show local attractions and activities
+16. THE Admin Configuration panel SHALL provide controls for: enabling/disabling each tip category, per-card AI chat toggle, location-based tips toggle, web search enhancement toggle, and cache duration setting

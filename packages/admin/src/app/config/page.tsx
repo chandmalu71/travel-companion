@@ -9,6 +9,8 @@ const AI_FEATURES = [
   { id: 'gap_suggestions', label: 'Gap Suggestions' },
   { id: 'proactive_suggestions', label: 'Proactive Suggestions' },
   { id: 'trip_naming', label: 'Trip Naming' },
+  { id: 'trip_tips', label: 'Trip Tips Generation' },
+  { id: 'trip_tips_chat', label: 'Trip Tips Chat' },
 ];
 
 const MODELS = [
@@ -105,6 +107,70 @@ export default function ConfigPage() {
             <button className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-600">
               Enabled
             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* AI Trip Tips Configuration */}
+      <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <h2 className="text-lg font-semibold text-white mb-4">AI Trip Tips</h2>
+        <p className="text-sm text-gray-400 mb-4">Control which tip categories are generated and which AI features are enabled for tips.</p>
+        <div className="space-y-4">
+          <div>
+            <p className="text-xs font-medium text-gray-300 uppercase mb-2">Enabled Categories</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {[
+                { id: 'activities', label: '🎯 Activities', enabled: true },
+                { id: 'packing', label: '🧳 Packing', enabled: true },
+                { id: 'precautions', label: '⚠️ Precautions', enabled: true },
+                { id: 'culture', label: '🎭 Culture', enabled: true },
+                { id: 'food', label: '🍽️ Food', enabled: true },
+                { id: 'transport', label: '🚌 Transport', enabled: true },
+                { id: 'budget', label: '💰 Budget', enabled: true },
+                { id: 'documents', label: '📋 Documents', enabled: true },
+              ].map(cat => (
+                <label key={cat.id} className="flex items-center gap-2 rounded-md p-2 border border-gray-600 bg-green-900/20 cursor-pointer">
+                  <input type="checkbox" defaultChecked={cat.enabled} className="rounded border-gray-600" />
+                  <span className="text-xs text-gray-200">{cat.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-white">Per-Card AI Chat</p>
+                <p className="text-xs text-gray-400">Allow users to ask AI about each tip category</p>
+              </div>
+              <button className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600">Enabled</button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-white">Location-Based Tips</p>
+                <p className="text-xs text-gray-400">Allow "Nearby Tips" using GPS</p>
+              </div>
+              <button className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600">Enabled</button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-white">Web Search Enhancement</p>
+                <p className="text-xs text-gray-400">Use web search for real-time destination info</p>
+              </div>
+              <button className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600">Enabled</button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-white">Cache Duration</p>
+                <p className="text-xs text-gray-400">How long tips are cached before refresh</p>
+              </div>
+              <select defaultValue="7" className="rounded-lg bg-gray-700 border border-gray-600 px-3 py-1.5 text-xs text-white">
+                <option value="1">1 day</option>
+                <option value="3">3 days</option>
+                <option value="7">7 days</option>
+                <option value="14">14 days</option>
+                <option value="30">30 days</option>
+              </select>
+            </div>
           </div>
         </div>
       </section>
