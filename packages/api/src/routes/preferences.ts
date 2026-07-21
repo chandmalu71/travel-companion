@@ -122,8 +122,11 @@ export async function registerPreferencesRoutes(
       const authenticatedUserId = (request as any).userId as string;
       const { userId } = request.params;
 
+      // Support "me" as alias for authenticated user
+      const targetUserId = userId === 'me' ? authenticatedUserId : userId;
+
       // Users can only read their own preferences
-      if (authenticatedUserId !== userId) {
+      if (authenticatedUserId !== targetUserId) {
         return reply.status(403).send({
           statusCode: 403,
           error: 'FORBIDDEN',
@@ -134,7 +137,7 @@ export async function registerPreferencesRoutes(
       const prefs = await db
         .selectFrom('user_preferences')
         .selectAll()
-        .where('user_id', '=', userId)
+        .where('user_id', '=', targetUserId)
         .executeTakeFirst();
 
       if (!prefs) {
@@ -171,7 +174,10 @@ export async function registerPreferencesRoutes(
       const { userId } = request.params;
       const body = request.body;
 
-      if (authenticatedUserId !== userId) {
+      // Support "me" as alias for authenticated user
+      const targetUserId = userId === 'me' ? authenticatedUserId : userId;
+
+      if (authenticatedUserId !== targetUserId) {
         return reply.status(403).send({
           statusCode: 403,
           error: 'FORBIDDEN',
@@ -191,7 +197,7 @@ export async function registerPreferencesRoutes(
       }
 
       const updateValues: Record<string, unknown> = {
-        user_id: userId,
+        user_id: targetUserId,
         updated_at: new Date(),
       };
 
