@@ -55,7 +55,7 @@ export default function ExpensesPage() {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
   const [movingExpense, setMovingExpense] = useState<Expense | null>(null);
-  const { primaryCurrency } = useUserCurrency();
+  const { primaryCurrency, convert } = useUserCurrency();
   const { formatCurrency } = useTranslation();
 
   const loadExpenses = () => {
@@ -67,7 +67,11 @@ export default function ExpensesPage() {
 
   useEffect(() => { loadExpenses(); }, []);
 
-  const totalSpent = expenses.reduce((sum, e) => sum + (Number(e.converted_amount) || Number(e.amount) || 0), 0);
+  // Total converted to user's preferred display currency
+  const totalSpent = expenses.reduce((sum, e) => {
+    const amount = Number(e.amount) || 0;
+    return sum + convert(amount, e.currency);
+  }, 0);
 
   const receiptFileRef = useRef<HTMLInputElement>(null);
   const [receiptExpenseId, setReceiptExpenseId] = useState<string | null>(null);
@@ -176,8 +180,8 @@ export default function ExpensesPage() {
               </div>
               <div className="text-right flex-shrink-0 ml-2">
                 <p className="font-semibold text-gray-900 text-sm">{formatCurrency(Number(expense.amount), expense.currency)}</p>
-                {expense.converted_amount && expense.currency !== primaryCurrency && (
-                  <p className="text-[10px] text-gray-400">≈ {formatCurrency(Number(expense.converted_amount), primaryCurrency)}</p>
+                {expense.currency !== primaryCurrency && (
+                  <p className="text-[10px] text-gray-400">≈ {formatCurrency(convert(Number(expense.amount), expense.currency), primaryCurrency)}</p>
                 )}
               </div>
               {/* Actions menu */}

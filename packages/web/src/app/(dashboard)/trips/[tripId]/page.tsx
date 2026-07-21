@@ -390,7 +390,7 @@ function ExpensesTab({ tripId }: { tripId: string }) {
   const [loading, setLoading] = useState(true);
   const [subTab, setSubTab] = useState<'expenses' | 'settlements'>('expenses');
   const [showAddExpense, setShowAddExpense] = useState(false);
-  const { primaryCurrency } = useUserCurrency();
+  const { primaryCurrency, convert } = useUserCurrency();
   const { formatCurrency } = useTranslation();
 
   const loadExpenses = () => {
@@ -402,7 +402,10 @@ function ExpensesTab({ tripId }: { tripId: string }) {
 
   useEffect(() => { loadExpenses(); }, [tripId]);
 
-  const totalSpent = expenses.reduce((sum, e) => sum + (Number(e.converted_amount) || Number(e.amount) || 0), 0);
+  const totalSpent = expenses.reduce((sum, e) => {
+    const amount = Number(e.amount) || 0;
+    return sum + convert(amount, e.currency ?? 'USD');
+  }, 0);
 
   if (loading) return <div className="animate-pulse h-32 bg-gray-200 rounded-lg" />;
 
@@ -466,8 +469,8 @@ function ExpensesTab({ tripId }: { tripId: string }) {
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="font-semibold text-gray-900 text-sm">{formatCurrency(Number(expense.amount), expense.currency)}</p>
-                    {expense.converted_amount && expense.currency !== primaryCurrency && (
-                      <p className="text-[10px] text-gray-400">≈ {formatCurrency(Number(expense.converted_amount), primaryCurrency)}</p>
+                    {expense.currency !== primaryCurrency && (
+                      <p className="text-[10px] text-gray-400">≈ {formatCurrency(convert(Number(expense.amount), expense.currency), primaryCurrency)}</p>
                     )}
                   </div>
                 </div>

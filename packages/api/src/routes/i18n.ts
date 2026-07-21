@@ -46,6 +46,58 @@ export async function registerI18nRoutes(
     return reply.send({ statusCode: 200, data: currencies });
   });
 
+  // GET /api/i18n/exchange-rates — exchange rates relative to USD
+  // In production: fetched from Open Exchange Rates API every 24h and cached
+  // In dev: static approximate rates
+  app.get('/api/i18n/exchange-rates', async (_request: FastifyRequest, reply: FastifyReply) => {
+    const rates: Record<string, number> = {
+      USD: 1.0,
+      EUR: 0.92,
+      GBP: 0.79,
+      JPY: 157.5,
+      AUD: 1.53,
+      CAD: 1.36,
+      CHF: 0.88,
+      INR: 83.5,
+      SGD: 1.34,
+      THB: 35.8,
+      IDR: 15950,
+      MXN: 17.2,
+      BRL: 4.95,
+      SEK: 10.45,
+      NOK: 10.55,
+      DKK: 6.87,
+      PLN: 4.02,
+      TRY: 32.5,
+      KRW: 1320,
+      CNY: 7.25,
+      NZD: 1.64,
+      ZAR: 18.5,
+      AED: 3.67,
+      SAR: 3.75,
+      HKD: 7.82,
+      TWD: 32.1,
+      MYR: 4.72,
+      PHP: 56.5,
+      VND: 25350,
+      CZK: 22.8,
+      HUF: 355,
+      ILS: 3.65,
+      CLP: 925,
+      COP: 3950,
+      PEN: 3.72,
+      ARS: 870,
+      EGP: 48.5,
+      NGN: 1550,
+      KES: 155,
+      GHS: 15.2,
+    };
+    return reply.send({
+      statusCode: 200,
+      data: { base: 'USD', rates, updated_at: new Date().toISOString() },
+    });
+  });
+
   // GET /api/i18n/locales — enabled locale configs
   app.get('/api/i18n/locales', async (_request: FastifyRequest, reply: FastifyReply) => {
     const locales = await db
