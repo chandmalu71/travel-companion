@@ -711,3 +711,71 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 
 27. THE admin panel SHALL display trip membership statistics (total memberships, invitations pending, average members per trip)
 28. THE admin panel SHALL allow force-adding or force-removing travellers from any trip for support purposes
+
+
+---
+
+## Requirement 34: My Network (Connected Users)
+
+**User Story:** As a user, I want to maintain a list of travel contacts so that I can quickly add them to future trips without re-entering their details.
+
+### Acceptance Criteria
+
+1. THE Application SHALL provide a "My Network" page at `/connections` with two tabs: Network and Family
+2. WHEN a trip invitation is accepted, THE Application SHALL automatically add both users to each other's connections (bidirectional, status: connected)
+3. THE Application SHALL allow manual addition of contacts by email (linked if registered, stored if not)
+4. THE Application SHALL support connection statuses: connected, invited, declined, blocked
+5. THE Application SHALL allow labels on connections: Partner, Family, Friend, Colleague, Travel Buddy, Guide, Other
+6. THE Application SHALL support privacy levels: Full (name+email+avatar), Limited (name+avatar), Minimal (display name only)
+7. THE Application SHALL provide a suggestions endpoint for trip invite autocomplete (max 50 results)
+8. THE Application SHALL display "Select from My Network" in the trip invite modal to auto-fill recipient email
+9. THE Application SHALL provide name autocomplete in the Add Member modal showing matching Network and Family contacts
+10. WHEN a contact is selected from autocomplete, THE Application SHALL lock email and type fields (read-only) until selection is cleared
+11. THE Application SHALL enforce a maximum of 500 connections per user
+
+## Requirement 34b: Family Members
+
+**User Story:** As a user, I want to manage family member profiles with their travel preferences and passport details so they can be quickly added to trips.
+
+### Acceptance Criteria
+
+1. THE Application SHALL support two family member modes: Connected (linked Nayya account) and Managed (no account, user maintains details)
+2. THE Application SHALL store per family member: first/last name, relationship, date of birth, gender
+3. THE Application SHALL store preferences: dietary restrictions (chip selector), allergies (chip selector), seat preference, meal preference, cabin class
+4. THE Application SHALL use the same chip-based UI for dietary/allergies as the user's own Settings preferences (admin-managed options)
+5. THE Application SHALL offer 16 IATA standard flight meal codes: STD, VGML, AVML, VJML, RVML, GFML, NLML, DBML, LFML, LSML, BLML, KSML, MOML, HNML, CHML, BBML
+6. THE Application SHALL display meal codes in "Label (CODE)" format with descriptions shown on selection
+7. THE Application SHALL display disclaimer: "Meal availability may vary by airline and route"
+8. THE Application SHALL encrypt passport/ID data with AES-256-GCM and display masked (****XXXX) with click-to-reveal
+9. THE Application SHALL allow users to choose not to store passport details at all
+10. THE Application SHALL support preference sharing scope: this_trip / all_trips / none (with per-field toggles for dietary, allergies, travel preferences)
+11. THE Application SHALL provide a "Family" button in the trip Members tab to quickly add family members to the trip
+12. WHEN a child family member is added to a trip, THE Application SHALL auto-set traveller type to "child"
+13. THE Application SHALL enforce a maximum of 20 family members per user
+14. THE Application SHALL support relationships: spouse, partner, child, parent, sibling, grandparent, other
+
+## Requirement 35: Currency Conversion in Expenses
+
+**User Story:** As a user, I want expenses displayed in my preferred currency with converted amounts so I can understand my spending across multi-currency trips.
+
+### Acceptance Criteria
+
+1. THE Application SHALL provide an exchange rates API endpoint with rates for 40 currencies (USD base)
+2. THE Application SHALL convert expense totals to the user's preferred display currency
+3. THE Application SHALL show individual expenses with original amount + converted equivalent when currencies differ
+4. THE Application SHALL use Intl.NumberFormat for locale-aware currency formatting via I18nProvider
+5. THE Application SHALL fetch user's display currency preference via useUserCurrency hook
+6. In production, THE Application SHALL refresh exchange rates from Open Exchange Rates API every 24 hours
+
+## Requirement 36: Landing Page & App Internationalization
+
+**User Story:** As an admin, I want all user-facing text to be translatable so the app can be localized to different languages.
+
+### Acceptance Criteria
+
+1. THE Application SHALL maintain 265+ translation keys across 12 namespaces in the translation_keys database table
+2. THE Application SHALL provide English translations as fallback in en.json (client-side)
+3. THE Application SHALL include translation keys for: landing page (74 keys), flight meals (33 keys), network (10 keys), and all existing features
+4. THE Admin Translation Editor SHALL display all translation keys grouped by namespace
+5. THE Application SHALL wrap all dashboard pages with I18nProvider for locale-aware formatting
+6. THE Application SHALL disable browser caching for dev assets (Cache-Control: no-store) to prevent stale 404 errors
