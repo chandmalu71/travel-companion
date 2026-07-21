@@ -811,3 +811,32 @@ This implementation plan builds the Travel Companion application incrementally, 
 - [x] 39.3 Add weather widget to trip Overview tab
   - Horizontal scrollable strip (first 5 days)
   - Day name, weather icon, high/low temp, rain badge (>30%)
+
+
+## Phase 10: Messaging & Communications (Req 40)
+
+- [x] 40.1 Create DB migration 018: conversations, messages, reactions, polls, poll_votes, trip_decisions
+  - 7 tables with proper FK cascades and indexes
+  - Supports: DM, group, family, trip, broadcast conversation types
+- [x] 40.2 Create messaging API (14 endpoints)
+  - Conversations: list, create (DM/group/trip)
+  - Messages: list, send (with @AI auto-response), edit, delete, threads
+  - Reactions: add/remove emoji
+  - Polls: create, vote
+  - Trip Decisions: list, create (promote from message), vote
+- [x] 40.3 Create Messages page (/messages)
+  - Left sidebar: conversation list with type icons, unread badges, preview
+  - Right panel: chat view with message bubbles, threaded replies, emoji reactions
+  - New Conversation modal: DM or Group, select from Network contacts
+- [x] 40.4 Create Trip Chat tab + Trip Decisions
+  - Chat tab in trip detail (auto-creates trip conversation)
+  - @AI support with contextual responses
+  - "Promote to Trip Decision" on message hover
+  - Trip Decisions panel with voting (yes/no)
+  - Create Poll modal (question + N options)
+- [x] 40.5 Admin Configuration
+  - Messaging section: sidebar messages toggle, trip chat toggle, AI toggle, polls toggle
+  - Broadcast permissions (owner only / owner+co-owners)
+  - Max message length, max group size, retention policy
+  - Notification channels (in-app, email, WhatsApp, SMS)
+  - Added messaging_ai to AI Model Configuration

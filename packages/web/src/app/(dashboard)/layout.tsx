@@ -11,6 +11,7 @@ const navItems = [
   { href: '/bookings', label: 'Bookings', icon: '📋' },
   { href: '/expenses', label: 'Expenses', icon: '💰' },
   { href: '/connections', label: 'My Network', icon: '👥' },
+  { href: '/messages', label: 'Messages', icon: '💬' },
   { href: '/search', label: 'Search', icon: '🔍' },
   { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];

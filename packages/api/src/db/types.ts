@@ -45,6 +45,13 @@ export interface Database {
   family_members: FamilyMembersTable;
   trip_tips: TripTipsTable;
   trip_tip_chats: TripTipChatsTable;
+  conversations: ConversationsTable;
+  conversation_participants: ConversationParticipantsTable;
+  messages: MessagesTable;
+  message_reactions: MessageReactionsTable;
+  polls: PollsTable;
+  poll_votes: PollVotesTable;
+  trip_decisions: TripDecisionsTable;
 }
 
 // --- Users ---
@@ -833,4 +840,87 @@ export interface TripTipChatsTable {
   message: string;
   ai_model: string | null;
   created_at: Generated<Date>;
+}
+
+// --- Messaging ---
+
+export interface ConversationsTable {
+  id: Generated<string>;
+  type: string; // 'dm' | 'group' | 'family' | 'trip' | 'broadcast'
+  name: string | null;
+  trip_id: string | null;
+  created_by: string;
+  last_message_at: Date | null;
+  last_message_preview: string | null;
+  is_archived: Generated<boolean>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface ConversationParticipantsTable {
+  id: Generated<string>;
+  conversation_id: string;
+  user_id: string;
+  role: Generated<string>; // 'owner' | 'co-owner' | 'member'
+  last_read_at: Date | null;
+  is_muted: Generated<boolean>;
+  joined_at: Generated<Date>;
+}
+
+export interface MessagesTable {
+  id: Generated<string>;
+  conversation_id: string;
+  sender_id: string;
+  parent_message_id: string | null;
+  content: string;
+  content_type: Generated<string>; // 'text' | 'image' | 'link' | 'ai_response' | 'broadcast' | 'poll' | 'system'
+  metadata: any | null; // JSONB
+  is_edited: Generated<boolean>;
+  is_deleted: Generated<boolean>;
+  ai_model: string | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface MessageReactionsTable {
+  id: Generated<string>;
+  message_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: Generated<Date>;
+}
+
+export interface PollsTable {
+  id: Generated<string>;
+  message_id: string;
+  question: string;
+  options: any; // JSONB [{ id, text }]
+  is_multiple_choice: Generated<boolean>;
+  is_anonymous: Generated<boolean>;
+  closes_at: Date | null;
+  created_at: Generated<Date>;
+}
+
+export interface PollVotesTable {
+  id: Generated<string>;
+  poll_id: string;
+  user_id: string;
+  option_id: string;
+  created_at: Generated<Date>;
+}
+
+export interface TripDecisionsTable {
+  id: Generated<string>;
+  trip_id: string;
+  proposed_by: string;
+  source_message_id: string | null;
+  title: string;
+  description: string | null;
+  status: Generated<string>; // 'proposed' | 'voting' | 'approved' | 'rejected' | 'promoted'
+  promoted_to: string | null;
+  promoted_item_id: string | null;
+  votes_for: Generated<number>;
+  votes_against: Generated<number>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
 }

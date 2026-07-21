@@ -1934,3 +1934,87 @@ Return { forecast[], alerts[], homeWeather }
 - `OPENWEATHERMAP_API_KEY` — production API key
 - Free tier: 1000 calls/day, 5-day/3h forecast
 - Paid tier: 16-day daily forecast + historical data
+
+
+---
+
+## Component 40: Messaging & Communications
+
+**Responsibility**: Real-time messaging with DM, group, trip chat, polls, and trip decisions
+
+### Data Model
+
+```
+conversations
+├── type: dm | group | family | trip | broadcast
+├── name (null for DM)
+├── trip_id (for trip/broadcast types)
+├── last_message_at, last_message_preview
+└── is_archived
+
+conversation_participants
+├── conversation_id → conversations.id
+├── user_id, role (owner/co-owner/member)
+├── last_read_at, is_muted
+
+messages
+├── conversation_id → conversations.id
+├── sender_id
+├── parent_message_id (null = top-level, set = threaded reply)
+├── content, content_type (text/image/link/ai_response/broadcast/poll/system)
+├── metadata (JSONB: link unfurl, image URL, AI context)
+├── is_edited, is_deleted, ai_model
+
+message_reactions
+├── message_id → messages.id
+├── user_id, emoji (unique per message+user+emoji)
+
+polls
+├── message_id → messages.id
+├── question, options (JSONB [{id, text}])
+├── is_multiple_choice, is_anonymous, closes_at
+
+poll_votes
+├── poll_id → polls.id
+├── user_id, option_id (unique per poll+user+option)
+
+trip_decisions
+├── trip_id → trips.id
+├── proposed_by, source_message_id
+├── title, description, status (proposed/voting/approved/rejected/promoted)
+├── promoted_to (tip/favorite/timeline_event)
+├── votes_for, votes_against
+```
+
+### API Endpoints (14)
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | /api/conversations | List user's conversations |
+| POST | /api/conversations | Create DM/group/trip conversation |
+| GET | /api/conversations/:id/messages | Get messages (top-level) |
+| POST | /api/conversations/:id/messages | Send message (@AI auto-responds) |
+| GET | /api/messages/:id/thread | Get threaded replies |
+| PUT | /api/messages/:id | Edit/delete own message |
+| POST | /api/messages/:id/reactions | Add emoji reaction |
+| DELETE | /api/messages/:id/reactions/:emoji | Remove reaction |
+| POST | /api/conversations/:id/polls | Create poll |
+| POST | /api/polls/:id/vote | Vote on poll option |
+| GET | /api/trips/:tripId/decisions | List trip decisions |
+| POST | /api/trips/:tripId/decisions | Promote message → decision |
+| PUT | /api/trips/:tripId/decisions/:id | Vote/update decision |
+
+### Real-Time (Production)
+
+- Socket.io WebSocket for real-time message delivery
+- Typing indicators ("Alice is typing...")
+- Online/offline presence
+- Dev: polling fallback (refresh to see new messages)
+
+### UI Components
+
+- **Messages Page** (/messages): WhatsApp-style split view (conversations list + chat)
+- **Trip Chat Tab**: embedded in trip detail with decisions panel
+- **New Conversation Modal**: DM or Group, select from Network
+- **Poll Form Modal**: question + N options
+- **Trip Decisions Panel**: vote yes/no, status badges
