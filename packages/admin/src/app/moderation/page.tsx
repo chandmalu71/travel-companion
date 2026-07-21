@@ -110,11 +110,17 @@ function ImpersonateSection() {
       {impersonating && (
         <div className="rounded-lg bg-amber-900/30 border border-amber-700 p-4">
           <p className="text-sm text-amber-300">✅ Impersonation session opened for: <strong>{email}</strong></p>
-          <p className="text-xs text-amber-400 mt-1">A new tab has been opened with the user's dashboard. Read-only in production.</p>
-          <button onClick={() => setImpersonating(false)}
-            className="mt-2 text-xs bg-amber-700 px-3 py-1 rounded text-white hover:bg-amber-600">
-            Dismiss
-          </button>
+          <p className="text-xs text-amber-400 mt-1">A new tab has been opened with the user's dashboard.</p>
+          <div className="flex gap-2 mt-2">
+            <button onClick={() => setImpersonating(false)}
+              className="text-xs bg-gray-700 px-3 py-1 rounded text-white hover:bg-gray-600">
+              Dismiss
+            </button>
+            <button onClick={() => { setImpersonating(false); setEmail(''); }}
+              className="text-xs bg-red-700 px-3 py-1 rounded text-white hover:bg-red-600">
+              Stop Impersonation
+            </button>
+          </div>
         </div>
       )}
 
