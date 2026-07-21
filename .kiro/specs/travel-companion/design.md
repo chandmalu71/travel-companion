@@ -1668,3 +1668,100 @@ Each card follows a max 4-5 row structure:
 - Car: `🚗 Europcar [EU-7829341] · Compact SUV · Aug 1–Aug 15 · Rome Fiumicino`
 
 Plus status badge (upcoming/active/completed) and source icon.
+
+
+---
+
+## Component 34: My Network & Family Members
+
+**Responsibility**: Travel contact management, family profiles with encrypted PII, trip member integration
+
+### Data Model
+
+```
+user_connections (Migration 015)
+├── user_id → users.id
+├── connected_user_id → users.id (nullable — for non-registered contacts)
+├── connected_email, connected_name
+├── status: connected | invited | declined | blocked
+├── label: Partner | Family | Friend | Colleague | Travel Buddy | Guide | Other
+├── privacy: full | limited | minimal
+├── source: manual | trip_invite | trip_accept
+└── source_trip_id (nullable)
+
+family_members (Migration 016)
+├── user_id → users.id (owner)
+├── linked_user_id → users.id (nullable — for connected mode)
+├── mode: managed | connected
+├── relationship: spouse | partner | child | parent | sibling | grandparent | other
+├── first_name, last_name, date_of_birth, gender
+├── dietary_preferences[], allergies[] (PostgreSQL text arrays)
+├── seat_preference, meal_preference (IATA code), cabin_class_preference
+├── passport_name, passport_number, passport_expiry (AES-256-GCM encrypted)
+├── passport_nationality, passport_issuing_country (not encrypted — ISO codes)
+├── has_passport_stored (boolean flag)
+├── sharing_scope: this_trip | all_trips | none
+└── share_dietary, share_allergies, share_travel_prefs (boolean toggles)
+```
+
+### Security: PII Encryption
+
+- Algorithm: AES-256-GCM (authenticated encryption)
+- Key: `PII_ENCRYPTION_KEY` environment variable (32 chars)
+- Format stored: `${iv_hex}:${auth_tag_hex}:${encrypted_hex}`
+- Display: masked as `****XXXX` (last 4 chars) in list views
+- Full decrypt only on explicit `?reveal_passport=true` API parameter
+- Optional storage — users can choose not to store passport at all
+
+### API Endpoints
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | /api/connections | List user's network connections |
+| POST | /api/connections | Add connection manually |
+| PUT | /api/connections/:id | Update label, privacy, notes, status |
+| DELETE | /api/connections/:id | Remove connection |
+| GET | /api/connections/suggest | Top 50 for trip invite autocomplete |
+| GET | /api/family-members | List family (masked passport) |
+| POST | /api/family-members | Add family member (auto-encrypt) |
+| GET | /api/family-members/:id | Detail (optional passport reveal) |
+| PUT | /api/family-members/:id | Update (re-encrypts passport) |
+| DELETE | /api/family-members/:id | Remove |
+| GET | /api/family-members/for-trip | Shared preferences for trip context |
+
+### UI Components
+
+- `/connections` page: two-tab layout (Network / Family)
+- Add Member modal: name autocomplete → contact chip (locked fields) or manual entry
+- Trip invite modal: "Select from My Network" collapsible section
+- Trip Members tab: "Family" button → picker modal
+- Family add/edit: chip-based dietary/allergies (same as Settings), IATA meal selector
+
+---
+
+## Component 35: Currency Conversion
+
+**Responsibility**: Multi-currency display with real-time conversion
+
+### Architecture
+
+```
+GET /api/i18n/exchange-rates → { base: "USD", rates: { EUR: 0.92, GBP: 0.79, ... } }
+                                    ↓
+useUserCurrency hook ← fetches user preferences + rates
+                                    ↓
+convert(amount, fromCurrency) → amount / fromRate × toRate
+                                    ↓
+formatCurrency(converted, primaryCurrency) → Intl.NumberFormat display
+```
+
+- 40 currencies supported (static rates in dev, Open Exchange Rates in production)
+- I18nProvider wraps dashboard layout — provides formatCurrency to all pages
+- Default context fallback uses Intl.NumberFormat (not hardcoded `$`)
+- Exchange rates cached client-side per session
+
+### IATA Flight Meal Codes
+
+16 standard codes: STD, VGML, AVML, VJML, RVML, GFML, NLML, DBML, LFML, LSML, BLML, KSML, MOML, HNML, CHML, BBML
+
+Display: "Label (CODE)" with description on selection. Airline disclaimer shown.

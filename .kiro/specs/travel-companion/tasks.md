@@ -701,3 +701,50 @@ This implementation plan builds the Travel Companion application incrementally, 
   ]
 }
 ```
+
+
+---
+
+## Phase 7: My Network, Family Members, Currency Conversion (Req 34-36)
+
+- [x] 34.1 Create DB migration 015: user_connections table
+  - user_id, connected_user_id (FK), connected_email, connected_name, status, label, privacy, source, notes
+  - Unique index on (user_id, connected_user_id)
+- [x] 34.2 Create API routes for connections
+  - GET/POST/PUT/DELETE /api/connections + GET /api/connections/suggest
+  - Auto-connect (bidirectional) when trip invitation accepted
+- [x] 34.3 Create /connections web page (My Network)
+  - Renamed to "My Network" with sidebar nav link
+  - Filter tabs: all/connected/invited/declined
+  - Add/edit/remove modals with labels and privacy
+- [x] 34.4 Add "Select from My Network" to trip invite modal
+  - Collapsible contact list in email channel, auto-fills recipient
+- [x] 34.5 Add name autocomplete to Add Member modal
+  - Fetches Network + Family contacts, live dropdown filter
+  - Contact selection locks email/type fields (read-only chip display)
+- [x] 34b.1 Create DB migration 016: family_members table
+  - Encrypted passport fields (AES-256-GCM), dietary, allergies, travel preferences
+  - Sharing scope controls (this_trip/all_trips/none)
+- [x] 34b.2 Create API routes for family members
+  - GET/POST/PUT/DELETE /api/family-members + /api/family-members/:id?reveal_passport=true
+  - GET /api/family-members/for-trip (shared preferences for trip context)
+- [x] 34b.3 Create Family tab in /connections page
+  - Add modal: name, relationship, DOB, gender, chip-based dietary/allergies (same as Settings)
+  - Edit modal with sharing scope, passport section (collapsible, encrypted)
+  - IATA flight meal codes (16 options) with descriptions and airline disclaimer
+- [x] 34b.4 Wire family members into trip flow
+  - "Family" button in Members tab → picker modal
+  - One-click add with auto-detected child type
+- [x] 35.1 Create exchange rates API endpoint
+  - GET /api/i18n/exchange-rates — 40 currencies, USD base
+- [x] 35.2 Create useUserCurrency hook
+  - Fetches display currencies + exchange rates
+  - convert() function for cross-currency math
+- [x] 35.3 Wire currency conversion to Expenses page and Trip expenses tab
+  - Total in user's preferred currency, individual items show converted equivalent
+  - I18nProvider added to dashboard layout
+  - formatCurrency uses Intl.NumberFormat with locale
+- [x] 36.1 Add landing page translation keys
+  - 74 keys in landing.* namespace, 33 keys in flight.meal.*, 10 in network.*
+  - All inserted into translation_keys DB table for Admin Translation Editor
+  - Total: 265 keys across 12 namespaces
