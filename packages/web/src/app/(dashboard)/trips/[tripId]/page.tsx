@@ -532,7 +532,7 @@ function MembersTab({ tripId }: { tripId: string }) {
 
   const handleCreateGroup = async () => {
     if (!newGroupName.trim()) return;
-    await api.post(`/api/trips/${tripId}/groups`, { name: newGroupName });
+    await api.post(`/api/trips/${tripId}/travel-groups`, { name: newGroupName });
     setNewGroupName(''); setShowGroupForm(false);
     loadMembers();
   };

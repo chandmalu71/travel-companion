@@ -149,15 +149,15 @@ export async function registerTripMembersRoutes(app: FastifyInstance, options: T
 
   // ─── Groups ────────────────────────────────────────────────────────────
 
-  // GET /api/trips/:tripId/groups
-  app.get('/api/trips/:tripId/groups', async (request: FastifyRequest<{ Params: { tripId: string } }>, reply: FastifyReply) => {
+  // GET /api/trips/:tripId/travel-groups
+  app.get('/api/trips/:tripId/travel-groups', async (request: FastifyRequest<{ Params: { tripId: string } }>, reply: FastifyReply) => {
     const { tripId } = request.params;
     const groups = await db.selectFrom('trip_groups').selectAll().where('trip_id', '=', tripId).orderBy('display_order', 'asc').execute();
     return reply.send({ statusCode: 200, data: groups });
   });
 
-  // POST /api/trips/:tripId/groups
-  app.post('/api/trips/:tripId/groups', async (
+  // POST /api/trips/:tripId/travel-groups
+  app.post('/api/trips/:tripId/travel-groups', async (
     request: FastifyRequest<{ Params: { tripId: string }; Body: { name: string; groupType?: string; expenseSplitMode?: string; color?: string } }>,
     reply: FastifyReply,
   ) => {
@@ -177,8 +177,8 @@ export async function registerTripMembersRoutes(app: FastifyInstance, options: T
     return reply.status(201).send({ statusCode: 201, data: group });
   });
 
-  // PUT /api/trips/:tripId/groups/:id
-  app.put('/api/trips/:tripId/groups/:id', async (
+  // PUT /api/trips/:tripId/travel-groups/:id
+  app.put('/api/trips/:tripId/travel-groups/:id', async (
     request: FastifyRequest<{ Params: { tripId: string; id: string }; Body: { name?: string; groupType?: string; expenseSplitMode?: string; color?: string } }>,
     reply: FastifyReply,
   ) => {
@@ -196,8 +196,8 @@ export async function registerTripMembersRoutes(app: FastifyInstance, options: T
     return reply.send({ statusCode: 200, message: 'Group updated' });
   });
 
-  // DELETE /api/trips/:tripId/groups/:id
-  app.delete('/api/trips/:tripId/groups/:id', async (request: FastifyRequest<{ Params: { tripId: string; id: string } }>, reply: FastifyReply) => {
+  // DELETE /api/trips/:tripId/travel-groups/:id
+  app.delete('/api/trips/:tripId/travel-groups/:id', async (request: FastifyRequest<{ Params: { tripId: string; id: string } }>, reply: FastifyReply) => {
     const { id } = request.params;
     // Ungroup members first
     await db.updateTable('trip_travellers').set({ group_id: null }).where('group_id', '=', id).execute();
