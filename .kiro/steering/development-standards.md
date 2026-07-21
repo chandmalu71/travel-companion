@@ -401,7 +401,7 @@ When making changes that affect requirements, design, or architecture:
    - Add implementation tasks (mark [x] for completed)
    - Group under a Phase heading
 
-4. **Confluence** (Space: `Nayyaai`)
+4. **Confluence** (Space: `Neyyaai`)
    - Update Features page with the new feature section
    - Keep "Designed But Not Yet Built" table current
 
@@ -416,8 +416,8 @@ When making changes that affect requirements, design, or architecture:
 
 ### Confluence Space Details
 
-- **Space Key:** `Nayyaai`
-- **URL:** https://chandmalu.atlassian.net/wiki/spaces/Nayyaai
+- **Space Key:** `Neyyaai`
+- **URL:** https://chandmalu.atlassian.net/wiki/spaces/Neyyaai
 - **Root Page ID:** `2916520`
 - **Key Page IDs:**
   - Project Overview: `3112961`
