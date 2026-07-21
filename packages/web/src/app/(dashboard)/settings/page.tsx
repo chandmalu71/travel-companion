@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { useTranslation } from '@/i18n';
 
 // ─── Options fetched from Admin-configured API ──────────────────────────────
 // Interests, Dietary, Allergies, and Currencies are all managed in the Admin panel.
@@ -10,6 +11,7 @@ import { api } from '@/lib/api';
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const [preferences, setPreferences] = useState({
     interests: [] as string[],
     dietaryPreferences: [] as string[],
@@ -138,7 +140,15 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl space-y-8">
-      <h1 className="text-2xl font-bold text-gray-900">Preferences</h1>
+      <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          SECTION 1: Profile & Account
+          ═══════════════════════════════════════════════════════════════ */}
+      <div className="border-b border-gray-200 pb-2">
+        <h2 className="text-xl font-semibold text-gray-900">Profile & Account</h2>
+        <p className="text-sm text-gray-500">Manage your account settings and connections</p>
+      </div>
 
       {/* ─── Email Connection Quick Link ────────────────────────────── */}
       <section className="rounded-lg border border-primary-200 bg-primary-50 p-4">
@@ -176,10 +186,18 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* ═══════════════════════════════════════════════════════════════
+          SECTION 2: Travel Preferences
+          ═══════════════════════════════════════════════════════════════ */}
+      <div className="border-b border-gray-200 pb-2 pt-4">
+        <h2 className="text-xl font-semibold text-gray-900">Travel Preferences</h2>
+        <p className="text-sm text-gray-500">Personalize your travel experience with your preferences</p>
+      </div>
+
       {/* ─── Interests ──────────────────────────────────────────────── */}
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Interests</h2>
-        <p className="text-sm text-gray-500 mb-3">Select your travel interests to personalize recommendations.</p>
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">{t('settings.interests')}</h2>
+        <p className="text-sm text-gray-500 mb-3">{t('settings.interests.hint')}</p>
         <div className="flex flex-wrap gap-2">
           {INTEREST_OPTIONS.map((interest) => (
             <button
@@ -191,7 +209,7 @@ export default function SettingsPage() {
                   : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
               }`}
             >
-              {interest.icon} {interest.name}
+              {interest.icon} {t(`preferences.interest.${interest.key}`) !== `preferences.interest.${interest.key}` ? t(`preferences.interest.${interest.key}`) : interest.name}
             </button>
           ))}
         </div>
@@ -199,8 +217,8 @@ export default function SettingsPage() {
 
       {/* ─── Dietary Preferences ────────────────────────────────────── */}
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Dietary Preferences</h2>
-        <p className="text-sm text-gray-500 mb-3">We'll use these to filter restaurant recommendations.</p>
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">{t('settings.dietary')}</h2>
+        <p className="text-sm text-gray-500 mb-3">{t('settings.dietary.hint')}</p>
         <div className="flex flex-wrap gap-2">
           {DIETARY_OPTIONS.map((pref) => (
             <button
@@ -212,7 +230,7 @@ export default function SettingsPage() {
                   : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
               }`}
             >
-              {pref.icon} {pref.name}
+              {pref.icon} {t(`preferences.dietary.${pref.key}`) !== `preferences.dietary.${pref.key}` ? t(`preferences.dietary.${pref.key}`) : pref.name}
             </button>
           ))}
         </div>
@@ -220,9 +238,9 @@ export default function SettingsPage() {
 
       {/* ─── Allergies ──────────────────────────────────────────────── */}
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Allergies</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">{t('settings.allergies')}</h2>
         <p className="text-sm text-gray-500 mb-3">
-          Select known allergies or add custom ones. Results containing allergens will be excluded.
+          {t('settings.allergies.hint')}
         </p>
 
         {/* Known allergies as selectable chips */}
@@ -237,7 +255,7 @@ export default function SettingsPage() {
                   : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
               }`}
             >
-              {allergy.icon} {allergy.name}
+              {allergy.icon} {t(`preferences.allergy.${allergy.key}`) !== `preferences.allergy.${allergy.key}` ? t(`preferences.allergy.${allergy.key}`) : allergy.name}
             </button>
           ))}
         </div>
@@ -288,9 +306,9 @@ export default function SettingsPage() {
 
       {/* ─── Display Currencies ─────────────────────────────────────── */}
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Display Currencies</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">{t('settings.currencies')}</h2>
         <p className="text-sm text-gray-500 mb-3">
-          Select currencies to display. The first one is your default. Click the star to change the default.
+          {t('settings.currencies.hint')}
         </p>
 
         <div className="space-y-2">
@@ -362,9 +380,9 @@ export default function SettingsPage() {
           disabled={saving}
           className="rounded-md bg-primary-600 px-6 py-2 text-sm font-semibold text-white hover:bg-primary-500 disabled:opacity-50"
         >
-          {saving ? 'Saving...' : 'Save Preferences'}
+          {saving ? 'Saving...' : t('settings.save')}
         </button>
-        {saved && <span className="text-sm text-green-600 font-medium">✅ Saved successfully!</span>}
+        {saved && <span className="text-sm text-green-600 font-medium">✅ {t('settings.saved')}</span>}
         {saveError && <span className="text-sm text-red-600 font-medium">❌ {saveError}</span>}
       </div>
     </div>
