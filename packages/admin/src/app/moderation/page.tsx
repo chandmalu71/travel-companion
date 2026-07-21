@@ -39,35 +39,87 @@ export default function ModerationPage() {
 function ImpersonateSection() {
   const [email, setEmail] = useState('');
   const [impersonating, setImpersonating] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleImpersonate = async () => {
+    if (!email) return;
+    setLoading(true);
+    setError('');
+    try {
+      // Get an impersonation token from the API
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      const adminToken = localStorage.getItem('adminToken');
+      const res = await fetch(`${API_URL}/api/admin/impersonate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || 'Failed to impersonate user');
+        return;
+      }
+
+      // Open web app in new tab with the impersonation token
+      const token = data.data?.accessToken;
+      if (token) {
+        const webUrl = process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3001';
+        // Open new tab with a special URL that sets the token and redirects to dashboard
+        const newTab = window.open('about:blank', '_blank');
+        if (newTab) {
+          newTab.document.write(`
+            <html><body><script>
+              localStorage.setItem('accessToken', '${token}');
+              localStorage.setItem('user', JSON.stringify({ email: '${email}', displayName: '${email.split('@')[0]}' }));
+              localStorage.setItem('impersonating', 'true');
+              window.location.href = '${webUrl}/dashboard';
+            </script><p>Opening user session...</p></body></html>
+          `);
+        }
+        setImpersonating(true);
+      } else {
+        setError('No token received from server');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Network error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <section className="bg-gray-800 rounded-lg p-6 border border-gray-700 space-y-4">
       <h2 className="text-lg font-semibold text-white">User Impersonation</h2>
-      <p className="text-sm text-gray-400">View a user's account in read-only mode for debugging. All impersonation actions are logged in the audit trail.</p>
+      <p className="text-sm text-gray-400">Opens the user's dashboard in a new tab. All impersonation actions are logged in the audit trail.</p>
 
       <div className="flex gap-3">
         <input type="email" placeholder="Enter user email to impersonate..."
           value={email} onChange={(e) => setEmail(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleImpersonate()}
           className="flex-1 rounded-lg bg-gray-700 border border-gray-600 px-4 py-2 text-sm text-white placeholder-gray-400" />
-        <button onClick={() => setImpersonating(true)}
-          className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500">
-          Start Impersonation
+        <button onClick={handleImpersonate} disabled={loading || !email}
+          className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500 disabled:opacity-50">
+          {loading ? 'Opening...' : 'Impersonate →'}
         </button>
       </div>
 
+      {error && <p className="text-sm text-red-400">{error}</p>}
+
       {impersonating && (
         <div className="rounded-lg bg-amber-900/30 border border-amber-700 p-4">
-          <p className="text-sm text-amber-300">⚠️ Impersonation mode active for: <strong>{email}</strong></p>
-          <p className="text-xs text-amber-400 mt-1">Read-only access. You cannot modify user data.</p>
+          <p className="text-sm text-amber-300">✅ Impersonation session opened for: <strong>{email}</strong></p>
+          <p className="text-xs text-amber-400 mt-1">A new tab has been opened with the user's dashboard. Read-only in production.</p>
           <button onClick={() => setImpersonating(false)}
             className="mt-2 text-xs bg-amber-700 px-3 py-1 rounded text-white hover:bg-amber-600">
-            End Session
+            Dismiss
           </button>
         </div>
       )}
 
       <div className="text-xs text-gray-500 mt-4">
-        Note: Impersonation opens the user's dashboard view in a new window. All actions logged.
+        The user's web app opens in a new browser tab. Their session is independent from your admin session.
       </div>
     </section>
   );

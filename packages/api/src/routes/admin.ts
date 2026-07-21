@@ -432,3 +432,53 @@ export async function registerAdminCreateUserRoute(app: any, options: { db: any 
     });
   });
 }
+
+
+/**
+ * Admin Impersonation endpoint.
+ * Generates a token for the target user so admin can open their session in a new tab.
+ */
+export async function registerAdminImpersonateRoute(app: any, options: { db: any }): Promise<void> {
+  const { db } = options;
+
+  app.post('/api/admin/impersonate', async (request: any, reply: any) => {
+    const { email } = request.body ?? {};
+
+    if (!email) {
+      return reply.status(400).send({ statusCode: 400, error: 'Email is required' });
+    }
+
+    // Find the target user
+    const user = await db
+      .selectFrom('users')
+      .select(['id', 'email', 'display_name'])
+      .where('email', '=', email)
+      .executeTakeFirst();
+
+    if (!user) {
+      return reply.status(404).send({ statusCode: 404, error: 'NOT_FOUND', message: `User not found: ${email}` });
+    }
+
+    // Generate a token for the target user (reuse local auth token generation)
+    const { createHash } = await import('node:crypto');
+    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+    const payload = Buffer.from(JSON.stringify({
+      sub: user.id,
+      email: user.email,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour
+      iss: 'local-dev',
+      impersonated_by: 'admin',
+    })).toString('base64url');
+    const signature = createHash('sha256').update(`${header}.${payload}.local-secret`).digest('base64url');
+    const accessToken = `${header}.${payload}.${signature}`;
+
+    return reply.send({
+      statusCode: 200,
+      data: {
+        accessToken,
+        user: { id: user.id, email: user.email, displayName: user.display_name },
+      },
+    });
+  });
+}
