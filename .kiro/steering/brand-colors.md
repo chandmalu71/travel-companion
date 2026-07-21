@@ -5,7 +5,7 @@ This steering file defines the official brand colors, typography, and logo usage
 ## Brand Identity
 
 - **Name:** Neyya
-- **Tagline:** Your Complete Travel Companion
+- **Tagline:** Your Complete AI Travel Companion
 - **Domain:** neyya.ai
 - **Logo mark:** Compass with AI, cityscape, leaves, and orange/green navigation arrows
 

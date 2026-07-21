@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Neyya — Your Complete Travel Companion',
-  description: 'AI-powered travel planning that adapts to your style. Plan trips, track expenses, discover places, and collaborate with fellow travelers.',
+  title: 'Neyya — Your Complete AI Travel Companion',
+  description: 'Your Complete AI Travel Companion. Plan trips, track expenses, discover places, and collaborate with fellow travelers.',
 };
 
 export default function RootLayout({

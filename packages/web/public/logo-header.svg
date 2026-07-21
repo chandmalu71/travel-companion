@@ -8,5 +8,5 @@
   <!-- NEYYA text -->
   <text x="44" y="24" font-family="Arial, sans-serif" font-weight="bold" font-size="20" fill="#2D2D2D" letter-spacing="1.5">NEYYA</text>
   <!-- Tagline -->
-  <text x="44" y="36" font-family="Arial, sans-serif" font-size="7" fill="#609550" letter-spacing="0.3">Your Complete Travel Companion</text>
+  <text x="44" y="36" font-family="Arial, sans-serif" font-size="7" fill="#609550" letter-spacing="0.3">Your Complete AI Travel Companion</text>
 </svg>
