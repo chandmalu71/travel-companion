@@ -37,6 +37,7 @@ import { registerFamilyMemberRoutes } from './routes/family-members.js';
 import { registerTripTipsRoutes } from './routes/trip-tips.js';
 import { registerWeatherRoutes } from './routes/weather.js';
 import { registerMessagingRoutes } from './routes/messaging.js';
+import { registerEmailAliasRoutes } from './routes/email-aliases.js';
 import { registerReceiptScanRoute } from './routes/receipt-scan.js';
 import { registerTripTimelineRoute } from './routes/trip-timeline.js';
 import { registerHomeLocationRoutes } from './routes/home-location.js';
@@ -212,6 +213,11 @@ export async function buildApp(
   // Register messaging routes
   if (options.db) {
     await registerMessagingRoutes(app, { db: options.db });
+  }
+
+  // Register email alias routes
+  if (options.db) {
+    await registerEmailAliasRoutes(app, { db: options.db });
   }
 
   // Register receipt scanning route

@@ -939,3 +939,23 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 8. Admin SHALL be able to enable/disable individual widgets globally (disabled widgets hidden from user customization)
 9. Users SHALL be able to reset to default widget layout
 10. THE default layout SHALL include: Quick Actions, Upcoming Trips, Expenses, Messages, Network, Weather, AI Tips
+
+
+## Requirement 42: Email Aliases (Multi-Email Account)
+
+**User Story:** As a user, I want to add multiple email addresses to my account so that booking confirmations forwarded from any of my emails are matched to my account.
+
+### Acceptance Criteria
+
+1. Users SHALL be able to add alternate email addresses in Settings → Profile & Account (new "Email Aliases" section)
+2. Adding an alias SHALL require email verification (verification link sent to the alternate email)
+3. When a user connects a Gmail/Outlook account, that email SHALL be auto-added as a verified alias
+4. THE email forwarding system (trips@neyya.ai) SHALL match incoming emails against both primary email AND all verified aliases
+5. THE matching priority SHALL be: primary email → verified aliases → unclaimed booking storage
+6. Login with alias email SHALL be configurable by admin (same password as primary account)
+7. Max number of aliases per user SHALL be admin-configurable (default: 5, options: 5/10/15)
+8. Aliases SHALL be purely internal — not visible to other users, not shown in My Network
+9. Users SHALL be able to remove an alias at any time (unlinks from account)
+10. THE Application SHALL prevent adding an alias that belongs to another user's primary email or verified alias
+11. Alias verification tokens SHALL expire after 24 hours
+12. Admin SHALL be able to configure: max aliases, login-with-alias toggle, verification requirement toggle
