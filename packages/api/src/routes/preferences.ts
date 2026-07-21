@@ -257,21 +257,23 @@ export async function registerPreferencesRoutes(
 function validatePreferences(body: UpdatePreferencesBody): string[] {
   const errors: string[] = [];
 
+  // Interests: admin-managed, no hardcoded validation — accept any string key
   if (body.interests) {
-    const invalid = body.interests.filter(
-      (i) => !INTEREST_CATEGORIES.includes(i as any),
-    );
-    if (invalid.length > 0) {
-      errors.push(`Invalid interests: ${invalid.join(', ')}. Valid: ${INTEREST_CATEGORIES.join(', ')}`);
+    for (const interest of body.interests) {
+      if (typeof interest !== 'string' || interest.length === 0 || interest.length > 100) {
+        errors.push(`Invalid interest: must be a non-empty string (max 100 chars)`);
+        break;
+      }
     }
   }
 
+  // Dietary preferences: admin-managed, no hardcoded validation
   if (body.dietaryPreferences) {
-    const invalid = body.dietaryPreferences.filter(
-      (d) => !DIETARY_PREFERENCES.includes(d as any),
-    );
-    if (invalid.length > 0) {
-      errors.push(`Invalid dietary preferences: ${invalid.join(', ')}`);
+    for (const pref of body.dietaryPreferences) {
+      if (typeof pref !== 'string' || pref.length === 0 || pref.length > 100) {
+        errors.push(`Invalid dietary preference: must be a non-empty string (max 100 chars)`);
+        break;
+      }
     }
   }
 
