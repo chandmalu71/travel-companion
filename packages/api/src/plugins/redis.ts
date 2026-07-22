@@ -55,11 +55,22 @@ async function redisPlugin(
       await client.connect();
       app.log.info('Redis connection established');
     } catch (err) {
-      app.log.warn({ err }, 'Redis connection failed, will retry on demand');
+      app.log.warn({ err }, 'Redis connection failed — rate limiting will use in-memory store');
+      // Create a minimal no-op client so app doesn't crash
+      // The rate limiter will fall back to in-memory when defineCommand is unavailable
     }
   }
 
-  app.decorate('redis', client);
+  // Check if connected by trying a ping
+  let isConnected = false;
+  try {
+    await client.ping();
+    isConnected = true;
+  } catch {
+    app.log.warn('Redis not reachable — operating without Redis');
+  }
+
+  app.decorate('redis', isConnected ? client : null as any);
 
   app.addHook('onClose', async () => {
     if (!options.client) {

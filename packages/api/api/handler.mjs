@@ -1638,10 +1638,17 @@ async function redisPlugin(app2, options) {
       await client.connect();
       app2.log.info("Redis connection established");
     } catch (err) {
-      app2.log.warn({ err }, "Redis connection failed, will retry on demand");
+      app2.log.warn({ err }, "Redis connection failed \u2014 rate limiting will use in-memory store");
     }
   }
-  app2.decorate("redis", client);
+  let isConnected = false;
+  try {
+    await client.ping();
+    isConnected = true;
+  } catch {
+    app2.log.warn("Redis not reachable \u2014 operating without Redis");
+  }
+  app2.decorate("redis", isConnected ? client : null);
   app2.addHook("onClose", async () => {
     if (!options.client) {
       await client.quit();
