@@ -42,3 +42,4 @@ android/app/build/
 *.jks
 *.keystore
 packages/web/tsconfig.tsbuildinfo
+.env.production
