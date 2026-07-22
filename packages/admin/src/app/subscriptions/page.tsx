@@ -159,7 +159,7 @@ function PromotionsTab() {
   const [promos, setPromos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ name: '', discountPercent: 50, appliesTo: 'pro,premium', billingCycles: 'monthly,annual', startsAt: '', endsAt: '', badgeText: '' });
+  const [form, setForm] = useState({ name: '', discountPercent: 50, appliesTo: 'pro,premium', billingCycles: 'monthly,annual', startsAt: '', endsAt: '', badgeText: '', eventType: 'general', themeColor: '#ef4444', bannerEmoji: '', bannerText: '' });
 
   const fetchPromos = () => {
     fetch('http://localhost:3000/api/admin/promotions').then(r => r.json())
@@ -181,6 +181,10 @@ function PromotionsTab() {
         startsAt: form.startsAt,
         endsAt: form.endsAt,
         badgeText: form.badgeText || `🔥 ${form.discountPercent}% OFF`,
+        eventType: form.eventType,
+        themeColor: form.themeColor,
+        bannerEmoji: form.bannerEmoji,
+        bannerText: form.bannerText,
       }),
     });
     setShowCreate(false);
@@ -240,6 +244,35 @@ function PromotionsTab() {
               <input value={form.badgeText} onChange={e => setForm({...form, badgeText: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" placeholder="🔥 50% OFF" />
             </div>
           </div>
+          {/* Event-specific fields */}
+          <div className="grid grid-cols-4 gap-3">
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Event Type</label>
+              <select value={form.eventType} onChange={e => setForm({...form, eventType: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white">
+                <option value="general">General</option>
+                <option value="summer">Summer</option>
+                <option value="christmas">Christmas</option>
+                <option value="black_friday">Black Friday</option>
+                <option value="new_year">New Year</option>
+                <option value="easter">Easter</option>
+                <option value="valentines">Valentine's</option>
+                <option value="back_to_school">Back to School</option>
+                <option value="flash_sale">Flash Sale</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Theme Color</label>
+              <input type="color" value={form.themeColor} onChange={e => setForm({...form, themeColor: e.target.value})} className="w-full h-7 rounded bg-gray-900 border border-gray-600" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Banner Emoji</label>
+              <input value={form.bannerEmoji} onChange={e => setForm({...form, bannerEmoji: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" placeholder="☀️ 🎄 ⚡" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Banner Text (pricing page)</label>
+              <input value={form.bannerText} onChange={e => setForm({...form, bannerText: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" placeholder="Summer Sale — 50% off!" />
+            </div>
+          </div>
           <div className="flex gap-2 pt-1">
             <button onClick={createPromo} className="rounded bg-primary-600 px-3 py-1 text-xs text-white hover:bg-primary-500">Create</button>
             <button onClick={() => setShowCreate(false)} className="rounded bg-gray-700 px-3 py-1 text-xs text-white hover:bg-gray-600">Cancel</button>
@@ -259,9 +292,11 @@ function PromotionsTab() {
                   <div className="flex items-center gap-2">
                     <span className="text-white font-medium text-sm">{p.name}</span>
                     <span className="bg-red-900/30 text-red-400 text-xs px-2 py-0.5 rounded">{p.discount_percent}% OFF</span>
+                    {p.event_type && p.event_type !== 'general' && <span className="bg-purple-900/30 text-purple-400 text-xs px-2 py-0.5 rounded">{p.event_type.replace('_', ' ')}</span>}
                     {p.is_active && !isExpired && <span className="bg-green-900/30 text-green-400 text-xs px-2 py-0.5 rounded">Active</span>}
                     {isExpired && <span className="bg-gray-700 text-gray-400 text-xs px-2 py-0.5 rounded">Expired</span>}
                     {!p.is_active && !isExpired && <span className="bg-yellow-900/30 text-yellow-400 text-xs px-2 py-0.5 rounded">Paused</span>}
+                    {!isExpired && new Date(p.starts_at) > new Date() && <span className="bg-blue-900/30 text-blue-400 text-xs px-2 py-0.5 rounded">Scheduled</span>}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
                     {new Date(p.starts_at).toLocaleDateString()} → {new Date(p.ends_at).toLocaleDateString()} · Plans: {p.applies_to?.join(', ')} · Badge: "{p.badge_text}"

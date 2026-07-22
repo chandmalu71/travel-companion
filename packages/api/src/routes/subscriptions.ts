@@ -362,6 +362,11 @@ export async function registerAdminPromotionRoutes(
       ends_at: new Date(body.endsAt),
       badge_text: body.badgeText ?? 'Limited Time!',
       is_active: body.isActive ?? true,
+      event_type: body.eventType ?? 'general',
+      theme_color: body.themeColor ?? '#ef4444',
+      banner_text: body.bannerText ?? null,
+      banner_emoji: body.bannerEmoji ?? null,
+      description: body.description ?? null,
     } as any).returningAll().executeTakeFirst();
 
     return reply.send({ statusCode: 201, data: promo });
@@ -381,6 +386,11 @@ export async function registerAdminPromotionRoutes(
     if (body.endsAt !== undefined) updates.ends_at = new Date(body.endsAt);
     if (body.badgeText !== undefined) updates.badge_text = body.badgeText;
     if (body.isActive !== undefined) updates.is_active = body.isActive;
+    if (body.eventType !== undefined) updates.event_type = body.eventType;
+    if (body.themeColor !== undefined) updates.theme_color = body.themeColor;
+    if (body.bannerText !== undefined) updates.banner_text = body.bannerText;
+    if (body.bannerEmoji !== undefined) updates.banner_emoji = body.bannerEmoji;
+    if (body.description !== undefined) updates.description = body.description;
 
     await db.updateTable('subscription_promotions' as any).set(updates as any).where('id', '=', id).execute();
     return reply.send({ statusCode: 200, message: 'Promotion updated' });

@@ -27,6 +27,10 @@ interface Promotion {
   ends_at: string;
   badge_text: string;
   is_active: boolean;
+  event_type: string;
+  theme_color: string;
+  banner_text: string | null;
+  banner_emoji: string | null;
 }
 
 const FEATURE_LABELS: Record<string, string> = {
@@ -137,6 +141,25 @@ export default function PricingPage() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 py-16">
+        {/* Promotional Banner */}
+        {promotions.length > 0 && (() => {
+          // Show the first active promotion's banner
+          const activePromo = promotions[0];
+          if (!activePromo?.banner_text) return null;
+          return (
+            <div className="mb-8 rounded-xl p-4 text-center border-2 animate-pulse-slow" style={{ backgroundColor: `${activePromo.theme_color}15`, borderColor: `${activePromo.theme_color}40` }}>
+              <p className="text-lg font-bold" style={{ color: activePromo.theme_color }}>
+                {activePromo.banner_emoji && <span className="mr-2 text-2xl">{activePromo.banner_emoji}</span>}
+                {activePromo.banner_text}
+                {activePromo.banner_emoji && <span className="ml-2 text-2xl">{activePromo.banner_emoji}</span>}
+              </p>
+              <p className="text-sm text-gray-600 mt-1">
+                Offer valid until {new Date(activePromo.ends_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+          );
+        })()}
+
         {/* Title */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Simple, transparent pricing</h1>
