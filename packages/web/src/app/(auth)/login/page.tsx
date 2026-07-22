@@ -153,7 +153,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => {
                 localStorage.setItem('loginProvider', 'microsoft');
-                alert('Microsoft OAuth would redirect here. For local dev, use email/password.');
+                window.location.href = 'http://localhost:3000/api/auth/microsoft';
               }}
               className="flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
