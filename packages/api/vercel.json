@@ -1,17 +1,16 @@
 {
   "installCommand": "pnpm install --ignore-scripts",
-  "buildCommand": "cd ../shared && npx tsc && cd ../api",
   "version": 2,
   "builds": [
     {
-      "src": "api/index.ts",
+      "src": "api/handler.mjs",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "api/index.ts"
+      "dest": "api/handler.mjs"
     }
   ]
 }
