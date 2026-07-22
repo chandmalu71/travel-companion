@@ -1,9 +1,9 @@
 /**
  * Vercel Serverless Function Entry Point
- * 
- * Wraps the Fastify app as a Vercel serverless function.
- * Vercel routes all requests to this handler.
+ *
+ * Wraps the Fastify app for Vercel serverless deployment.
  */
+import type { IncomingMessage, ServerResponse } from 'http';
 import { buildApp } from '../src/app.js';
 import { getDatabase } from '../src/db/database.js';
 
@@ -18,7 +18,8 @@ async function getApp() {
   return app;
 }
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req: IncomingMessage, res: ServerResponse) {
   const fastify = await getApp();
+  await fastify.ready();
   fastify.server.emit('request', req, res);
 }
