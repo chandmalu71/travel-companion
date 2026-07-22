@@ -1623,13 +1623,15 @@ async function redisPlugin(app2, options) {
   const config2 = app2.config;
   const url2 = options.url ?? config2?.REDIS_URL ?? "redis://localhost:6379";
   const client = options.client ?? new Redis(url2, {
-    maxRetriesPerRequest: 3,
+    maxRetriesPerRequest: null,
     retryStrategy(times) {
-      const delay = Math.min(times * 200, 5e3);
+      if (times > 10) return null;
+      const delay = Math.min(times * 200, 3e3);
       return delay;
     },
     lazyConnect: true,
-    enableReadyCheck: true
+    enableReadyCheck: false,
+    tls: url2.startsWith("rediss://") ? { rejectUnauthorized: false } : void 0
   });
   if (!options.client) {
     try {

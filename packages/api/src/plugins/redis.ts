@@ -38,13 +38,15 @@ async function redisPlugin(
   const client =
     options.client ??
     new Redis(url, {
-      maxRetriesPerRequest: 3,
+      maxRetriesPerRequest: null,
       retryStrategy(times: number) {
-        const delay = Math.min(times * 200, 5000);
+        if (times > 10) return null; // stop retrying after 10 attempts
+        const delay = Math.min(times * 200, 3000);
         return delay;
       },
       lazyConnect: true,
-      enableReadyCheck: true,
+      enableReadyCheck: false,
+      tls: url.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
     });
 
   // Only connect if we created the client ourselves (not injected)
