@@ -15,8 +15,9 @@ const navItems = [
   { href: '/messages', label: 'Messages', icon: '💬' },
   { href: '/search', label: 'Search', icon: '🔍' },
   { href: '/settings', label: 'Settings', icon: '⚙️' },
-  { href: '/settings#subscription', label: 'Upgrade', icon: '💎' },
 ];
+
+const upgradeItem = { href: '/settings#subscription', label: 'Upgrade', icon: '💎' };
 
 export default function DashboardLayout({
   children,
@@ -29,11 +30,21 @@ export default function DashboardLayout({
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [impersonationTimeLeft, setImpersonationTimeLeft] = useState('');
+  const [planSlug, setPlanSlug] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
     if (stored) {
       try { setUser(JSON.parse(stored)); } catch {}
+    }
+
+    // Fetch user's subscription plan
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      fetch('http://localhost:3000/api/subscription', { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.json())
+        .then(d => { if (d.data?.plan_slug || d.data?.planSlug) setPlanSlug(d.data.plan_slug ?? d.data.planSlug); })
+        .catch(() => {});
     }
 
     // Check for impersonation mode
@@ -104,10 +115,17 @@ export default function DashboardLayout({
         <div className="flex h-16 items-center px-6 border-b border-gray-200">
           <Link href="/dashboard" className="flex items-center gap-2">
             <img src="/logo-header.svg" alt="Neyya" className="h-9" />
+            {planSlug && planSlug !== 'free' && (
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${
+                planSlug === 'premium' ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-900' : 'bg-gradient-to-r from-blue-400 to-indigo-500 text-white'
+              }`}>
+                {planSlug}
+              </span>
+            )}
           </Link>
         </div>
         <nav className="mt-4 px-3 space-y-1">
-          {navItems.map((item) => {
+          {[...navItems, ...((!planSlug || planSlug === 'free') ? [upgradeItem] : [])].map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link
@@ -131,10 +149,17 @@ export default function DashboardLayout({
       <div className="flex flex-1 flex-col">
         {/* Top bar */}
         <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
-          <div className="lg:hidden">
+          <div className="lg:hidden flex items-center gap-2">
             <span className="text-lg font-bold text-primary-500">
               <img src="/logo-icon.svg" alt="Neyya" className="h-8" />
             </span>
+            {planSlug && planSlug !== 'free' && (
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${
+                planSlug === 'premium' ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-900' : 'bg-gradient-to-r from-blue-400 to-indigo-500 text-white'
+              }`}>
+                {planSlug}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-4 ml-auto">
             <button className="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200" aria-label="Notifications">
