@@ -530,4 +530,22 @@ export async function registerAdminSubscriptionOverride(
 
     return reply.send({ statusCode: 200, message: `Granted ${planSlug} to user ${id}`, periodEnd });
   });
+
+  // GET /api/admin/subscription-overrides — list all users with active subscriptions
+  app.get('/api/admin/subscription-overrides', async (_request: FastifyRequest, reply: FastifyReply) => {
+    const overrides = await (db.selectFrom('user_subscriptions' as any) as any)
+      .innerJoin('users', 'users.id', 'user_subscriptions.user_id')
+      .innerJoin('subscription_plans' as any, 'subscription_plans.id', 'user_subscriptions.plan_id')
+      .select([
+        'users.id', 'users.email', 'users.display_name',
+        'subscription_plans.slug as plan_slug', 'subscription_plans.name as plan_name',
+        'user_subscriptions.status', 'user_subscriptions.current_period_end',
+        'user_subscriptions.created_at',
+      ])
+      .where('user_subscriptions.status', '=', 'active')
+      .orderBy('user_subscriptions.created_at', 'desc')
+      .execute();
+
+    return reply.send({ statusCode: 200, data: overrides });
+  });
 }

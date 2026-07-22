@@ -601,6 +601,14 @@ function UserOverridesTab() {
   const [searching, setSearching] = useState(false);
   const [granted, setGranted] = useState<any[]>([]);
   const [message, setMessage] = useState('');
+
+  // Fetch existing overrides on mount
+  useEffect(() => {
+    fetch('http://localhost:3000/api/admin/subscription-overrides')
+      .then(r => r.json())
+      .then(d => setGranted(d.data ?? []))
+      .catch(() => {});
+  }, []);
   const debounceRef = (globalThis as any).__debounceRef ?? { current: null };
   (globalThis as any).__debounceRef = debounceRef;
 
@@ -649,7 +657,10 @@ function UserOverridesTab() {
         body: JSON.stringify({ planSlug: plan, periodEnd }),
       });
       setMessage(`Granted ${plan} to ${selectedUser.display_name || selectedUser.email}`);
-      setGranted(prev => [...prev, { ...selectedUser, plan, duration, grantedAt: new Date().toISOString() }]);
+      // Refresh the overrides list from API
+      const res = await fetch('http://localhost:3000/api/admin/subscription-overrides');
+      const d = await res.json();
+      setGranted(d.data ?? []);
       setSelectedUser(null);
       setQuery('');
     } catch { setMessage('Failed to grant access'); }
@@ -726,8 +737,8 @@ function UserOverridesTab() {
                   <span className="text-xs text-gray-500 ml-2">{g.email}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs bg-primary-900/30 text-primary-400 px-2 py-0.5 rounded">{g.plan}</span>
-                  <span className="text-xs text-gray-500">{g.duration}</span>
+                  <span className="text-xs bg-primary-900/30 text-primary-400 px-2 py-0.5 rounded">{g.plan_name || g.plan_slug || g.plan}</span>
+                  <span className="text-xs text-gray-500">{g.current_period_end ? `Until ${new Date(g.current_period_end).toLocaleDateString()}` : 'Forever'}</span>
                 </div>
               </div>
             ))}
