@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Requirements First Check",
+      "trigger": "UserPromptSubmit",
+      "description": "Enforces the requirements-first workflow by reminding the agent to document requirements before coding",
+      "action": {
+        "type": "agent",
+        "prompt": "Before implementing any new feature or significant change, check if a numbered requirement exists in .kiro/specs/travel-companion/requirements.md. If not, write the requirement with acceptance criteria FIRST, then proceed with implementation. This is a mandatory workflow per steering rule §16."
+      }
+    }
+  ]
+}

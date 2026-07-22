@@ -147,15 +147,59 @@ Components:
 
 ## 8. Testing
 
-### Unit Tests
-- Runner: Jest
-- Location: `src/**/__tests__/*.test.ts`
-- Property-based: fast-check library, `*.property.test.ts`
+### Testing Requirements (MANDATORY)
 
-### E2E Tests
-- Framework: Playwright
-- Location: `e2e/[feature]/[scenario].spec.ts`
-- Run: `npx playwright test`
+**Every new feature and bug fix MUST include adequate test coverage.** Untested code is incomplete code.
+
+### Unit Test Coverage Requirements
+
+- **Minimum coverage target: 80%** for new code (lines, branches, functions)
+- Every API endpoint MUST have corresponding unit tests
+- Every service/utility function MUST have unit tests
+- Tests MUST cover: happy path, error cases, edge cases, validation
+- Use descriptive test names: `it('should return 403 when plan limit exceeded')`
+- Mock external dependencies (DB, Redis, external APIs)
+
+### End-to-End Test Requirements
+
+- **Every user-facing feature MUST have E2E tests** covering the critical user flow
+- E2E tests live in `e2e/` directory using Playwright
+- Cover at minimum: create, read, update, delete flows for the feature
+- Test both authenticated and unauthenticated access where applicable
+- Test responsive behavior (mobile/desktop) for key pages
+- E2E tests should run in CI before merge to develop
+
+### When Writing Tests
+
+For a new feature, write tests that verify:
+1. **API layer**: Request validation, success responses, error responses, auth checks
+2. **Business logic**: Plan limits, calculations, state transitions
+3. **UI interactions**: Form submissions, navigation, error display, loading states
+4. **Integration**: DB queries return expected data, cache invalidation works
+
+### Property-Based Testing
+
+Use fast-check for:
+- Input validation (fuzz all input fields)
+- Mathematical calculations (currency conversion, expense splitting)
+- State machines (booking status transitions, subscription lifecycle)
+
+### Test Naming Convention
+
+```
+src/routes/[feature].test.ts        — API unit tests
+src/services/[service].test.ts      — Service unit tests
+src/middleware/[name].test.ts       — Middleware tests
+e2e/[feature]/[flow].spec.ts       — E2E tests
+src/routes/__tests__/pbt/*.pbt.test.ts — Property-based tests
+```
+
+### Runner: Jest (unit), Playwright (E2E), fast-check (property-based)
+- Location: `src/**/__tests__/*.test.ts` or co-located `*.test.ts`
+- Property-based: fast-check library, `*.pbt.test.ts`
+- E2E: `e2e/[feature]/[scenario].spec.ts`
+- Run unit: `npm test` in packages/api
+- Run E2E: `npx playwright test`
 
 ## 9. CI/CD
 
@@ -384,6 +428,24 @@ When creating admin panel pages, use these color classes:
 ## 16. Documentation Sync (Confluence + Spec Files)
 
 When making changes that affect requirements, design, or architecture:
+
+### REQUIREMENTS-FIRST RULE (MANDATORY)
+
+**Before writing ANY code for a new feature or significant change, the requirement MUST be documented first.**
+
+The workflow is ALWAYS:
+1. **Write the requirement** in `requirements.md` with acceptance criteria
+2. **Get confirmation** from the user that the requirement captures their intent
+3. **Then implement** the feature
+4. **After implementation**, update design.md, tasks.md, and Confluence
+
+This is non-negotiable. If a feature is requested:
+- Do NOT start coding immediately
+- First add the requirement (numbered sequentially)
+- Define acceptance criteria (measurable, testable outcomes)
+- Then proceed with implementation
+
+If the user explicitly says "just do it" or is in a rapid iteration flow, the requirement can be documented immediately after implementation — but NEVER skipped entirely.
 
 ### Auto-Update Triggers
 
