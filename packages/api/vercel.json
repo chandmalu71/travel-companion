@@ -1,4 +1,5 @@
 {
+  "installCommand": "pnpm install --ignore-scripts",
   "version": 2,
   "builds": [
     {
