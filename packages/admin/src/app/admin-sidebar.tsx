@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: '/i18n/translations', label: 'Translations', icon: '📝' },
   { href: '/subscriptions', label: 'Subscriptions', icon: '💎' },
   { href: '/analytics', label: 'Analytics', icon: '📊' },
+  { href: '/email', label: 'Email', icon: '📧' },
   { href: '/config', label: 'Configuration', icon: '⚙️' },
   { href: '/costs', label: 'Costs', icon: '💰' },
   { href: '/health', label: 'System Health', icon: '🟢' },

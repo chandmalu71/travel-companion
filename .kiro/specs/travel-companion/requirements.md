@@ -1185,3 +1185,23 @@ Subscription plan limits enforced server-side on all resource creation endpoints
 - 44.8: 403 PLAN_LIMIT_REACHED response with upgrade URL
 - 44.9: Client-side UpgradePrompt component for limit errors
 - 44.10: Admin plan limit changes take effect immediately (no deploy)
+
+
+### Requirement 45: Email Delivery Service
+
+**Status:** Implemented
+
+Abstracted email service with provider support, admin-editable templates, and configurable sender addresses.
+
+**Acceptance Criteria:**
+- 45.1: Abstracted email service with provider interface (SES, SendGrid, or console)
+- 45.2: HTML email templates branded with Neyya.ai (stored in DB, admin-editable)
+- 45.3: 6 templates: email verification, password reset, trip invitation, alias verification, subscription confirmation, welcome email
+- 45.4: Environment-based provider selection (SES in prod, console in dev)
+- 45.5: Retry logic for failed sends (3 attempts with exponential backoff)
+- 45.6: Send logging to email_send_log table (status, attempts, errors)
+- 45.7: Admin → Email Templates page: edit subject + HTML body, preview, test send
+- 45.8: Multiple sender addresses: admin-configurable per purpose (transactional, booking, support, marketing, notifications)
+- 45.9: Reply-to configuration per template
+- 45.10: Admin → Sender Addresses: add/remove/verify addresses
+- 45.11: Admin → Send Log: view history of all emails sent (to, template, status, time)
