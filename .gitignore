@@ -44,6 +44,3 @@ android/app/build/
 packages/web/tsconfig.tsbuildinfo
 .env.production
 
-
-# Allow shared package dist (needed for Vercel deployment)
-!packages/shared/dist/

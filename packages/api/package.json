@@ -2,7 +2,6 @@
   "name": "@travel-companion/api",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "description": "Fastify API server for Travel Companion",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
