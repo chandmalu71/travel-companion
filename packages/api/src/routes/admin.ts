@@ -482,3 +482,52 @@ export async function registerAdminImpersonateRoute(app: any, options: { db: any
     });
   });
 }
+
+
+// ─── PUT /api/admin/users/:id/subscription — Grant/override user subscription ─
+// Called from Admin → Subscriptions → User Overrides
+export async function registerAdminSubscriptionOverride(
+  app: FastifyInstance,
+  options: { db: Kysely<Database> },
+): Promise<void> {
+  const { db } = options;
+
+  app.put('/api/admin/users/:id/subscription', async (request: FastifyRequest<{ Params: { id: string }; Body: any }>, reply: FastifyReply) => {
+    const { id } = request.params;
+    const { planSlug, periodEnd } = request.body as any;
+
+    if (!planSlug) return reply.status(400).send({ statusCode: 400, error: 'planSlug required' });
+
+    // Find the target plan
+    const plan = await db.selectFrom('subscription_plans' as any).selectAll().where('slug', '=', planSlug).executeTakeFirst() as any;
+    if (!plan) return reply.status(404).send({ statusCode: 404, error: 'Plan not found' });
+
+    // Check if user already has a subscription
+    const existing = await db.selectFrom('user_subscriptions' as any).select('id').where('user_id', '=', id).executeTakeFirst();
+
+    if (existing) {
+      // Update existing
+      await db.updateTable('user_subscriptions' as any).set({
+        plan_id: plan.id,
+        status: 'active',
+        current_period_end: periodEnd ? new Date(periodEnd) : null,
+        cancel_at_period_end: false,
+        updated_at: new Date(),
+      } as any).where('user_id', '=', id).execute();
+    } else {
+      // Create new subscription
+      await db.insertInto('user_subscriptions' as any).values({
+        user_id: id,
+        plan_id: plan.id,
+        status: 'active',
+        billing_cycle: 'monthly',
+        current_period_end: periodEnd ? new Date(periodEnd) : null,
+        auto_renew: false,
+        is_family_plan: false,
+        cancel_at_period_end: false,
+      } as any).execute();
+    }
+
+    return reply.send({ statusCode: 200, message: `Granted ${planSlug} to user ${id}`, periodEnd });
+  });
+}

@@ -593,31 +593,146 @@ function CampaignsTab() {
 }
 
 function UserOverridesTab() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [plan, setPlan] = useState('premium');
+  const [duration, setDuration] = useState('forever');
+  const [searching, setSearching] = useState(false);
+  const [granted, setGranted] = useState<any[]>([]);
+  const [message, setMessage] = useState('');
+  const debounceRef = (globalThis as any).__debounceRef ?? { current: null };
+  (globalThis as any).__debounceRef = debounceRef;
+
+  // Search users as they type (debounced)
+  const searchUsers = (q: string) => {
+    setQuery(q);
+    setSelectedUser(null);
+    if (q.length < 2) { setResults([]); return; }
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`http://localhost:3000/api/admin/users?search=${encodeURIComponent(q)}&limit=8`);
+        const data = await res.json();
+        setResults(data.data ?? []);
+      } catch { setResults([]); }
+      setSearching(false);
+    }, 300);
+  };
+
+  const selectUser = (user: any) => {
+    setSelectedUser(user);
+    setQuery(user.display_name || user.email);
+    setResults([]);
+  };
+
+  const grantAccess = async () => {
+    if (!selectedUser) return;
+    // In production: create/update user_subscriptions entry
+    // For now: insert override subscription
+    try {
+      const planData = await fetch('http://localhost:3000/api/plans').then(r => r.json());
+      const targetPlan = (planData.data ?? []).find((p: any) => p.slug === plan);
+      if (!targetPlan) { setMessage('Plan not found'); return; }
+
+      // Calculate period end based on duration
+      let periodEnd: string | null = null;
+      const now = new Date();
+      if (duration === '3months') periodEnd = new Date(now.getTime() + 90 * 86400000).toISOString();
+      else if (duration === '6months') periodEnd = new Date(now.getTime() + 180 * 86400000).toISOString();
+      else if (duration === '1year') periodEnd = new Date(now.getTime() + 365 * 86400000).toISOString();
+      // 'forever' = no period end
+
+      await fetch(`http://localhost:3000/api/admin/users/${selectedUser.id}/subscription`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planSlug: plan, periodEnd }),
+      });
+      setMessage(`Granted ${plan} to ${selectedUser.display_name || selectedUser.email}`);
+      setGranted(prev => [...prev, { ...selectedUser, plan, duration, grantedAt: new Date().toISOString() }]);
+      setSelectedUser(null);
+      setQuery('');
+    } catch { setMessage('Failed to grant access'); }
+    setTimeout(() => setMessage(''), 3000);
+  };
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-gray-400">Grant individual users free Premium access or override their plan (for promotions, beta testers, partners).</p>
 
       <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-        <h4 className="text-sm font-semibold text-white mb-3">Grant Free Premium</h4>
-        <div className="flex gap-2">
-          <input type="email" placeholder="User email..." className="flex-1 rounded-md bg-gray-700 border border-gray-600 px-3 py-2 text-sm text-white placeholder-gray-400" />
-          <select className="rounded-md bg-gray-700 border border-gray-600 px-3 py-2 text-sm text-white">
+        <h4 className="text-sm font-semibold text-white mb-3">Grant Free Plan Access</h4>
+        <div className="flex gap-2 items-start">
+          {/* User search with autocomplete */}
+          <div className="flex-1 relative">
+            <input
+              type="text" value={query}
+              onChange={e => searchUsers(e.target.value)}
+              placeholder="Search by name or email..."
+              className="w-full rounded-md bg-gray-700 border border-gray-600 px-3 py-2 text-sm text-white placeholder-gray-400"
+            />
+            {selectedUser && (
+              <div className="absolute right-2 top-2">
+                <span className="text-xs bg-green-900/40 text-green-400 px-1.5 py-0.5 rounded">✓ Selected</span>
+              </div>
+            )}
+            {/* Dropdown results */}
+            {results.length > 0 && !selectedUser && (
+              <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-gray-900 border border-gray-600 rounded-md shadow-xl max-h-48 overflow-y-auto">
+                {results.map((u: any) => (
+                  <button key={u.id} onClick={() => selectUser(u)}
+                    className="w-full text-left px-3 py-2 hover:bg-gray-700 flex items-center gap-2 border-b border-gray-800 last:border-0">
+                    <div className="w-7 h-7 rounded-full bg-primary-600 flex items-center justify-center text-xs text-white font-bold">
+                      {(u.display_name?.[0] || u.email?.[0] || '?').toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm text-white">{u.display_name || 'No name'}</p>
+                      <p className="text-xs text-gray-400">{u.email}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {searching && <p className="text-xs text-gray-500 mt-1">Searching...</p>}
+          </div>
+          <select value={plan} onChange={e => setPlan(e.target.value)} className="rounded-md bg-gray-700 border border-gray-600 px-3 py-2 text-sm text-white">
             <option value="premium">Premium</option>
             <option value="pro">Pro</option>
           </select>
-          <select className="rounded-md bg-gray-700 border border-gray-600 px-3 py-2 text-sm text-white">
+          <select value={duration} onChange={e => setDuration(e.target.value)} className="rounded-md bg-gray-700 border border-gray-600 px-3 py-2 text-sm text-white">
             <option value="forever">Forever</option>
             <option value="1year">1 Year</option>
             <option value="6months">6 Months</option>
             <option value="3months">3 Months</option>
           </select>
-          <button className="rounded-md bg-primary-600 px-4 py-2 text-sm text-white hover:bg-primary-500">Grant</button>
+          <button onClick={grantAccess} disabled={!selectedUser}
+            className={`rounded-md px-4 py-2 text-sm text-white ${selectedUser ? 'bg-primary-600 hover:bg-primary-500' : 'bg-gray-600 cursor-not-allowed'}`}>
+            Grant
+          </button>
         </div>
+        {message && <p className="text-xs text-green-400 mt-2">{message}</p>}
       </div>
 
       <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
         <h4 className="text-sm font-semibold text-white mb-2">Active Overrides</h4>
-        <p className="text-xs text-gray-500">No manual overrides configured yet.</p>
+        {granted.length === 0 ? (
+          <p className="text-xs text-gray-500">No manual overrides configured yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {granted.map((g, i) => (
+              <div key={i} className="flex items-center justify-between py-1 border-b border-gray-700 last:border-0">
+                <div>
+                  <span className="text-sm text-white">{g.display_name || g.email}</span>
+                  <span className="text-xs text-gray-500 ml-2">{g.email}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs bg-primary-900/30 text-primary-400 px-2 py-0.5 rounded">{g.plan}</span>
+                  <span className="text-xs text-gray-500">{g.duration}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

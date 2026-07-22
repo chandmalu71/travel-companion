@@ -22,7 +22,7 @@ import { registerEmailWebhookRoutes } from './routes/email-webhooks.js';
 import { registerSearchRoutes } from './routes/search.js';
 import { registerBookingForwardRoutes } from './routes/booking-forward.js';
 import { registerEmailConnectionRoutes } from './routes/email-connections.js';
-import { registerAdminRoutes, registerAdminRoleRoutes, registerAdminTripsRoute, registerAdminCreateUserRoute, registerAdminImpersonateRoute } from './routes/admin.js';
+import { registerAdminRoutes, registerAdminRoleRoutes, registerAdminTripsRoute, registerAdminCreateUserRoute, registerAdminImpersonateRoute, registerAdminSubscriptionOverride } from './routes/admin.js';
 import { registerAdminAuth } from './plugins/admin-auth.js';
 import { registerExpenseRoutes } from './routes/expenses.js';
 import { registerExpenseGroupRoutes } from './routes/expense-groups.js';
@@ -333,6 +333,7 @@ export async function buildApp(
     await registerAdminTripsRoute(app, { db: options.db });
     await registerAdminCreateUserRoute(app, { db: options.db });
     await registerAdminImpersonateRoute(app, { db: options.db });
+    await registerAdminSubscriptionOverride(app, { db: options.db });
   }
 
   return app;
