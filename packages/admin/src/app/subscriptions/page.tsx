@@ -159,6 +159,9 @@ function PromotionsTab() {
   const [promos, setPromos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<any>({});
+  const [view, setView] = useState<'timeline' | 'list'>('timeline');
   const [form, setForm] = useState({ name: '', discountPercent: 50, appliesTo: 'pro,premium', billingCycles: 'monthly,annual', startsAt: '', endsAt: '', badgeText: '', eventType: 'general', themeColor: '#ef4444', bannerEmoji: '', bannerText: '' });
 
   const fetchPromos = () => {
@@ -205,12 +208,64 @@ function PromotionsTab() {
     fetchPromos();
   };
 
+  const startEdit = (p: any) => {
+    setEditingId(p.id);
+    setEditForm({
+      name: p.name, discountPercent: p.discount_percent,
+      startsAt: p.starts_at?.split('T')[0] ?? '', endsAt: p.ends_at?.split('T')[0] ?? '',
+      badgeText: p.badge_text ?? '', eventType: p.event_type ?? 'general',
+      themeColor: p.theme_color ?? '#ef4444', bannerEmoji: p.banner_emoji ?? '', bannerText: p.banner_text ?? '',
+      appliesTo: (p.applies_to ?? []).join(','),
+    });
+  };
+
+  const saveEdit = async (id: string) => {
+    await fetch(`http://localhost:3000/api/admin/promotions/${id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: editForm.name, discountPercent: editForm.discountPercent,
+        startsAt: editForm.startsAt, endsAt: editForm.endsAt,
+        badgeText: editForm.badgeText, eventType: editForm.eventType,
+        themeColor: editForm.themeColor, bannerEmoji: editForm.bannerEmoji, bannerText: editForm.bannerText,
+        appliesTo: editForm.appliesTo?.split(',').map((s: string) => s.trim()),
+      }),
+    });
+    setEditingId(null);
+    fetchPromos();
+  };
+
   if (loading) return <div className="animate-pulse h-40 bg-gray-700 rounded-lg" />;
+
+  // Timeline computation: 12 months from current month
+  const now = new Date();
+  const months: { label: string; start: Date; end: Date }[] = [];
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + i + 1, 0);
+    months.push({ label: d.toLocaleString('en', { month: 'short', year: '2-digit' }), start: d, end });
+  }
+  const timelineStart = months[0].start.getTime();
+  const timelineEnd = months[11].end.getTime();
+  const totalDuration = timelineEnd - timelineStart;
+  const getBarStyle = (p: any) => {
+    const s = Math.max(new Date(p.starts_at).getTime(), timelineStart);
+    const e = Math.min(new Date(p.ends_at).getTime(), timelineEnd);
+    if (e < timelineStart || s > timelineEnd) return null;
+    const left = ((s - timelineStart) / totalDuration) * 100;
+    const width = ((e - s) / totalDuration) * 100;
+    return { left: `${left}%`, width: `${Math.max(width, 1)}%` };
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-400">Site-wide promotions display crossed-out prices on the pricing page. Only one active promotion per plan is shown.</p>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-gray-400">Manage scheduled and active promotions.</p>
+          <div className="flex bg-gray-800 rounded-md p-0.5 border border-gray-700">
+            <button onClick={() => setView('timeline')} className={`px-2 py-0.5 text-xs rounded ${view === 'timeline' ? 'bg-gray-600 text-white' : 'text-gray-400'}`}>📅 Timeline</button>
+            <button onClick={() => setView('list')} className={`px-2 py-0.5 text-xs rounded ${view === 'list' ? 'bg-gray-600 text-white' : 'text-gray-400'}`}>📋 List</button>
+          </div>
+        </div>
         <button onClick={() => setShowCreate(!showCreate)} className="rounded-md bg-primary-600 px-3 py-1.5 text-xs text-white hover:bg-primary-500">
           + New Promotion
         </button>
@@ -282,6 +337,58 @@ function PromotionsTab() {
 
       {promos.length === 0 ? (
         <p className="text-gray-500 text-sm text-center py-8">No promotions yet. Create one to display discounted prices.</p>
+      ) : view === 'timeline' ? (
+        <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+          {/* Month headers */}
+          <div className="flex border-b border-gray-700 pb-2 mb-2">
+            <div className="w-36 shrink-0 text-xs text-gray-500">Event</div>
+            <div className="flex-1 flex">
+              {months.map((m, i) => <div key={i} className="flex-1 text-center text-[10px] text-gray-500">{m.label}</div>)}
+            </div>
+            <div className="w-20 shrink-0" />
+          </div>
+          {/* Legend */}
+          <div className="flex items-center gap-3 mb-3 text-[10px] text-gray-500">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-white/40 inline-block" /> Today</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> Active</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" /> Scheduled</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-500 inline-block" /> Paused</span>
+          </div>
+          {/* Promo rows */}
+          {promos.map((p: any) => {
+            const barStyle = getBarStyle(p);
+            const isExpired = new Date(p.ends_at) < new Date();
+            let barColor = p.theme_color ?? '#ef4444';
+            let opacity = '1';
+            if (!p.is_active) { barColor = '#6b7280'; opacity = '0.5'; }
+            else if (isExpired) { barColor = '#6b7280'; opacity = '0.4'; }
+            return (
+              <div key={p.id} className="flex items-center mb-2 group">
+                <div className="w-36 shrink-0 flex items-center gap-1 pr-2">
+                  <span className="text-[11px] text-white truncate">{p.banner_emoji ?? ''} {p.name}</span>
+                  <span className="text-[10px] text-gray-500">{p.discount_percent}%</span>
+                </div>
+                <div className="flex-1 relative h-7 bg-gray-900/50 rounded">
+                  {/* Today line */}
+                  <div className="absolute top-0 bottom-0 w-px bg-white/30 z-10" style={{ left: `${((now.getTime() - timelineStart) / totalDuration) * 100}%` }} />
+                  {barStyle && (
+                    <div className="absolute top-1 bottom-1 rounded cursor-pointer transition-all hover:brightness-125 flex items-center justify-center"
+                      style={{ ...barStyle, backgroundColor: barColor, opacity }}
+                      onClick={() => startEdit(p)}
+                      title={`${p.name}: ${new Date(p.starts_at).toLocaleDateString()} → ${new Date(p.ends_at).toLocaleDateString()}`}>
+                      <span className="text-[10px] text-white font-medium px-1 truncate">{p.badge_text}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="w-20 shrink-0 flex items-center justify-end gap-1 pl-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => toggleActive(p)} title={p.is_active ? 'Pause' : 'Activate'} className={`text-xs px-1 py-0.5 rounded ${p.is_active ? 'bg-yellow-600' : 'bg-green-600'} text-white`}>{p.is_active ? '⏸' : '▶'}</button>
+                  <button onClick={() => startEdit(p)} title="Edit" className="text-xs px-1 py-0.5 rounded bg-blue-600 text-white">✎</button>
+                  <button onClick={() => deletePromo(p.id)} title="Delete" className="text-xs px-1 py-0.5 rounded bg-red-600 text-white">✕</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       ) : (
         <div className="space-y-2">
           {promos.map((p: any) => {
@@ -293,24 +400,50 @@ function PromotionsTab() {
                     <span className="text-white font-medium text-sm">{p.name}</span>
                     <span className="bg-red-900/30 text-red-400 text-xs px-2 py-0.5 rounded">{p.discount_percent}% OFF</span>
                     {p.event_type && p.event_type !== 'general' && <span className="bg-purple-900/30 text-purple-400 text-xs px-2 py-0.5 rounded">{p.event_type.replace('_', ' ')}</span>}
-                    {p.is_active && !isExpired && <span className="bg-green-900/30 text-green-400 text-xs px-2 py-0.5 rounded">Active</span>}
+                    {p.is_active && !isExpired && new Date(p.starts_at) <= new Date() && <span className="bg-green-900/30 text-green-400 text-xs px-2 py-0.5 rounded">Active</span>}
                     {isExpired && <span className="bg-gray-700 text-gray-400 text-xs px-2 py-0.5 rounded">Expired</span>}
                     {!p.is_active && !isExpired && <span className="bg-yellow-900/30 text-yellow-400 text-xs px-2 py-0.5 rounded">Paused</span>}
-                    {!isExpired && new Date(p.starts_at) > new Date() && <span className="bg-blue-900/30 text-blue-400 text-xs px-2 py-0.5 rounded">Scheduled</span>}
+                    {!isExpired && new Date(p.starts_at) > new Date() && p.is_active && <span className="bg-blue-900/30 text-blue-400 text-xs px-2 py-0.5 rounded">Scheduled</span>}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {new Date(p.starts_at).toLocaleDateString()} → {new Date(p.ends_at).toLocaleDateString()} · Plans: {p.applies_to?.join(', ')} · Badge: "{p.badge_text}"
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{new Date(p.starts_at).toLocaleDateString()} → {new Date(p.ends_at).toLocaleDateString()} · Plans: {p.applies_to?.join(', ')}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => toggleActive(p)} className={`text-xs px-2 py-1 rounded ${p.is_active ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-green-600 hover:bg-green-500'} text-white`}>
-                    {p.is_active ? 'Pause' : 'Activate'}
-                  </button>
+                  <button onClick={() => startEdit(p)} className="text-xs px-2 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white">Edit</button>
+                  <button onClick={() => toggleActive(p)} className={`text-xs px-2 py-1 rounded ${p.is_active ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-green-600 hover:bg-green-500'} text-white`}>{p.is_active ? 'Pause' : 'Activate'}</button>
                   <button onClick={() => deletePromo(p.id)} className="text-xs px-2 py-1 rounded bg-red-600 hover:bg-red-500 text-white">Delete</button>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Edit modal */}
+      {editingId && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={() => setEditingId(null)}>
+          <div className="bg-gray-800 rounded-xl p-6 w-[560px] border border-gray-600 space-y-4" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-white">Edit Promotion</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-xs text-gray-400 block mb-1">Name</label><input value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+              <div><label className="text-xs text-gray-400 block mb-1">Discount %</label><input type="number" value={editForm.discountPercent} onChange={e => setEditForm({...editForm, discountPercent: +e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+              <div><label className="text-xs text-gray-400 block mb-1">Start Date</label><input type="date" value={editForm.startsAt} onChange={e => setEditForm({...editForm, startsAt: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+              <div><label className="text-xs text-gray-400 block mb-1">End Date</label><input type="date" value={editForm.endsAt} onChange={e => setEditForm({...editForm, endsAt: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+              <div><label className="text-xs text-gray-400 block mb-1">Applies To</label><input value={editForm.appliesTo} onChange={e => setEditForm({...editForm, appliesTo: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+              <div><label className="text-xs text-gray-400 block mb-1">Badge Text</label><input value={editForm.badgeText} onChange={e => setEditForm({...editForm, badgeText: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+              <div><label className="text-xs text-gray-400 block mb-1">Event Type</label>
+                <select value={editForm.eventType} onChange={e => setEditForm({...editForm, eventType: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white">
+                  <option value="general">General</option><option value="summer">Summer</option><option value="christmas">Christmas</option><option value="black_friday">Black Friday</option><option value="new_year">New Year</option><option value="easter">Easter</option><option value="flash_sale">Flash Sale</option>
+                </select>
+              </div>
+              <div><label className="text-xs text-gray-400 block mb-1">Theme Color</label><input type="color" value={editForm.themeColor} onChange={e => setEditForm({...editForm, themeColor: e.target.value})} className="w-full h-7 rounded bg-gray-900 border border-gray-600" /></div>
+              <div><label className="text-xs text-gray-400 block mb-1">Banner Emoji</label><input value={editForm.bannerEmoji} onChange={e => setEditForm({...editForm, bannerEmoji: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+              <div><label className="text-xs text-gray-400 block mb-1">Banner Text</label><input value={editForm.bannerText} onChange={e => setEditForm({...editForm, bannerText: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => saveEdit(editingId)} className="rounded bg-primary-600 px-4 py-1.5 text-sm text-white hover:bg-primary-500">Save Changes</button>
+              <button onClick={() => setEditingId(null)} className="rounded bg-gray-700 px-4 py-1.5 text-sm text-white hover:bg-gray-600">Cancel</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
