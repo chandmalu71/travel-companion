@@ -1622,38 +1622,44 @@ import Redis from "ioredis";
 async function redisPlugin(app2, options) {
   const config2 = app2.config;
   const url2 = options.url ?? config2?.REDIS_URL ?? "redis://localhost:6379";
-  const client = options.client ?? new Redis(url2, {
+  const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+  const isLocalhost = url2.includes("localhost") || url2.includes("127.0.0.1");
+  if (isServerless && isLocalhost) {
+    app2.log.info("Serverless environment with localhost Redis \u2014 skipping Redis");
+    app2.decorate("redis", null);
+    return;
+  }
+  if (options.client) {
+    app2.decorate("redis", options.client);
+    return;
+  }
+  const client = new Redis(url2, {
     maxRetriesPerRequest: null,
     retryStrategy(times) {
-      if (times > 10) return null;
-      const delay = Math.min(times * 200, 3e3);
-      return delay;
+      if (times > 5) return null;
+      return Math.min(times * 300, 3e3);
     },
     lazyConnect: true,
     enableReadyCheck: false,
+    connectTimeout: 3e3,
     tls: url2.startsWith("rediss://") ? { rejectUnauthorized: false } : void 0
   });
-  let isConnected = false;
-  if (!options.client) {
-    try {
-      const connectPromise = client.connect().then(() => client.ping());
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Redis connection timeout")), 3e3));
-      await Promise.race([connectPromise, timeoutPromise]);
-      isConnected = true;
-      app2.log.info("Redis connection established");
-    } catch (err) {
-      app2.log.warn("Redis not reachable \u2014 operating without Redis (in-memory rate limiting)");
-    }
-  } else {
-    isConnected = true;
-  }
-  app2.decorate("redis", isConnected ? client : null);
-  app2.addHook("onClose", async () => {
-    if (!options.client) {
+  try {
+    await client.connect();
+    await client.ping();
+    app2.log.info("Redis connection established");
+    app2.decorate("redis", client);
+    app2.addHook("onClose", async () => {
       await client.quit();
-      app2.log.info("Redis connection closed");
+    });
+  } catch (err) {
+    app2.log.warn("Redis connection failed \u2014 operating without Redis");
+    try {
+      client.disconnect();
+    } catch {
     }
-  });
+    app2.decorate("redis", null);
+  }
 }
 var registerRedis = fp(redisPlugin, {
   name: "redis",

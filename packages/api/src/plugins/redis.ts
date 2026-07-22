@@ -35,45 +35,47 @@ async function redisPlugin(
   const config = (app as unknown as { config?: { REDIS_URL?: string } }).config;
   const url = options.url ?? config?.REDIS_URL ?? 'redis://localhost:6379';
 
-  const client =
-    options.client ??
-    new Redis(url, {
-      maxRetriesPerRequest: null,
-      retryStrategy(times: number) {
-        if (times > 10) return null; // stop retrying after 10 attempts
-        const delay = Math.min(times * 200, 3000);
-        return delay;
-      },
-      lazyConnect: true,
-      enableReadyCheck: false,
-      tls: url.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
-    });
+  // Skip Redis entirely in serverless (Vercel) if no valid URL or if it's localhost
+  const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+  const isLocalhost = url.includes('localhost') || url.includes('127.0.0.1');
 
-  // Only connect if we created the client ourselves (not injected)
-  let isConnected = false;
-  if (!options.client) {
-    try {
-      // Set a 3-second timeout for Redis connection (Vercel has 10s function limit)
-      const connectPromise = client.connect().then(() => client.ping());
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Redis connection timeout')), 3000));
-      await Promise.race([connectPromise, timeoutPromise]);
-      isConnected = true;
-      app.log.info('Redis connection established');
-    } catch (err) {
-      app.log.warn('Redis not reachable — operating without Redis (in-memory rate limiting)');
-    }
-  } else {
-    isConnected = true;
+  if (isServerless && isLocalhost) {
+    app.log.info('Serverless environment with localhost Redis — skipping Redis');
+    app.decorate('redis', null as any);
+    return;
   }
 
-  app.decorate('redis', isConnected ? client : null as any);
+  if (options.client) {
+    app.decorate('redis', options.client);
+    return;
+  }
 
-  app.addHook('onClose', async () => {
-    if (!options.client) {
-      await client.quit();
-      app.log.info('Redis connection closed');
-    }
+  const client = new Redis(url, {
+    maxRetriesPerRequest: null,
+    retryStrategy(times: number) {
+      if (times > 5) return null;
+      return Math.min(times * 300, 3000);
+    },
+    lazyConnect: true,
+    enableReadyCheck: false,
+    connectTimeout: 3000,
+    tls: url.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
   });
+
+  try {
+    await client.connect();
+    await client.ping();
+    app.log.info('Redis connection established');
+    app.decorate('redis', client);
+
+    app.addHook('onClose', async () => {
+      await client.quit();
+    });
+  } catch (err) {
+    app.log.warn('Redis connection failed — operating without Redis');
+    try { client.disconnect(); } catch {}
+    app.decorate('redis', null as any);
+  }
 }
 
 export const registerRedis = fp(redisPlugin, {
