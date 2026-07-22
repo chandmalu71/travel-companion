@@ -26,11 +26,7 @@ export async function up(db: Kysely<any>): Promise<void> {
   await sql`ALTER TABLE trip_members DROP CONSTRAINT IF EXISTS trip_members_access_level_check`.execute(db);
   await sql`ALTER TABLE trip_members ADD CONSTRAINT trip_members_access_level_check CHECK (access_level IN ('owner', 'co-owner', 'editor', 'view', 'edit'))`.execute(db);
 
-  // Add shared/personal flag to expenses
-  await db.schema
-    .alterTable('expenses')
-    .addColumn('is_shared', 'boolean', (col) => col.defaultTo(true))
-    .execute();
+  // is_shared column already created in migration 002 — skip here
 
   // Add scan settings to email_connections
   await db.schema

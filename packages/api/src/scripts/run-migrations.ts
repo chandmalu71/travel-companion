@@ -1,0 +1,51 @@
+/**
+ * Run migrations against a remote database.
+ * Usage: DATABASE_URL=<url> npx tsx src/scripts/run-migrations.ts
+ */
+import pg from 'pg';
+import { Kysely, PostgresDialect } from 'kysely';
+import { migrateToLatest } from '../db/migrator.js';
+import type { Database } from '../db/types.js';
+
+async function main() {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    console.error('DATABASE_URL not set');
+    process.exit(1);
+  }
+
+  console.log('Connecting to database...');
+  const pool = new pg.Pool({
+    connectionString: url,
+    ssl: { rejectUnauthorized: false },
+  });
+
+  const db = new Kysely<Database>({
+    dialect: new PostgresDialect({ pool }),
+  });
+
+  console.log('Running migrations...');
+  const result = await migrateToLatest(db);
+
+  if (result.error) {
+    console.error('Migration error:', result.error);
+    process.exit(1);
+  }
+
+  if (result.results && result.results.length > 0) {
+    for (const r of result.results) {
+      console.log(`  ${r.status === 'Success' ? '✓' : '✗'} ${r.migrationName} (${r.status})`);
+    }
+    console.log(`\n${result.results.length} migrations executed.`);
+  } else {
+    console.log('No pending migrations.');
+  }
+
+  await db.destroy();
+  console.log('Done.');
+}
+
+main().catch(err => {
+  console.error('Fatal error:', err);
+  process.exit(1);
+});

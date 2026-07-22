@@ -14,8 +14,8 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('city', 'varchar(100)', (col) => col.notNull())
     .addColumn('country', 'varchar(100)', (col) => col.notNull())
     .addColumn('address', 'text') // optional full address
-    .addColumn('latitude', 'decimal(9,6)')
-    .addColumn('longitude', 'decimal(9,6)')
+    .addColumn('latitude', 'numeric' as any)
+    .addColumn('longitude', 'numeric' as any)
     .addColumn('timezone', 'varchar(50)') // e.g. 'Europe/London'
     .addColumn('nearest_airports', 'text') // JSON array of IATA codes
     .addColumn('transport_mode', 'varchar(30)') // drive, taxi, public_transport, train, drop_off
