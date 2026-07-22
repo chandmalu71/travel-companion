@@ -1732,7 +1732,8 @@ function createSessionStore(redis, options = {}) {
 }
 async function sessionPlugin(app2, options) {
   if (!app2.redis) {
-    throw new Error("Redis plugin must be registered before the session plugin");
+    app2.log.warn("Redis not available \u2014 session store disabled");
+    return;
   }
   const store = createSessionStore(app2.redis, options);
   app2.decorate("sessionStore", store);

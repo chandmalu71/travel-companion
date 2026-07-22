@@ -137,7 +137,8 @@ async function sessionPlugin(
   options: SessionPluginOptions,
 ): Promise<void> {
   if (!app.redis) {
-    throw new Error('Redis plugin must be registered before the session plugin');
+    app.log.warn('Redis not available — session store disabled');
+    return;
   }
 
   const store = createSessionStore(app.redis, options);
