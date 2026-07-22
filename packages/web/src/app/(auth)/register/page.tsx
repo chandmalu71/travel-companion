@@ -182,7 +182,7 @@ export default function RegisterPage() {
               type="button"
               onClick={() => {
                 localStorage.setItem('loginProvider', 'google');
-                alert('Google OAuth signup would redirect here. For local dev, use email/password.');
+                window.location.href = 'http://localhost:3000/api/auth/google';
               }}
               className="flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
