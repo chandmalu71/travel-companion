@@ -117,6 +117,18 @@ export async function registerOAuthRoutes(
           .executeTakeFirstOrThrow();
 
         console.log(`[OAuth] New user created via Google: ${profile.email}`);
+
+        // Send welcome email
+        try {
+          const { EmailService } = await import('../services/email.js');
+          const emailService = new EmailService(db);
+          const appUrl = process.env.APP_URL ?? 'http://localhost:3001';
+          await emailService.sendTemplate({
+            to: profile.email,
+            templateSlug: 'welcome',
+            variables: { name: profile.name, dashboardUrl: `${appUrl}/dashboard` },
+          });
+        } catch {}
       } else if (!user.cognito_sub?.startsWith('google_')) {
         // Link Google to existing account
         await db.updateTable('users')
@@ -271,6 +283,18 @@ export async function registerMicrosoftOAuthRoutes(
           .executeTakeFirstOrThrow();
 
         console.log(`[OAuth/MS] New user created via Microsoft: ${email}`);
+
+        // Send welcome email
+        try {
+          const { EmailService } = await import('../services/email.js');
+          const emailService = new EmailService(db);
+          const appUrl = process.env.APP_URL ?? 'http://localhost:3001';
+          await emailService.sendTemplate({
+            to: email,
+            templateSlug: 'welcome',
+            variables: { name: profile.displayName, dashboardUrl: `${appUrl}/dashboard` },
+          });
+        } catch {}
       } else if (!user.cognito_sub?.startsWith('microsoft_')) {
         await db.updateTable('users')
           .set({ cognito_sub: `microsoft_${profile.id}` })
@@ -396,6 +420,18 @@ export async function registerFacebookOAuthRoutes(
           .executeTakeFirstOrThrow();
 
         console.log(`[OAuth/FB] New user created via Facebook: ${email}`);
+
+        // Send welcome email
+        try {
+          const { EmailService } = await import('../services/email.js');
+          const emailService = new EmailService(db);
+          const appUrl = process.env.APP_URL ?? 'http://localhost:3001';
+          await emailService.sendTemplate({
+            to: email,
+            templateSlug: 'welcome',
+            variables: { name: profile.name, dashboardUrl: `${appUrl}/dashboard` },
+          });
+        } catch {}
       } else if (!user.cognito_sub?.startsWith('facebook_')) {
         await db.updateTable('users')
           .set({ cognito_sub: `facebook_${profile.id}` })

@@ -247,7 +247,31 @@ export async function registerTripInvitationRoutes(app: any, options: { db: any 
     }).returning(['id', 'token', 'channel', 'recipient', 'status', 'expires_at', 'created_at']).executeTakeFirstOrThrow();
 
     // Generate accept URL
-    const acceptUrl = `${process.env.WEB_URL || 'http://localhost:3001'}/invite/${token}`;
+    const appUrl = process.env.APP_URL ?? process.env.WEB_URL ?? 'http://localhost:3001';
+    const acceptUrl = `${appUrl}/invite/${token}`;
+    const declineUrl = `${appUrl}/invite/${token}?action=decline`;
+
+    // Send invitation email if channel is email
+    if (channel === 'email' && recipient) {
+      try {
+        const { EmailService } = await import('../services/email.js');
+        const emailService = new EmailService(db);
+        const inviter = await db.selectFrom('users').select('display_name').where('id', '=', userId).executeTakeFirst();
+        const trip = await db.selectFrom('trips').select('name').where('id', '=', tripId).executeTakeFirst();
+        await emailService.sendTemplate({
+          to: recipient,
+          templateSlug: 'trip_invitation',
+          variables: {
+            inviterName: inviter?.display_name ?? 'Someone',
+            tripName: trip?.name ?? 'a trip',
+            acceptUrl,
+            declineUrl,
+          },
+        });
+      } catch (e) {
+        console.log(`[Email] Failed to send trip invitation: ${(e as Error).message}`);
+      }
+    }
 
     return reply.status(201).send({
       statusCode: 201,

@@ -102,8 +102,24 @@ export async function registerEmailAliasRoutes(
       source: 'manual',
     } as any).execute();
 
-    // In production: send verification email with link containing the token
-    // In dev: auto-log the token
+    // Send verification email
+    try {
+      const { EmailService } = await import('../services/email.js');
+      const emailService = new EmailService(db);
+      const user = await db.selectFrom('users').select('display_name').where('id', '=', userId).executeTakeFirst();
+      const appUrl = process.env.APP_URL ?? 'http://localhost:3001';
+      await emailService.sendTemplate({
+        to: normalizedEmail,
+        templateSlug: 'alias_verification',
+        variables: {
+          name: user?.display_name ?? 'there',
+          aliasEmail: normalizedEmail,
+          verifyUrl: `${appUrl}/settings?verify-alias=${token}`,
+        },
+      });
+    } catch (e) {
+      console.log(`[Email] Failed to send alias verification: ${(e as Error).message}`);
+    }
     console.log(`[DEV] Email alias verification token for ${normalizedEmail}: ${token}`);
 
     return reply.status(201).send({
