@@ -35,18 +35,11 @@ async function redisPlugin(
   const config = (app as unknown as { config?: { REDIS_URL?: string } }).config;
   const url = options.url ?? config?.REDIS_URL ?? 'redis://localhost:6379';
 
-  // Skip Redis entirely in serverless (Vercel) if no valid URL or if it's localhost
+  // Skip Redis entirely in serverless (Vercel/Lambda) — use in-memory stores
   const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
-  const isLocalhost = url.includes('localhost') || url.includes('127.0.0.1');
-
-  if (isServerless && isLocalhost) {
-    app.log.info('Serverless environment with localhost Redis — skipping Redis');
+  if (isServerless) {
+    app.log.info('Serverless environment — skipping Redis (in-memory fallback)');
     app.decorate('redis', null as any);
-    return;
-  }
-
-  if (options.client) {
-    app.decorate('redis', options.client);
     return;
   }
 

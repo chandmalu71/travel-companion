@@ -1623,14 +1623,9 @@ async function redisPlugin(app2, options) {
   const config2 = app2.config;
   const url2 = options.url ?? config2?.REDIS_URL ?? "redis://localhost:6379";
   const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
-  const isLocalhost = url2.includes("localhost") || url2.includes("127.0.0.1");
-  if (isServerless && isLocalhost) {
-    app2.log.info("Serverless environment with localhost Redis \u2014 skipping Redis");
+  if (isServerless) {
+    app2.log.info("Serverless environment \u2014 skipping Redis (in-memory fallback)");
     app2.decorate("redis", null);
-    return;
-  }
-  if (options.client) {
-    app2.decorate("redis", options.client);
     return;
   }
   const client = new Redis(url2, {
