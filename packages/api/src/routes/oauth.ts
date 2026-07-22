@@ -294,3 +294,128 @@ export async function registerMicrosoftOAuthRoutes(
     }
   });
 }
+
+
+// ─── Facebook OAuth ──────────────────────────────────────────────────────────
+
+const FB_AUTH_URL = 'https://www.facebook.com/v19.0/dialog/oauth';
+const FB_TOKEN_URL = 'https://graph.facebook.com/v19.0/oauth/access_token';
+const FB_USERINFO_URL = 'https://graph.facebook.com/v19.0/me?fields=id,name,email,picture';
+
+export async function registerFacebookOAuthRoutes(
+  app: FastifyInstance,
+  options: OAuthOptions,
+): Promise<void> {
+  const { db } = options;
+
+  const appId = process.env.FACEBOOK_APP_ID;
+  const appSecret = process.env.FACEBOOK_APP_SECRET;
+  const appUrl = process.env.APP_URL ?? 'http://localhost:3001';
+  const apiUrl = process.env.API_URL ?? 'http://localhost:3000';
+  const redirectUri = `${apiUrl}/api/auth/facebook/callback`;
+
+  // ─── GET /api/auth/facebook ────────────────────────────────────────────────
+  app.get('/api/auth/facebook', async (_request: FastifyRequest, reply: FastifyReply) => {
+    if (!appId) {
+      return reply.status(500).send({ statusCode: 500, error: 'Facebook OAuth not configured' });
+    }
+
+    const params = new URLSearchParams({
+      client_id: appId,
+      redirect_uri: redirectUri,
+      scope: 'email,public_profile',
+      response_type: 'code',
+    });
+
+    return reply.redirect(`${FB_AUTH_URL}?${params.toString()}`);
+  });
+
+  // ─── GET /api/auth/facebook/callback ───────────────────────────────────────
+  app.get('/api/auth/facebook/callback', async (request: FastifyRequest<{ Querystring: { code?: string; error?: string } }>, reply: FastifyReply) => {
+    const { code, error } = request.query;
+
+    if (error || !code) {
+      return reply.redirect(`${appUrl}/login?error=oauth_cancelled`);
+    }
+
+    if (!appId || !appSecret) {
+      return reply.redirect(`${appUrl}/login?error=oauth_not_configured`);
+    }
+
+    try {
+      // Exchange code for access token
+      const tokenParams = new URLSearchParams({
+        client_id: appId,
+        client_secret: appSecret,
+        redirect_uri: redirectUri,
+        code,
+      });
+
+      const tokenRes = await fetch(`${FB_TOKEN_URL}?${tokenParams.toString()}`);
+
+      if (!tokenRes.ok) {
+        console.error('[OAuth/FB] Token exchange failed:', await tokenRes.text());
+        return reply.redirect(`${appUrl}/login?error=oauth_token_failed`);
+      }
+
+      const tokens = await tokenRes.json() as { access_token: string };
+
+      // Get user profile
+      const profileRes = await fetch(`${FB_USERINFO_URL}&access_token=${tokens.access_token}`);
+
+      if (!profileRes.ok) {
+        return reply.redirect(`${appUrl}/login?error=oauth_profile_failed`);
+      }
+
+      const profile = await profileRes.json() as {
+        id: string; name: string; email?: string;
+      };
+
+      if (!profile.email) {
+        return reply.redirect(`${appUrl}/login?error=oauth_no_email`);
+      }
+
+      const email = profile.email.toLowerCase();
+
+      // Find or create user
+      let user = await db.selectFrom('users')
+        .selectAll()
+        .where('email', '=', email)
+        .executeTakeFirst();
+
+      if (!user) {
+        user = await db.insertInto('users')
+          .values({
+            id: randomUUID(),
+            email,
+            display_name: profile.name,
+            cognito_sub: `facebook_${profile.id}`,
+            password_hash: '',
+          })
+          .returningAll()
+          .executeTakeFirstOrThrow();
+
+        console.log(`[OAuth/FB] New user created via Facebook: ${email}`);
+      } else if (!user.cognito_sub?.startsWith('facebook_')) {
+        await db.updateTable('users')
+          .set({ cognito_sub: `facebook_${profile.id}` })
+          .where('id', '=', user.id)
+          .execute();
+      }
+
+      // Generate JWT
+      const jwt = generateJWT(user.id, user.email);
+
+      const callbackParams = new URLSearchParams({
+        token: jwt.accessToken,
+        refreshToken: jwt.refreshToken,
+        user: JSON.stringify({ displayName: user.display_name ?? profile.name, email: user.email }),
+      });
+
+      return reply.redirect(`${appUrl}/auth/callback?${callbackParams.toString()}`);
+    } catch (err: any) {
+      console.error('[OAuth/FB] Error:', err.message);
+      return reply.redirect(`${appUrl}/login?error=oauth_failed`);
+    }
+  });
+}

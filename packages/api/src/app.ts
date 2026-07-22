@@ -42,7 +42,7 @@ import { registerSubscriptionRoutes, registerAdminPlanRoutes, registerAdminPromo
 import { registerReceiptScanRoute } from './routes/receipt-scan.js';
 import { registerAnalyticsRoutes } from './routes/analytics.js';
 import { registerEmailAdminRoutes } from './routes/email-admin.js';
-import { registerOAuthRoutes, registerMicrosoftOAuthRoutes } from './routes/oauth.js';
+import { registerOAuthRoutes, registerMicrosoftOAuthRoutes, registerFacebookOAuthRoutes } from './routes/oauth.js';
 import { registerTripTimelineRoute } from './routes/trip-timeline.js';
 import { registerHomeLocationRoutes } from './routes/home-location.js';
 import { registerSharingRoutes } from './routes/sharing.js';
@@ -241,6 +241,7 @@ export async function buildApp(
     await registerEmailAdminRoutes(app, { db: options.db });
     await registerOAuthRoutes(app, { db: options.db });
     await registerMicrosoftOAuthRoutes(app, { db: options.db });
+    await registerFacebookOAuthRoutes(app, { db: options.db });
   }
 
   // Register enriched trip timeline route
