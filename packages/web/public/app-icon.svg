@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="200" fill="url(#bg)"/>
+  <!-- Stylized "N" letter -->
+  <path d="M 300 750 L 300 274 L 380 274 L 620 650 L 620 274 L 724 274 L 724 750 L 644 750 L 404 374 L 404 750 Z" fill="white"/>
+  <!-- Small plane accent -->
+  <path d="M 680 200 L 720 180 L 760 200 L 720 210 Z" fill="rgba(255,255,255,0.6)"/>
+  <path d="M 700 190 L 720 160 L 740 190" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="3"/>
+</svg>

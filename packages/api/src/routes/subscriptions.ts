@@ -118,13 +118,30 @@ export async function registerSubscriptionRoutes(
     const plan = await db.selectFrom('subscription_plans' as any).selectAll().where('slug', '=', planSlug).executeTakeFirst();
     if (!plan) return reply.status(404).send({ statusCode: 404, error: 'Plan not found' });
 
-    // In production: create Stripe Checkout Session and redirect
-    // In dev: directly activate the subscription
+    // If Stripe is configured, create a real Checkout Session
+    if (process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.includes('placeholder')) {
+      const { createCheckoutSession } = await import('../services/stripe.js');
+      const user = await db.selectFrom('users').select(['email']).where('id', '=', userId).executeTakeFirst();
+      const appUrl = process.env.APP_URL ?? 'http://localhost:3001';
+
+      const { url, sessionId } = await createCheckoutSession(db, {
+        userId,
+        email: user?.email ?? '',
+        planSlug: planSlug as 'pro' | 'premium',
+        billingCycle: billingCycle ?? 'monthly',
+        isFamily: isFamily ?? false,
+        successUrl: `${appUrl}/settings?upgrade=success`,
+        cancelUrl: `${appUrl}/settings?upgrade=cancelled`,
+      });
+
+      return reply.send({ statusCode: 200, checkoutUrl: url, sessionId });
+    }
+
+    // Dev fallback: directly activate (no payment)
     const periodEnd = billingCycle === 'annual'
       ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
       : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-    // Upsert subscription
     const existing = await db.selectFrom('user_subscriptions' as any).select('id').where('user_id', '=', userId).executeTakeFirst();
 
     if (existing) {
@@ -150,7 +167,6 @@ export async function registerSubscriptionRoutes(
       } as any).execute();
     }
 
-    // Apply campaign if provided
     if (campaignCode) {
       await db.updateTable('subscription_campaigns' as any)
         .set({ current_uses: db.fn<number>('coalesce', ['current_uses', db.val(0)]) } as any)
@@ -162,8 +178,6 @@ export async function registerSubscriptionRoutes(
       statusCode: 200,
       message: `Upgraded to ${(plan as any).name}!`,
       data: { plan: (plan as any).name, billingCycle, periodEnd },
-      // In production: would return Stripe checkout URL
-      _devNote: 'In production, this returns a Stripe Checkout URL for payment',
     });
   });
 
@@ -275,18 +289,50 @@ export async function registerSubscriptionRoutes(
   });
 
   // ─── POST /api/webhooks/stripe ─────────────────────────────────────────────
-  // Stub for Stripe webhook handling (production implementation)
-  app.post('/api/webhooks/stripe', async (request: FastifyRequest, reply: FastifyReply) => {
-    // In production:
-    // 1. Verify Stripe signature
-    // 2. Handle events: checkout.session.completed, invoice.paid, invoice.payment_failed,
-    //    customer.subscription.updated, customer.subscription.deleted
-    // 3. Update user_subscriptions accordingly
+  app.post('/api/webhooks/stripe', {
+    config: { rawBody: true },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const sig = request.headers['stripe-signature'] as string;
 
+    // If webhook secret is configured, verify signature
+    if (process.env.STRIPE_WEBHOOK_SECRET && sig) {
+      try {
+        const { verifyWebhookSignature, handleWebhookEvent } = await import('../services/stripe.js');
+        const rawBody = (request as any).rawBody ?? JSON.stringify(request.body);
+        const event = verifyWebhookSignature(rawBody, sig);
+        await handleWebhookEvent(db, event);
+        console.log(`[Stripe Webhook] Processed: ${event.type}`);
+        return reply.send({ statusCode: 200, received: true });
+      } catch (err: any) {
+        console.error('[Stripe Webhook] Signature verification failed:', err.message);
+        return reply.status(400).send({ statusCode: 400, error: 'Webhook signature verification failed' });
+      }
+    }
+
+    // Dev fallback: log and accept without verification
     const event = request.body as any;
-    console.log('[Stripe Webhook] Received event:', event?.type ?? 'unknown');
-
+    console.log('[Stripe Webhook] Received (unverified):', event?.type ?? 'unknown');
     return reply.send({ statusCode: 200, received: true });
+  });
+
+  // ─── POST /api/subscription/portal ─────────────────────────────────────────
+  app.post('/api/subscription/portal', async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = (request as any).userId as string;
+    if (!userId) return reply.status(401).send({ statusCode: 401, error: 'UNAUTHORIZED' });
+
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return reply.status(503).send({ statusCode: 503, error: 'Stripe not configured' });
+    }
+
+    const { createPortalSession } = await import('../services/stripe.js');
+    const appUrl = process.env.APP_URL ?? 'http://localhost:3001';
+
+    try {
+      const { url } = await createPortalSession(db, userId, `${appUrl}/settings`);
+      return reply.send({ statusCode: 200, portalUrl: url });
+    } catch (err: any) {
+      return reply.status(400).send({ statusCode: 400, error: err.message });
+    }
   });
 }
 
