@@ -491,15 +491,34 @@ If the user explicitly says "just do it" or is in a rapid iteration flow, the re
   - Admin Panel Guide: `3145749`
   - Test Coverage: `3211265`
 
-### Update Process
+### Update Process (MANDATORY — Every Change)
 
-After implementing a feature or fix that affects documentation:
-1. Update requirements.md with acceptance criteria
-2. Update design.md with architecture/data model
-3. Update tasks.md with completed tasks
-4. Update the relevant Confluence page(s) via the MCP Confluence tools
-5. Use `mcp_atlassian_confluence_update_page_section` for targeted updates
-6. Keep content concise and structured (markdown format)
+**Confluence MUST be updated in the SAME session as the code change.** Documentation is not a follow-up task — it is part of "done."
+
+After ANY code change (feature, fix, refactor, config change), update Confluence in the same session:
+
+1. **requirements.md** — Add/update acceptance criteria
+2. **design.md** — Architecture, data model, API shape
+3. **tasks.md** — Mark completed tasks
+4. **Confluence** — Update the relevant page(s) immediately:
+
+| What Changed | Confluence Page to Update |
+|-------------|--------------------------|
+| New feature implemented | Features (ID: 3047429) |
+| New/modified API endpoint | API Reference (ID: 3145729) |
+| New DB table or migration | Database Schema (ID: 3178497) |
+| Infrastructure/deployment change | Deployment & Infrastructure (ID: 3244033) |
+| Dev workflow/tooling change | Development Guide (ID: 3014660) |
+| Admin panel change | Admin Panel Guide (ID: 3145749) |
+| Project-level stats change | Project Overview (ID: 3112961) |
+
+**Rules:**
+- Use `mcp_atlassian_confluence_update_page` or `mcp_atlassian_confluence_update_page_section` for targeted updates
+- Keep content concise and structured (markdown format)
+- Include version_comment describing what changed
+- NEVER leave Confluence out of date — if code changed, docs changed
+- If multiple pages are affected, update ALL of them in the same session
+- The "Designed But Not Yet Built" table on Features page must stay current (remove items when built, add new pending items)
 
 ## 17. Admin-Managed Configuration Pattern
 
