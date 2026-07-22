@@ -1,4 +1,4 @@
-name: CI - Tests & Quality
+name: CI — Build & Test
 
 on:
   pull_request:
@@ -27,7 +27,7 @@ jobs:
       - run: pnpm --filter @travel-companion/api typecheck
 
   unit-tests:
-    name: Unit & Property Tests
+    name: Unit Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,12 +40,8 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @travel-companion/shared build
-
-      - name: Run Shared Tests
-        run: pnpm --filter @travel-companion/shared test
-
-      - name: Run API Tests
-        run: pnpm --filter @travel-companion/api test
+      - name: Run Tests
+        run: pnpm --filter @travel-companion/shared test && pnpm --filter @travel-companion/api test
 
   build:
     name: Build Verification
@@ -61,11 +57,9 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @travel-companion/shared build
-
       - name: Build Web
         run: pnpm --filter @travel-companion/web build
         env:
-          NEXT_PUBLIC_API_URL: https://api-qa.nayya.ai
-
-      - name: Build Docker Image
-        run: docker build -t nayya-api:test -f packages/api/Dockerfile .
+          NEXT_PUBLIC_API_URL: https://api-qa.neyya.ai
+      - name: Build Admin
+        run: pnpm --filter @travel-companion/admin build

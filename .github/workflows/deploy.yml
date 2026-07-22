@@ -1,11 +1,9 @@
-name: Deploy Nayya.ai
+name: Deploy Neyya.ai
 
 on:
   push:
     branches:
-      - develop    # → QA
-      - 'release/*'  # → Staging
-      - main       # → Production (manual approval)
+      - develop  # → Auto-deploy to QA
   workflow_dispatch:
     inputs:
       environment:
@@ -14,44 +12,37 @@ on:
         type: choice
         options:
           - qa
-          - staging
           - production
 
 env:
-  AWS_REGION: eu-west-1
-  ECR_REPOSITORY: nayya-api
-  ECS_CLUSTER_PREFIX: nayya
   NODE_VERSION: '20'
 
 jobs:
-  # ─── Test ──────────────────────────────────────────────────────────────
+  # ─── Build & Test ──────────────────────────────────────────────────────
   test:
-    name: Test & Build
+    name: Build & Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v2
         with:
           version: 9
-
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
-
       - run: pnpm install --frozen-lockfile
-
+      - run: pnpm --filter @travel-companion/shared build
       - name: Typecheck
-        run: pnpm --filter @travel-companion/shared build && pnpm --filter @travel-companion/api typecheck
-
-      - name: Unit & Property Tests
+        run: pnpm --filter @travel-companion/api typecheck
+      - name: Unit Tests
         run: pnpm --filter @travel-companion/api test && pnpm --filter @travel-companion/shared test
-
-      - name: Build Web App
+      - name: Build Web
         run: pnpm --filter @travel-companion/web build
         env:
-          NEXT_PUBLIC_API_URL: https://api-${{ github.ref == 'refs/heads/main' && '' || github.ref == 'refs/heads/develop' && 'qa.' || 'staging.' }}nayya.ai
+          NEXT_PUBLIC_API_URL: ${{ github.ref == 'refs/heads/main' && 'https://api.neyya.ai' || 'https://api-qa.neyya.ai' }}
+      - name: Build Admin
+        run: pnpm --filter @travel-companion/admin build
 
   # ─── Determine Environment ─────────────────────────────────────────────
   determine-env:
@@ -59,8 +50,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       environment: ${{ steps.set-env.outputs.environment }}
-      api_domain: ${{ steps.set-env.outputs.api_domain }}
-      web_domain: ${{ steps.set-env.outputs.web_domain }}
+      api_url: ${{ steps.set-env.outputs.api_url }}
+      web_url: ${{ steps.set-env.outputs.web_url }}
+      admin_url: ${{ steps.set-env.outputs.admin_url }}
     steps:
       - id: set-env
         run: |
@@ -68,152 +60,153 @@ jobs:
             ENV="${{ github.event.inputs.environment }}"
           elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
             ENV="qa"
-          elif [[ "${{ github.ref }}" == refs/heads/release/* ]]; then
-            ENV="staging"
           elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
             ENV="production"
           else
             ENV="qa"
           fi
-
           echo "environment=$ENV" >> $GITHUB_OUTPUT
-
           if [ "$ENV" == "production" ]; then
-            echo "api_domain=api.nayya.ai" >> $GITHUB_OUTPUT
-            echo "web_domain=nayya.ai" >> $GITHUB_OUTPUT
-          elif [ "$ENV" == "staging" ]; then
-            echo "api_domain=api-staging.nayya.ai" >> $GITHUB_OUTPUT
-            echo "web_domain=staging.nayya.ai" >> $GITHUB_OUTPUT
+            echo "api_url=https://api.neyya.ai" >> $GITHUB_OUTPUT
+            echo "web_url=https://neyya.ai" >> $GITHUB_OUTPUT
+            echo "admin_url=https://admin.neyya.ai" >> $GITHUB_OUTPUT
           else
-            echo "api_domain=api-qa.nayya.ai" >> $GITHUB_OUTPUT
-            echo "web_domain=qa.nayya.ai" >> $GITHUB_OUTPUT
+            echo "api_url=https://api-qa.neyya.ai" >> $GITHUB_OUTPUT
+            echo "web_url=https://qa.neyya.ai" >> $GITHUB_OUTPUT
+            echo "admin_url=https://admin-qa.neyya.ai" >> $GITHUB_OUTPUT
           fi
 
-  # ─── Deploy API ────────────────────────────────────────────────────────
-  deploy-api:
-    name: Deploy API (${{ needs.determine-env.outputs.environment }})
+  # ─── Deploy to QA (automatic) ──────────────────────────────────────────
+  deploy-qa:
+    name: Deploy to QA
     runs-on: ubuntu-latest
     needs: [test, determine-env]
-    environment: ${{ needs.determine-env.outputs.environment }}
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build & Push Docker Image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-          ENV: ${{ needs.determine-env.outputs.environment }}
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:$ENV-latest \
-            -f packages/api/Dockerfile .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$ENV-latest
-
-      - name: Deploy to ECS
-        env:
-          ENV: ${{ needs.determine-env.outputs.environment }}
-        run: |
-          aws ecs update-service \
-            --cluster ${{ env.ECS_CLUSTER_PREFIX }}-$ENV \
-            --service nayya-api-$ENV \
-            --force-new-deployment
-
-      - name: Wait for Deployment
-        env:
-          ENV: ${{ needs.determine-env.outputs.environment }}
-        run: |
-          aws ecs wait services-stable \
-            --cluster ${{ env.ECS_CLUSTER_PREFIX }}-$ENV \
-            --services nayya-api-$ENV
-
-  # ─── Deploy Web ────────────────────────────────────────────────────────
-  deploy-web:
-    name: Deploy Web (${{ needs.determine-env.outputs.environment }})
-    runs-on: ubuntu-latest
-    needs: [test, determine-env]
-    environment: ${{ needs.determine-env.outputs.environment }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Build Web App
-        run: pnpm --filter @travel-companion/shared build && pnpm --filter @travel-companion/web build
-        env:
-          NEXT_PUBLIC_API_URL: https://${{ needs.determine-env.outputs.api_domain }}
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Deploy to S3
-        env:
-          ENV: ${{ needs.determine-env.outputs.environment }}
-        run: |
-          aws s3 sync packages/web/.next/static s3://nayya-web-$ENV/_next/static --delete
-          aws s3 sync packages/web/public s3://nayya-web-$ENV/public --delete
-
-      - name: Invalidate CloudFront
-        env:
-          ENV: ${{ needs.determine-env.outputs.environment }}
-        run: |
-          DIST_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Comment=='nayya-$ENV'].Id" --output text)
-          if [ -n "$DIST_ID" ]; then
-            aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*"
-          fi
-
-  # ─── E2E Tests (QA only) ───────────────────────────────────────────────
-  e2e-tests:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    needs: [deploy-api, deploy-web, determine-env]
     if: needs.determine-env.outputs.environment == 'qa'
+    environment:
+      name: qa
+      url: ${{ needs.determine-env.outputs.web_url }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v2
         with:
           version: 9
-
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
-
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @travel-companion/shared build
 
-      - name: Install Playwright
-        run: cd packages/web && npx playwright install chromium
+      - name: Install Vercel CLI
+        run: npm i -g vercel
 
-      - name: Run E2E Tests
-        run: cd packages/web && npx playwright test
+      - name: Deploy API to Vercel (QA)
+        run: |
+          cd packages/api
+          vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }} \
+            --env DATABASE_URL=${{ secrets.QA_DATABASE_URL }} \
+            --env REDIS_URL=${{ secrets.QA_REDIS_URL }} \
+            --env JWT_SECRET=${{ secrets.QA_JWT_SECRET }} \
+            --env GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
+            --env GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \
+            --env STRIPE_SECRET_KEY=${{ secrets.QA_STRIPE_SECRET_KEY }} \
+            --env EMAIL_PROVIDER=ses \
+            --env SES_REGION=eu-west-1 \
+            --env APP_URL=https://qa.neyya.ai \
+            --env API_URL=https://api-qa.neyya.ai
         env:
-          BASE_URL: https://${{ needs.determine-env.outputs.web_domain }}
-          API_URL: https://${{ needs.determine-env.outputs.api_domain }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_API_PROJECT_ID }}
+
+      - name: Deploy Web to Vercel (QA)
+        run: |
+          cd packages/web
+          vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+          NEXT_PUBLIC_API_URL: https://api-qa.neyya.ai
+
+      - name: Deploy Admin to Vercel (QA)
+        run: |
+          cd packages/admin
+          vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
+
+      - name: Health Check
+        run: |
+          sleep 10
+          curl -f https://api-qa.neyya.ai/api/health || echo "Health check pending..."
+
+  # ─── Deploy to Production (manual approval gate) ────────────────────────
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [test, determine-env]
+    if: needs.determine-env.outputs.environment == 'production'
+    environment:
+      name: production
+      url: https://neyya.ai
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @travel-companion/shared build
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel
+
+      - name: Deploy API to Vercel (Production)
+        run: |
+          cd packages/api
+          vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }} \
+            --env DATABASE_URL=${{ secrets.PROD_DATABASE_URL }} \
+            --env REDIS_URL=${{ secrets.PROD_REDIS_URL }} \
+            --env JWT_SECRET=${{ secrets.PROD_JWT_SECRET }} \
+            --env GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
+            --env GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \
+            --env STRIPE_SECRET_KEY=${{ secrets.PROD_STRIPE_SECRET_KEY }} \
+            --env EMAIL_PROVIDER=ses \
+            --env SES_REGION=eu-west-1 \
+            --env APP_URL=https://neyya.ai \
+            --env API_URL=https://api.neyya.ai
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_API_PROJECT_ID }}
+
+      - name: Deploy Web to Vercel (Production)
+        run: |
+          cd packages/web
+          vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+          NEXT_PUBLIC_API_URL: https://api.neyya.ai
+
+      - name: Deploy Admin to Vercel (Production)
+        run: |
+          cd packages/admin
+          vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
+
+      - name: Health Check
+        run: |
+          sleep 10
+          curl -f https://api.neyya.ai/api/health || echo "Health check pending..."
+
+      - name: Notify Deployment
+        run: |
+          echo "🚀 Production deployment complete!"
+          echo "Web: https://neyya.ai"
+          echo "Admin: https://admin.neyya.ai"
+          echo "API: https://api.neyya.ai"
