@@ -403,3 +403,62 @@ export async function registerAdminPromotionRoutes(
     return reply.send({ statusCode: 200, message: 'Promotion deleted' });
   });
 }
+
+
+// ─── Admin Campaigns Management ──────────────────────────────────────────────
+
+export async function registerAdminCampaignRoutes(
+  app: FastifyInstance,
+  options: SubscriptionOptions,
+): Promise<void> {
+  const { db } = options;
+
+  // GET /api/admin/campaigns — list all campaigns
+  app.get('/api/admin/campaigns', async (_request: FastifyRequest, reply: FastifyReply) => {
+    const campaigns = await db.selectFrom('subscription_campaigns' as any).selectAll().orderBy('created_at', 'desc').execute();
+    return reply.send({ statusCode: 200, data: campaigns });
+  });
+
+  // POST /api/admin/campaigns — create campaign
+  app.post('/api/admin/campaigns', async (request: FastifyRequest<{ Body: any }>, reply: FastifyReply) => {
+    const body = request.body as any;
+    if (!body.code || !body.name || !body.discountPercent) {
+      return reply.status(400).send({ statusCode: 400, error: 'code, name, discountPercent required' });
+    }
+    const campaign = await db.insertInto('subscription_campaigns' as any).values({
+      code: body.code.toUpperCase(),
+      name: body.name,
+      discount_percent: body.discountPercent,
+      discount_months: body.discountMonths ?? 3,
+      applicable_plans: body.applicablePlans ?? ['pro', 'premium'],
+      max_uses: body.maxUses ?? 1000,
+      valid_until: body.validUntil ? new Date(body.validUntil) : new Date(Date.now() + 365 * 86400000),
+      is_active: body.isActive ?? true,
+    } as any).returningAll().executeTakeFirst();
+    return reply.status(201).send({ statusCode: 201, data: campaign });
+  });
+
+  // PUT /api/admin/campaigns/:id — update campaign
+  app.put('/api/admin/campaigns/:id', async (request: FastifyRequest<{ Params: { id: string }; Body: any }>, reply: FastifyReply) => {
+    const { id } = request.params;
+    const body = request.body as any;
+    const updates: Record<string, unknown> = {};
+    if (body.code !== undefined) updates.code = body.code.toUpperCase();
+    if (body.name !== undefined) updates.name = body.name;
+    if (body.discountPercent !== undefined) updates.discount_percent = body.discountPercent;
+    if (body.discountMonths !== undefined) updates.discount_months = body.discountMonths;
+    if (body.applicablePlans !== undefined) updates.applicable_plans = body.applicablePlans;
+    if (body.maxUses !== undefined) updates.max_uses = body.maxUses;
+    if (body.validUntil !== undefined) updates.valid_until = new Date(body.validUntil);
+    if (body.isActive !== undefined) updates.is_active = body.isActive;
+    await db.updateTable('subscription_campaigns' as any).set(updates as any).where('id', '=', id).execute();
+    return reply.send({ statusCode: 200, message: 'Campaign updated' });
+  });
+
+  // DELETE /api/admin/campaigns/:id — delete campaign
+  app.delete('/api/admin/campaigns/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    const { id } = request.params;
+    await db.deleteFrom('subscription_campaigns' as any).where('id', '=', id).execute();
+    return reply.send({ statusCode: 200, message: 'Campaign deleted' });
+  });
+}

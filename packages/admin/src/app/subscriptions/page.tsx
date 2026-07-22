@@ -9,11 +9,6 @@ const PLANS = [
   { slug: 'premium', name: 'Premium', tier: 2, monthlyEur: 29.99, annualEur: 299.99, familyMonthly: 44.99, familyAnnual: 449.99, maxTrips: null, maxExpenses: null, maxStorage: 25600, maxNetwork: 500, maxFamily: 20, maxAliases: 15, weather: 14 },
 ];
 
-const CAMPAIGNS = [
-  { code: 'LAUNCH50', name: 'Launch 50% Off First 3 Months', discount: 50, months: 3, plans: ['pro', 'premium'], maxUses: 1000, used: 12, active: true, validUntil: '2026-12-31' },
-  { code: 'EARLYBIRD', name: 'Early Bird 30% Off Annual', discount: 30, months: 12, plans: ['pro', 'premium'], maxUses: 500, used: 3, active: true, validUntil: '2026-09-30' },
-];
-
 type Tab = 'plans' | 'promotions' | 'campaigns' | 'users' | 'settings';
 
 export default function SubscriptionsPage() {
@@ -451,35 +446,148 @@ function PromotionsTab() {
 }
 
 function CampaignsTab() {
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<any>({});
+  const [form, setForm] = useState({ code: '', name: '', discountPercent: 30, discountMonths: 3, applicablePlans: 'pro,premium', maxUses: 1000, validUntil: '' });
+
+  const fetchCampaigns = () => {
+    fetch('http://localhost:3000/api/admin/campaigns').then(r => r.json())
+      .then(d => setCampaigns(d.data ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+  useEffect(() => { fetchCampaigns(); }, []);
+
+  const createCampaign = async () => {
+    await fetch('http://localhost:3000/api/admin/campaigns', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: form.code, name: form.name, discountPercent: form.discountPercent,
+        discountMonths: form.discountMonths, applicablePlans: form.applicablePlans.split(',').map(s => s.trim()),
+        maxUses: form.maxUses, validUntil: form.validUntil,
+      }),
+    });
+    setShowCreate(false);
+    setForm({ code: '', name: '', discountPercent: 30, discountMonths: 3, applicablePlans: 'pro,premium', maxUses: 1000, validUntil: '' });
+    fetchCampaigns();
+  };
+
+  const toggleActive = async (c: any) => {
+    await fetch(`http://localhost:3000/api/admin/campaigns/${c.id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isActive: !c.is_active }),
+    });
+    fetchCampaigns();
+  };
+
+  const startEdit = (c: any) => {
+    setEditingId(c.id);
+    setEditForm({
+      code: c.code, name: c.name, discountPercent: c.discount_percent,
+      discountMonths: c.discount_months, applicablePlans: (c.applicable_plans ?? []).join(','),
+      maxUses: c.max_uses, validUntil: c.valid_until?.split('T')[0] ?? '',
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    await fetch(`http://localhost:3000/api/admin/campaigns/${editingId}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: editForm.code, name: editForm.name, discountPercent: editForm.discountPercent,
+        discountMonths: editForm.discountMonths, applicablePlans: editForm.applicablePlans.split(',').map((s: string) => s.trim()),
+        maxUses: editForm.maxUses, validUntil: editForm.validUntil,
+      }),
+    });
+    setEditingId(null);
+    fetchCampaigns();
+  };
+
+  const deleteCampaign = async (id: string) => {
+    if (!confirm('Delete this campaign code?')) return;
+    await fetch(`http://localhost:3000/api/admin/campaigns/${id}`, { method: 'DELETE' });
+    fetchCampaigns();
+  };
+
+  if (loading) return <div className="animate-pulse h-32 bg-gray-700 rounded-lg" />;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-400">Manage discount codes and promotional campaigns.</p>
-        <button className="rounded-md bg-primary-600 px-3 py-1.5 text-xs text-white hover:bg-primary-500">+ Create Campaign</button>
+        <p className="text-sm text-gray-400">Manage discount codes users can enter at checkout.</p>
+        <button onClick={() => setShowCreate(!showCreate)} className="rounded-md bg-primary-600 px-3 py-1.5 text-xs text-white hover:bg-primary-500">+ Create Campaign</button>
       </div>
 
-      <div className="space-y-2">
-        {CAMPAIGNS.map(c => (
-          <div key={c.code} className="bg-gray-800 rounded-lg p-4 border border-gray-700 flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-sm text-white font-bold">{c.code}</span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded ${c.active ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
-                  {c.active ? 'Active' : 'Inactive'}
-                </span>
+      {showCreate && (
+        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            <div><label className="text-xs text-gray-400 block mb-1">Code</label><input value={form.code} onChange={e => setForm({...form, code: e.target.value.toUpperCase()})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white font-mono" placeholder="SUMMER50" /></div>
+            <div><label className="text-xs text-gray-400 block mb-1">Name</label><input value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" placeholder="Summer 50% Off" /></div>
+            <div><label className="text-xs text-gray-400 block mb-1">Discount %</label><input type="number" value={form.discountPercent} onChange={e => setForm({...form, discountPercent: +e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+            <div><label className="text-xs text-gray-400 block mb-1">Duration (months)</label><input type="number" value={form.discountMonths} onChange={e => setForm({...form, discountMonths: +e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+            <div><label className="text-xs text-gray-400 block mb-1">Max Uses</label><input type="number" value={form.maxUses} onChange={e => setForm({...form, maxUses: +e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+            <div><label className="text-xs text-gray-400 block mb-1">Valid Until</label><input type="date" value={form.validUntil} onChange={e => setForm({...form, validUntil: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={createCampaign} className="rounded bg-primary-600 px-3 py-1 text-xs text-white hover:bg-primary-500">Create</button>
+            <button onClick={() => setShowCreate(false)} className="rounded bg-gray-700 px-3 py-1 text-xs text-white hover:bg-gray-600">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {campaigns.length === 0 ? (
+        <p className="text-gray-500 text-sm text-center py-8">No campaign codes yet.</p>
+      ) : (
+        <div className="space-y-2">
+          {campaigns.map((c: any) => (
+            <div key={c.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700 flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-sm text-white font-bold">{c.code}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${c.is_active ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
+                    {c.is_active ? 'Active' : 'Disabled'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400 mt-0.5">{c.name}</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">
+                  {c.discount_percent}% off for {c.discount_months} months · Plans: {c.applicable_plans?.join(', ')} · Uses: {c.current_uses ?? 0}/{c.max_uses} · Expires: {c.valid_until ? new Date(c.valid_until).toLocaleDateString() : 'Never'}
+                </p>
               </div>
-              <p className="text-xs text-gray-400 mt-0.5">{c.name}</p>
-              <p className="text-[10px] text-gray-500 mt-0.5">
-                {c.discount}% off for {c.months} months • Plans: {c.plans.join(', ')} • Uses: {c.used}/{c.maxUses} • Expires: {c.validUntil}
-              </p>
+              <div className="flex gap-2">
+                <button onClick={() => startEdit(c)} className="text-xs px-2 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white">Edit</button>
+                <button onClick={() => toggleActive(c)} className={`text-xs px-2 py-1 rounded ${c.is_active ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-green-600 hover:bg-green-500'} text-white`}>
+                  {c.is_active ? 'Disable' : 'Enable'}
+                </button>
+                <button onClick={() => deleteCampaign(c.id)} className="text-xs px-2 py-1 rounded bg-red-600 hover:bg-red-500 text-white">Delete</button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button className="text-xs text-gray-400 hover:text-white">Edit</button>
-              <button className="text-xs text-red-400 hover:text-red-300">Disable</button>
+          ))}
+        </div>
+      )}
+
+      {/* Edit modal */}
+      {editingId && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={() => setEditingId(null)}>
+          <div className="bg-gray-800 rounded-xl p-6 w-[500px] border border-gray-600 space-y-4" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-white">Edit Campaign</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-xs text-gray-400 block mb-1">Code</label><input value={editForm.code} onChange={e => setEditForm({...editForm, code: e.target.value.toUpperCase()})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white font-mono" /></div>
+              <div><label className="text-xs text-gray-400 block mb-1">Name</label><input value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+              <div><label className="text-xs text-gray-400 block mb-1">Discount %</label><input type="number" value={editForm.discountPercent} onChange={e => setEditForm({...editForm, discountPercent: +e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+              <div><label className="text-xs text-gray-400 block mb-1">Duration (months)</label><input type="number" value={editForm.discountMonths} onChange={e => setEditForm({...editForm, discountMonths: +e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+              <div><label className="text-xs text-gray-400 block mb-1">Max Uses</label><input type="number" value={editForm.maxUses} onChange={e => setEditForm({...editForm, maxUses: +e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+              <div><label className="text-xs text-gray-400 block mb-1">Valid Until</label><input type="date" value={editForm.validUntil} onChange={e => setEditForm({...editForm, validUntil: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" /></div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button onClick={saveEdit} className="rounded bg-primary-600 px-4 py-1.5 text-sm text-white hover:bg-primary-500">Save Changes</button>
+              <button onClick={() => setEditingId(null)} className="rounded bg-gray-700 px-4 py-1.5 text-sm text-white hover:bg-gray-600">Cancel</button>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
