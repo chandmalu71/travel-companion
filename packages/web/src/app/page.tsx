@@ -468,7 +468,7 @@ function PricingSection() {
   const [promotions, setPromotions] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/plans')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'}/api/plans`)
       .then(r => r.json())
       .then(d => { setPlans(d.data ?? []); setPromotions(d.promotions ?? []); })
       .catch(() => {

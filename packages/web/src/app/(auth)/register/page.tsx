@@ -182,7 +182,7 @@ export default function RegisterPage() {
               type="button"
               onClick={() => {
                 localStorage.setItem('loginProvider', 'google');
-                window.location.href = 'http://localhost:3000/api/auth/google';
+                window.location.href = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'}/api/auth/google`;
               }}
               className="flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
@@ -198,7 +198,7 @@ export default function RegisterPage() {
               type="button"
               onClick={() => {
                 localStorage.setItem('loginProvider', 'microsoft');
-                window.location.href = 'http://localhost:3000/api/auth/microsoft';
+                window.location.href = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'}/api/auth/microsoft`;
               }}
               className="flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
@@ -227,7 +227,7 @@ export default function RegisterPage() {
               type="button"
               onClick={() => {
                 localStorage.setItem('loginProvider', 'facebook');
-                window.location.href = 'http://localhost:3000/api/auth/facebook';
+                window.location.href = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'}/api/auth/facebook`;
               }}
               className="flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >

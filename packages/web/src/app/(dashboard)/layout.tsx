@@ -41,7 +41,7 @@ export default function DashboardLayout({
     // Fetch user's subscription plan
     const token = localStorage.getItem('accessToken');
     if (token) {
-      fetch('http://localhost:3000/api/subscription', { headers: { Authorization: `Bearer ${token}` } })
+      fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'}/api/subscription`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.json())
         .then(d => { if (d.data?.plan_slug || d.data?.planSlug) setPlanSlug(d.data.plan_slug ?? d.data.planSlug); })
         .catch(() => {});

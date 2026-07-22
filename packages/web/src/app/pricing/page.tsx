@@ -63,7 +63,7 @@ export default function PricingPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/plans')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'}/api/plans`)
       .then(r => r.json())
       .then(d => {
         setPlans(d.data ?? []);
@@ -79,7 +79,7 @@ export default function PricingPage() {
   const applyCampaign = async () => {
     if (!campaign) return;
     try {
-      const res = await fetch('http://localhost:3000/api/subscription/apply-campaign', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'}/api/subscription/apply-campaign`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: campaign }),
       });
