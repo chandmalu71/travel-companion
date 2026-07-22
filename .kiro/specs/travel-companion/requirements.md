@@ -1017,3 +1017,171 @@ Travel Companion is a cross-platform application (web and mobile iOS/Android) th
 16. Payment failure SHALL trigger 3 retry attempts over 7 days before downgrade
 17. Users SHALL be able to cancel anytime (access continues until end of billing period)
 18. Cancelled users SHALL keep their data but lose premium feature access
+
+
+### Requirement 34: My Network (User Connections)
+
+**Status:** Implemented
+
+Users can build a personal travel network by connecting with other users.
+
+**Acceptance Criteria:**
+- 34.1: Users can add connections by email or name
+- 34.2: Connection invitations sent and accepted/declined
+- 34.3: Auto-connect when an invited user accepts
+- 34.4: Network page shows all connections with labels (friend/family/colleague)
+- 34.5: Privacy settings per connection (full/limited visibility)
+- 34.6: Family tab shows connected users' family members (if allowed by owner)
+- 34.7: Connection limits enforced per subscription plan
+
+### Requirement 35: Family Members
+
+**Status:** Implemented
+
+Users can manage family member profiles with travel details, encrypted sensitive data.
+
+**Acceptance Criteria:**
+- 35.1: Add family members with name, DOB, nationality, relationship
+- 35.2: Passport data encrypted with AES-256-GCM (PII_ENCRYPTION_KEY)
+- 35.3: 16 IATA meal codes supported
+- 35.4: Allergies and dietary preferences use same admin-managed data set
+- 35.5: Masked passport display (****XXXX) in UI
+- 35.6: Family members visible to connected users if sharing enabled
+- 35.7: Member limits enforced per subscription plan
+
+### Requirement 36: AI Trip Tips
+
+**Status:** Implemented
+
+AI-powered travel tips organized by category with interactive checklist items.
+
+**Acceptance Criteria:**
+- 36.1: 8 tip categories (packing, safety, culture, budget, transport, health, food, tech)
+- 36.2: Per-card AI interaction (ask follow-up questions)
+- 36.3: Checklist items users can mark complete
+- 36.4: Location-aware mode (tips based on destination)
+- 36.5: Tips limit per trip enforced by subscription plan
+
+### Requirement 37: Weather Integration
+
+**Status:** Implemented
+
+Weather forecasts for trip destinations displayed in trips and dashboard.
+
+**Acceptance Criteria:**
+- 37.1: Weather tab in trip detail showing forecast
+- 37.2: Dashboard weather widget for upcoming trips
+- 37.3: Forecast days determined by subscription plan (3-day free, 14-day paid)
+- 37.4: Weather data fetched from forecast API
+- 37.5: Admin-configurable weather settings
+
+### Requirement 38: Messaging & Trip Chat
+
+**Status:** Implemented
+
+Real-time messaging between connected users and within trips.
+
+**Acceptance Criteria:**
+- 38.1: Direct messaging between connected users
+- 38.2: Trip group chat for trip members
+- 38.3: Polls and voting in conversations
+- 38.4: Trip decisions promoted from chat
+- 38.5: @AI mentions for AI assistance in chat
+- 38.6: Message reactions
+- 38.7: Daily message limits enforced per subscription plan
+- 38.8: 7 DB tables, 14 API endpoints
+
+### Requirement 39: Customizable Dashboard
+
+**Status:** Implemented
+
+Users can customize their dashboard with configurable widgets.
+
+**Acceptance Criteria:**
+- 39.1: 10 widget types (upcoming trips, weather, expenses, network, tips, bookings, map, activity, messages, quick actions)
+- 39.2: User-persisted widget configuration (show/hide, order)
+- 39.3: Quick Actions widget always rendered at top (outside grid)
+- 39.4: Widget state saved per user via API
+
+### Requirement 40: Subscriptions & Tiered Plans
+
+**Status:** Implemented
+
+Freemium service with 3 tiers, 30-day trial, Stripe integration, admin management.
+
+**Acceptance Criteria:**
+- 40.1: Three plans — Free, Pro (EUR 14.99/mo), Premium (EUR 29.99/mo)
+- 40.2: 30-day free trial with full Premium access for all new users
+- 40.3: Monthly and annual billing (annual saves 2 months)
+- 40.4: Family plan pricing on Pro and Premium
+- 40.5: Stripe checkout stubs (production-ready hooks)
+- 40.6: Campaign discount codes (admin-managed, user-entered at checkout)
+- 40.7: Promotional pricing with strikethrough display and themed banners
+- 40.8: Seasonal event promotions (pre-scheduled, auto-activate by date)
+- 40.9: Admin plan editing persists to DB, reflects in pricing page immediately
+- 40.10: Plan badge (Pro/Premium) shown next to logo in dashboard
+- 40.11: Upgrade nav item hidden when already on paid plan
+- 40.12: Public pricing page with plan comparison
+- 40.13: Settings subscription section with cancel/reactivate
+
+### Requirement 41: Email Aliases
+
+**Status:** Implemented
+
+Users can add multiple email addresses for booking recognition.
+
+**Acceptance Criteria:**
+- 41.1: Add email aliases with verification flow (token-based)
+- 41.2: Verified aliases match incoming bookings
+- 41.3: Remove aliases from Settings
+- 41.4: Alias limits enforced per subscription plan
+- 41.5: Admin-configurable alias settings
+
+### Requirement 42: In-House Analytics
+
+**Status:** Implemented
+
+Click and engagement tracking with admin analytics dashboard.
+
+**Acceptance Criteria:**
+- 42.1: Auto page view tracking on all dashboard routes
+- 42.2: Feature usage and click event tracking
+- 42.3: Batch event submission support
+- 42.4: Admin analytics page: total events, today, active users (7-day)
+- 42.5: Top pages and top features charts
+- 42.6: Events by day (30-day bar chart)
+- 42.7: Session-based anonymous tracking for non-logged-in users
+
+### Requirement 43: Promotional Pricing & Events
+
+**Status:** Implemented
+
+Time-limited promotions with crossed-out prices and seasonal event scheduling.
+
+**Acceptance Criteria:**
+- 43.1: Admin creates promotions with discount %, date range, applicable plans
+- 43.2: Pricing page shows original price crossed out in red with discounted price
+- 43.3: Themed banner on pricing page during active promotion
+- 43.4: Event types: summer, christmas, black_friday, new_year, easter, flash_sale, etc.
+- 43.5: Pre-scheduled promotions auto-activate on start date
+- 43.6: Admin timeline/calendar view showing all events as Gantt bars
+- 43.7: Pause/activate/edit/delete promotions from admin
+- 43.8: Promotion theme color, banner emoji, and badge text configurable
+
+### Requirement 44: Plan Limit Enforcement
+
+**Status:** Implemented
+
+Subscription plan limits enforced server-side on all resource creation endpoints.
+
+**Acceptance Criteria:**
+- 44.1: checkPlanLimit middleware checks user plan before resource creation
+- 44.2: Trips limited by max_active_trips
+- 44.3: Expenses limited by max_expenses_per_month (monthly reset)
+- 44.4: Messages limited by max_messages_per_day (daily reset)
+- 44.5: Network connections limited by max_network_connections
+- 44.6: Family members limited by max_family_members
+- 44.7: Email aliases limited by max_email_aliases
+- 44.8: 403 PLAN_LIMIT_REACHED response with upgrade URL
+- 44.9: Client-side UpgradePrompt component for limit errors
+- 44.10: Admin plan limit changes take effect immediately (no deploy)
