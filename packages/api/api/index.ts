@@ -4,6 +4,8 @@
  * Wraps the Fastify app for Vercel serverless deployment.
  */
 import type { IncomingMessage, ServerResponse } from 'http';
+import { buildApp } from '../src/app.js';
+import { createDatabaseFromEnv } from '../src/db/database.js';
 
 let app: any;
 let initError: string | null = null;
@@ -13,9 +15,7 @@ async function getApp() {
   if (app) return app;
 
   try {
-    const { buildApp } = await import('../src/app.js');
-    const { getDatabase } = await import('../src/db/database.js');
-    const db = getDatabase();
+    const db = createDatabaseFromEnv();
     app = await buildApp({ db });
     await app.ready();
     return app;
