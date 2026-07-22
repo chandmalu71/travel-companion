@@ -43,3 +43,7 @@ android/app/build/
 *.keystore
 packages/web/tsconfig.tsbuildinfo
 .env.production
+
+
+# Allow shared package dist (needed for Vercel deployment)
+!packages/shared/dist/
