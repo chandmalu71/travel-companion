@@ -1633,20 +1633,19 @@ async function redisPlugin(app2, options) {
     enableReadyCheck: false,
     tls: url2.startsWith("rediss://") ? { rejectUnauthorized: false } : void 0
   });
+  let isConnected = false;
   if (!options.client) {
     try {
-      await client.connect();
+      const connectPromise = client.connect().then(() => client.ping());
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Redis connection timeout")), 3e3));
+      await Promise.race([connectPromise, timeoutPromise]);
+      isConnected = true;
       app2.log.info("Redis connection established");
     } catch (err) {
-      app2.log.warn({ err }, "Redis connection failed \u2014 rate limiting will use in-memory store");
+      app2.log.warn("Redis not reachable \u2014 operating without Redis (in-memory rate limiting)");
     }
-  }
-  let isConnected = false;
-  try {
-    await client.ping();
+  } else {
     isConnected = true;
-  } catch {
-    app2.log.warn("Redis not reachable \u2014 operating without Redis");
   }
   app2.decorate("redis", isConnected ? client : null);
   app2.addHook("onClose", async () => {

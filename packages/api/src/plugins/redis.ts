@@ -50,24 +50,20 @@ async function redisPlugin(
     });
 
   // Only connect if we created the client ourselves (not injected)
+  let isConnected = false;
   if (!options.client) {
     try {
-      await client.connect();
+      // Set a 3-second timeout for Redis connection (Vercel has 10s function limit)
+      const connectPromise = client.connect().then(() => client.ping());
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Redis connection timeout')), 3000));
+      await Promise.race([connectPromise, timeoutPromise]);
+      isConnected = true;
       app.log.info('Redis connection established');
     } catch (err) {
-      app.log.warn({ err }, 'Redis connection failed — rate limiting will use in-memory store');
-      // Create a minimal no-op client so app doesn't crash
-      // The rate limiter will fall back to in-memory when defineCommand is unavailable
+      app.log.warn('Redis not reachable — operating without Redis (in-memory rate limiting)');
     }
-  }
-
-  // Check if connected by trying a ping
-  let isConnected = false;
-  try {
-    await client.ping();
+  } else {
     isConnected = true;
-  } catch {
-    app.log.warn('Redis not reachable — operating without Redis');
   }
 
   app.decorate('redis', isConnected ? client : null as any);
