@@ -17,6 +17,18 @@ interface Plan {
   max_storage_mb: number | null;
 }
 
+interface Promotion {
+  id: string;
+  name: string;
+  discount_percent: number;
+  applies_to: string[];
+  billing_cycles: string[];
+  starts_at: string;
+  ends_at: string;
+  badge_text: string;
+  is_active: boolean;
+}
+
 const FEATURE_LABELS: Record<string, string> = {
   basic_trips: 'Up to 3 active trips',
   basic_expenses: 'Up to 20 expenses/month',
@@ -40,6 +52,7 @@ const FEATURE_LABELS: Record<string, string> = {
 
 export default function PricingPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [annual, setAnnual] = useState(false);
   const [campaign, setCampaign] = useState('');
   const [discount, setDiscount] = useState<{ code: string; percent: number } | null>(null);
@@ -48,7 +61,10 @@ export default function PricingPage() {
   useEffect(() => {
     fetch('http://localhost:3000/api/plans')
       .then(r => r.json())
-      .then(d => setPlans(d.data ?? []))
+      .then(d => {
+        setPlans(d.data ?? []);
+        setPromotions(d.promotions ?? []);
+      })
       .catch(() => {});
     // Check if user is logged in
     if (typeof window !== 'undefined' && localStorage.getItem('accessToken')) {
@@ -71,8 +87,39 @@ export default function PricingPage() {
 
   const getPrice = (plan: Plan) => {
     const base = annual ? Number(plan.price_annual_eur) : Number(plan.price_monthly_eur);
+    // Campaign code discount
     if (discount && plan.slug !== 'free') return base * (1 - discount.percent / 100);
     return base;
+  };
+
+  // Get active promotion for a specific plan and billing cycle
+  const getPromotion = (plan: Plan): Promotion | null => {
+    if (plan.slug === 'free') return null;
+    const cycle = annual ? 'annual' : 'monthly';
+    return promotions.find(p =>
+      p.is_active &&
+      p.applies_to.includes(plan.slug) &&
+      p.billing_cycles.includes(cycle)
+    ) ?? null;
+  };
+
+  // Calculate promotional price
+  const getPromoPrice = (plan: Plan): number | null => {
+    const promo = getPromotion(plan);
+    if (!promo) return null;
+    const base = annual ? Number(plan.price_annual_eur) : Number(plan.price_monthly_eur);
+    return base * (1 - promo.discount_percent / 100);
+  };
+
+  // Time remaining for promotion
+  const getPromoTimeRemaining = (promo: Promotion): string => {
+    const end = new Date(promo.ends_at);
+    const now = new Date();
+    const days = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (days <= 1) return 'Ends today!';
+    if (days <= 7) return `${days} days left`;
+    if (days <= 30) return `${Math.ceil(days / 7)} weeks left`;
+    return `${Math.ceil(days / 30)} months left`;
   };
 
   return (
@@ -123,29 +170,58 @@ export default function PricingPage() {
           {plans.map(plan => {
             const price = getPrice(plan);
             const isPopular = plan.slug === 'pro';
+            const promo = getPromotion(plan);
+            const promoPrice = getPromoPrice(plan);
 
             return (
               <div key={plan.slug} className={`rounded-xl border-2 p-6 bg-white relative ${
                 isPopular ? 'border-primary-500 shadow-lg' : 'border-gray-200'
               }`}>
-                {isPopular && (
+                {isPopular && !promo && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary-500 text-white text-xs font-bold px-3 py-1 rounded-full">
                     Most Popular
                   </div>
                 )}
+                {promo && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">
+                    {promo.badge_text}
+                  </div>
+                )}
 
                 <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
+
+                {/* Price display with promotion strikethrough */}
                 <div className="mt-4">
-                  <span className="text-4xl font-bold text-gray-900">
-                    €{price.toFixed(price === 0 ? 0 : 2)}
-                  </span>
-                  {plan.slug !== 'free' && (
-                    <span className="text-gray-500 text-sm">/{annual ? 'year' : 'month'}</span>
-                  )}
-                  {discount && plan.slug !== 'free' && (
-                    <span className="ml-2 text-xs line-through text-gray-400">
-                      €{annual ? plan.price_annual_eur : plan.price_monthly_eur}
-                    </span>
+                  {promo && promoPrice !== null ? (
+                    <>
+                      {/* Original price crossed out in red */}
+                      <span className="text-xl font-bold text-red-500 line-through decoration-red-500 decoration-2">
+                        €{price.toFixed(2)}
+                      </span>
+                      {/* Discounted price */}
+                      <span className="text-4xl font-bold text-gray-900 ml-2">
+                        €{promoPrice.toFixed(2)}
+                      </span>
+                      <span className="text-gray-500 text-sm">/{annual ? 'year' : 'month'}</span>
+                      {/* Time remaining */}
+                      <p className="text-xs text-red-500 font-medium mt-1">
+                        ⏰ {getPromoTimeRemaining(promo)}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-4xl font-bold text-gray-900">
+                        €{price.toFixed(price === 0 ? 0 : 2)}
+                      </span>
+                      {plan.slug !== 'free' && (
+                        <span className="text-gray-500 text-sm">/{annual ? 'year' : 'month'}</span>
+                      )}
+                      {discount && plan.slug !== 'free' && (
+                        <span className="ml-2 text-sm line-through text-red-400 font-semibold">
+                          €{(annual ? Number(plan.price_annual_eur) : Number(plan.price_monthly_eur)).toFixed(2)}
+                        </span>
+                      )}
+                    </>
                   )}
                 </div>
 

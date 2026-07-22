@@ -14,7 +14,7 @@ const CAMPAIGNS = [
   { code: 'EARLYBIRD', name: 'Early Bird 30% Off Annual', discount: 30, months: 12, plans: ['pro', 'premium'], maxUses: 500, used: 3, active: true, validUntil: '2026-09-30' },
 ];
 
-type Tab = 'plans' | 'campaigns' | 'users' | 'settings';
+type Tab = 'plans' | 'promotions' | 'campaigns' | 'users' | 'settings';
 
 export default function SubscriptionsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('plans');
@@ -25,7 +25,7 @@ export default function SubscriptionsPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-800 rounded-lg p-1">
-        {([['plans', '💎 Plans'], ['campaigns', '🏷️ Campaigns'], ['users', '👤 User Overrides'], ['settings', '⚙️ Settings']] as const).map(([id, label]) => (
+        {([['plans', '💎 Plans'], ['promotions', '🔥 Promotions'], ['campaigns', '🏷️ Campaigns'], ['users', '👤 User Overrides'], ['settings', '⚙️ Settings']] as const).map(([id, label]) => (
           <button key={id} onClick={() => setActiveTab(id)}
             className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${activeTab === id ? 'bg-gray-700 text-white shadow' : 'text-gray-400 hover:text-gray-200'}`}>
             {label}
@@ -34,6 +34,7 @@ export default function SubscriptionsPage() {
       </div>
 
       {activeTab === 'plans' && <PlansTab />}
+      {activeTab === 'promotions' && <PromotionsTab />}
       {activeTab === 'campaigns' && <CampaignsTab />}
       {activeTab === 'users' && <UserOverridesTab />}
       {activeTab === 'settings' && <SettingsTab />}
@@ -150,6 +151,133 @@ function PlansTab() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function PromotionsTab() {
+  const [promos, setPromos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({ name: '', discountPercent: 50, appliesTo: 'pro,premium', billingCycles: 'monthly,annual', startsAt: '', endsAt: '', badgeText: '' });
+
+  const fetchPromos = () => {
+    fetch('http://localhost:3000/api/admin/promotions').then(r => r.json())
+      .then(d => setPromos(d.data ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { fetchPromos(); }, []);
+
+  const createPromo = async () => {
+    await fetch('http://localhost:3000/api/admin/promotions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: form.name,
+        discountPercent: form.discountPercent,
+        appliesTo: form.appliesTo.split(',').map(s => s.trim()),
+        billingCycles: form.billingCycles.split(',').map(s => s.trim()),
+        startsAt: form.startsAt,
+        endsAt: form.endsAt,
+        badgeText: form.badgeText || `🔥 ${form.discountPercent}% OFF`,
+      }),
+    });
+    setShowCreate(false);
+    fetchPromos();
+  };
+
+  const toggleActive = async (promo: any) => {
+    await fetch(`http://localhost:3000/api/admin/promotions/${promo.id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isActive: !promo.is_active }),
+    });
+    fetchPromos();
+  };
+
+  const deletePromo = async (id: string) => {
+    if (!confirm('Delete this promotion?')) return;
+    await fetch(`http://localhost:3000/api/admin/promotions/${id}`, { method: 'DELETE' });
+    fetchPromos();
+  };
+
+  if (loading) return <div className="animate-pulse h-40 bg-gray-700 rounded-lg" />;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-400">Site-wide promotions display crossed-out prices on the pricing page. Only one active promotion per plan is shown.</p>
+        <button onClick={() => setShowCreate(!showCreate)} className="rounded-md bg-primary-600 px-3 py-1.5 text-xs text-white hover:bg-primary-500">
+          + New Promotion
+        </button>
+      </div>
+
+      {showCreate && (
+        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Name</label>
+              <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" placeholder="Summer Sale" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Discount %</label>
+              <input type="number" value={form.discountPercent} onChange={e => setForm({...form, discountPercent: +e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Start Date</label>
+              <input type="date" value={form.startsAt} onChange={e => setForm({...form, startsAt: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">End Date</label>
+              <input type="date" value={form.endsAt} onChange={e => setForm({...form, endsAt: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Applies To (comma-sep plans)</label>
+              <input value={form.appliesTo} onChange={e => setForm({...form, appliesTo: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" placeholder="pro,premium" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Badge Text (shown on card)</label>
+              <input value={form.badgeText} onChange={e => setForm({...form, badgeText: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1 text-sm text-white" placeholder="🔥 50% OFF" />
+            </div>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button onClick={createPromo} className="rounded bg-primary-600 px-3 py-1 text-xs text-white hover:bg-primary-500">Create</button>
+            <button onClick={() => setShowCreate(false)} className="rounded bg-gray-700 px-3 py-1 text-xs text-white hover:bg-gray-600">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {promos.length === 0 ? (
+        <p className="text-gray-500 text-sm text-center py-8">No promotions yet. Create one to display discounted prices.</p>
+      ) : (
+        <div className="space-y-2">
+          {promos.map((p: any) => {
+            const isExpired = new Date(p.ends_at) < new Date();
+            return (
+              <div key={p.id} className={`bg-gray-800 rounded-lg p-4 border ${p.is_active && !isExpired ? 'border-green-700' : 'border-gray-700'} flex items-center justify-between`}>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-medium text-sm">{p.name}</span>
+                    <span className="bg-red-900/30 text-red-400 text-xs px-2 py-0.5 rounded">{p.discount_percent}% OFF</span>
+                    {p.is_active && !isExpired && <span className="bg-green-900/30 text-green-400 text-xs px-2 py-0.5 rounded">Active</span>}
+                    {isExpired && <span className="bg-gray-700 text-gray-400 text-xs px-2 py-0.5 rounded">Expired</span>}
+                    {!p.is_active && !isExpired && <span className="bg-yellow-900/30 text-yellow-400 text-xs px-2 py-0.5 rounded">Paused</span>}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {new Date(p.starts_at).toLocaleDateString()} → {new Date(p.ends_at).toLocaleDateString()} · Plans: {p.applies_to?.join(', ')} · Badge: "{p.badge_text}"
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => toggleActive(p)} className={`text-xs px-2 py-1 rounded ${p.is_active ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-green-600 hover:bg-green-500'} text-white`}>
+                    {p.is_active ? 'Pause' : 'Activate'}
+                  </button>
+                  <button onClick={() => deletePromo(p.id)} className="text-xs px-2 py-1 rounded bg-red-600 hover:bg-red-500 text-white">Delete</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

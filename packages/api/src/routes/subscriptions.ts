@@ -38,7 +38,16 @@ export async function registerSubscriptionRoutes(
       .orderBy('tier', 'asc')
       .execute();
 
-    return reply.send({ statusCode: 200, data: plans });
+    // Fetch active promotions (valid now)
+    const promotions = await db
+      .selectFrom('subscription_promotions' as any)
+      .selectAll()
+      .where('is_active', '=', true)
+      .where('starts_at', '<=', new Date())
+      .where('ends_at', '>=', new Date())
+      .execute();
+
+    return reply.send({ statusCode: 200, data: plans, promotions });
   });
 
   // ─── GET /api/subscription ─────────────────────────────────────────────────
@@ -319,5 +328,68 @@ export async function registerAdminPlanRoutes(
     await db.updateTable('subscription_plans' as any).set(updates as any).where('slug', '=', slug).execute();
 
     return reply.send({ statusCode: 200, message: `Plan "${slug}" updated` });
+  });
+}
+
+
+// ─── Admin Promotions Management ─────────────────────────────────────────────
+
+export async function registerAdminPromotionRoutes(
+  app: FastifyInstance,
+  options: SubscriptionOptions,
+): Promise<void> {
+  const { db } = options;
+
+  // GET /api/admin/promotions — list all promotions
+  app.get('/api/admin/promotions', async (_request: FastifyRequest, reply: FastifyReply) => {
+    const promos = await db.selectFrom('subscription_promotions' as any).selectAll().orderBy('created_at', 'desc').execute();
+    return reply.send({ statusCode: 200, data: promos });
+  });
+
+  // POST /api/admin/promotions — create promotion
+  app.post('/api/admin/promotions', async (request: FastifyRequest<{ Body: any }>, reply: FastifyReply) => {
+    const body = request.body as any;
+    if (!body.name || !body.discountPercent || !body.startsAt || !body.endsAt) {
+      return reply.status(400).send({ statusCode: 400, error: 'name, discountPercent, startsAt, endsAt required' });
+    }
+
+    const promo = await db.insertInto('subscription_promotions' as any).values({
+      name: body.name,
+      discount_percent: body.discountPercent,
+      applies_to: body.appliesTo ?? ['pro', 'premium'],
+      billing_cycles: body.billingCycles ?? ['monthly', 'annual'],
+      starts_at: new Date(body.startsAt),
+      ends_at: new Date(body.endsAt),
+      badge_text: body.badgeText ?? 'Limited Time!',
+      is_active: body.isActive ?? true,
+    } as any).returningAll().executeTakeFirst();
+
+    return reply.send({ statusCode: 201, data: promo });
+  });
+
+  // PUT /api/admin/promotions/:id — update promotion
+  app.put('/api/admin/promotions/:id', async (request: FastifyRequest<{ Params: { id: string }; Body: any }>, reply: FastifyReply) => {
+    const { id } = request.params;
+    const body = request.body as any;
+
+    const updates: Record<string, unknown> = { updated_at: new Date() };
+    if (body.name !== undefined) updates.name = body.name;
+    if (body.discountPercent !== undefined) updates.discount_percent = body.discountPercent;
+    if (body.appliesTo !== undefined) updates.applies_to = body.appliesTo;
+    if (body.billingCycles !== undefined) updates.billing_cycles = body.billingCycles;
+    if (body.startsAt !== undefined) updates.starts_at = new Date(body.startsAt);
+    if (body.endsAt !== undefined) updates.ends_at = new Date(body.endsAt);
+    if (body.badgeText !== undefined) updates.badge_text = body.badgeText;
+    if (body.isActive !== undefined) updates.is_active = body.isActive;
+
+    await db.updateTable('subscription_promotions' as any).set(updates as any).where('id', '=', id).execute();
+    return reply.send({ statusCode: 200, message: 'Promotion updated' });
+  });
+
+  // DELETE /api/admin/promotions/:id — delete promotion
+  app.delete('/api/admin/promotions/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    const { id } = request.params;
+    await db.deleteFrom('subscription_promotions' as any).where('id', '=', id).execute();
+    return reply.send({ statusCode: 200, message: 'Promotion deleted' });
   });
 }

@@ -370,34 +370,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Pricing Section ──────────────────────────────────────── */}
-      <section id="pricing" className="py-20 px-4 bg-gray-50">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h2>
-            <p className="text-lg text-gray-600">Start free for 30 days. No credit card required.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { name: 'Free', price: '€0', period: 'forever', features: ['3 active trips', '20 expenses/month', 'Basic weather', 'Equal split', '100MB storage'], cta: 'Start Free', popular: false },
-              { name: 'Pro', price: '€14.99', period: '/month', features: ['Unlimited trips & expenses', 'All split modes', '14-day weather + alerts', 'Multi-currency', 'Polls & Trip Decisions', '5GB storage', 'Family plan available'], cta: 'Start Trial', popular: true },
-              { name: 'Premium', price: '€29.99', period: '/month', features: ['Everything in Pro', 'Priority AI model', 'Shared family visibility', 'Broadcast messages', '25GB storage', 'Priority support', 'Family plan available'], cta: 'Start Trial', popular: false },
-            ].map((plan) => (
-              <div key={plan.name} className={`rounded-xl border-2 p-6 bg-white relative ${plan.popular ? 'border-primary-500 shadow-lg' : 'border-gray-200'}`}>
-                {plan.popular && <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary-500 text-white text-xs font-bold px-3 py-1 rounded-full">Most Popular</div>}
-                <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
-                <p className="mt-2"><span className="text-3xl font-bold text-gray-900">{plan.price}</span><span className="text-gray-500 text-sm">{plan.period}</span></p>
-                <Link href="/register" className={`mt-4 block w-full text-center rounded-lg py-2.5 text-sm font-semibold ${plan.popular ? 'bg-primary-600 text-white hover:bg-primary-500' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}>
-                  {plan.cta}
-                </Link>
-                <ul className="mt-4 space-y-2">
-                  {plan.features.map(f => <li key={f} className="flex items-start gap-2 text-sm text-gray-600"><span className="text-green-500">✓</span>{f}</li>)}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <p className="text-center text-sm text-gray-500 mt-6">Annual billing saves 2 months. <Link href="/pricing" className="text-primary-600 hover:underline">View full comparison →</Link></p>
-        </div>
-      </section>
+      <PricingSection />
 
       {/* ─── CTA Section ────────────────────────────────────────────── */}
       <section className="py-20 px-4 bg-white">
@@ -485,5 +458,86 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+
+// ─── Dynamic Pricing Section (shows promotions with strikethrough) ────────────
+function PricingSection() {
+  const [plans, setPlans] = useState<any[]>([]);
+  const [promotions, setPromotions] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('http://localhost:3000/api/plans')
+      .then(r => r.json())
+      .then(d => { setPlans(d.data ?? []); setPromotions(d.promotions ?? []); })
+      .catch(() => {
+        // Fallback to hardcoded if API is down
+        setPlans([
+          { name: 'Free', slug: 'free', price_monthly_eur: 0, features: ['basic_trips', 'basic_expenses', 'basic_weather', 'equal_split'], max_storage_mb: 100 },
+          { name: 'Pro', slug: 'pro', price_monthly_eur: 14.99, features: ['unlimited_trips', 'unlimited_expenses', 'all_split_modes', 'polls', 'multi_currency', '14day_weather'], max_storage_mb: 5120, max_family_members: 10 },
+          { name: 'Premium', slug: 'premium', price_monthly_eur: 29.99, features: ['unlimited_trips', 'unlimited_expenses', 'priority_ai', 'shared_family_visibility', 'broadcast', 'priority_support'], max_storage_mb: 25600, max_family_members: 20 },
+        ]);
+      });
+  }, []);
+
+  const getPromo = (slug: string) => promotions.find(p => p.is_active && p.applies_to?.includes(slug) && p.billing_cycles?.includes('monthly'));
+
+  const FEATURES: Record<string, string[]> = {
+    free: ['3 active trips', '20 expenses/month', 'Basic weather', 'Equal split', '100MB storage'],
+    pro: ['Unlimited trips & expenses', 'All split modes', '14-day weather + alerts', 'Multi-currency', 'Polls & Trip Decisions', '5GB storage', 'Family plan available'],
+    premium: ['Everything in Pro', 'Priority AI model', 'Shared family visibility', 'Broadcast messages', '25GB storage', 'Priority support', 'Family plan available'],
+  };
+
+  return (
+    <section id="pricing" className="py-20 px-4 bg-gray-50">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h2>
+          <p className="text-lg text-gray-600">Start free for 30 days. No credit card required.</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {plans.map((plan) => {
+            const promo = getPromo(plan.slug);
+            const price = Number(plan.price_monthly_eur);
+            const promoPrice = promo ? price * (1 - promo.discount_percent / 100) : null;
+            const isPopular = plan.slug === 'pro';
+            const features = FEATURES[plan.slug] ?? [];
+
+            return (
+              <div key={plan.slug} className={`rounded-xl border-2 p-6 bg-white relative ${isPopular ? 'border-primary-500 shadow-lg' : 'border-gray-200'}`}>
+                {isPopular && !promo && <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary-500 text-white text-xs font-bold px-3 py-1 rounded-full">Most Popular</div>}
+                {promo && <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">{promo.badge_text}</div>}
+
+                <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
+
+                <div className="mt-2">
+                  {promo && promoPrice !== null ? (
+                    <>
+                      <span className="text-lg font-bold text-red-500 line-through decoration-red-500 decoration-2">€{price.toFixed(2)}</span>
+                      <span className="text-3xl font-bold text-gray-900 ml-2">€{promoPrice.toFixed(2)}</span>
+                      <span className="text-gray-500 text-sm">/month</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-3xl font-bold text-gray-900">€{price === 0 ? '0' : price.toFixed(2)}</span>
+                      <span className="text-gray-500 text-sm">{price === 0 ? ' forever' : '/month'}</span>
+                    </>
+                  )}
+                </div>
+
+                <Link href="/register" className={`mt-4 block w-full text-center rounded-lg py-2.5 text-sm font-semibold ${isPopular ? 'bg-primary-600 text-white hover:bg-primary-500' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}>
+                  {plan.slug === 'free' ? 'Start Free' : 'Start Trial'}
+                </Link>
+                <ul className="mt-4 space-y-2">
+                  {features.map(f => <li key={f} className="flex items-start gap-2 text-sm text-gray-600"><span className="text-green-500">✓</span>{f}</li>)}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-center text-sm text-gray-500 mt-6">Annual billing saves 2 months. <Link href="/pricing" className="text-primary-600 hover:underline">View full comparison →</Link></p>
+      </div>
+    </section>
   );
 }
