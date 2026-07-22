@@ -16,6 +16,7 @@
 import { type FastifyInstance, type FastifyRequest, type FastifyReply } from 'fastify';
 import { type Kysely } from 'kysely';
 import { type Database } from '../db/types.js';
+import { checkPlanLimit, PlanLimitError } from '../middleware/plan-limits.js';
 
 const MAX_CONNECTIONS = 500;
 
@@ -146,18 +147,16 @@ export async function registerConnectionRoutes(
         });
       }
 
-      // Check limit
-      const countResult = await db
-        .selectFrom('user_connections')
-        .select(db.fn.count<number>('id').as('count'))
-        .where('user_id', '=', userId)
-        .executeTakeFirst();
-
-      if ((countResult?.count ?? 0) >= MAX_CONNECTIONS) {
-        return reply.status(400).send({
-          statusCode: 400, error: 'LIMIT_REACHED',
-          message: `Maximum ${MAX_CONNECTIONS} connections allowed`,
-        });
+      // Check limit — plan-based enforcement
+      try {
+        await checkPlanLimit(db, userId, 'network_connections');
+      } catch (error: unknown) {
+        if (error instanceof PlanLimitError) {
+          return reply.status(403).send({
+            statusCode: 403, error: 'PLAN_LIMIT_REACHED', message: error.message,
+            resource: error.resource, limit: error.limit, current: error.current, planName: error.planName, upgradeUrl: '/settings#subscription',
+          });
+        }
       }
 
       // Check if the email belongs to a registered user

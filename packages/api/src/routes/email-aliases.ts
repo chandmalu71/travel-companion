@@ -15,6 +15,7 @@ import { type FastifyInstance, type FastifyRequest, type FastifyReply } from 'fa
 import { type Kysely } from 'kysely';
 import { type Database } from '../db/types.js';
 import { randomBytes } from 'node:crypto';
+import { checkPlanLimit, PlanLimitError } from '../middleware/plan-limits.js';
 
 const MAX_ALIASES_DEFAULT = 5;
 
@@ -65,15 +66,16 @@ export async function registerEmailAliasRoutes(
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Check limit
-    const count = await db
-      .selectFrom('user_email_aliases' as any)
-      .select(db.fn.count<number>('id').as('count'))
-      .where('user_id', '=', userId)
-      .executeTakeFirst();
-
-    if ((count as any)?.count >= MAX_ALIASES_DEFAULT) {
-      return reply.status(400).send({ statusCode: 400, error: 'LIMIT_REACHED', message: `Maximum ${MAX_ALIASES_DEFAULT} email aliases allowed` });
+    // Check plan limit for email aliases
+    try {
+      await checkPlanLimit(db, userId, 'email_aliases');
+    } catch (error: unknown) {
+      if (error instanceof PlanLimitError) {
+        return reply.status(403).send({
+          statusCode: 403, error: 'PLAN_LIMIT_REACHED', message: error.message,
+          resource: error.resource, limit: error.limit, current: error.current, planName: error.planName, upgradeUrl: '/settings#subscription',
+        });
+      }
     }
 
     // Check if email is already used (primary or alias)

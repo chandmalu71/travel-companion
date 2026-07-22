@@ -8,6 +8,7 @@ import { tripCreationSchema, tripUpdateSchema } from '@travel-companion/shared';
 import { type Kysely, sql } from 'kysely';
 import { type Database } from '../db/types.js';
 import { calculateBookingStatus, type BookingWithDetails } from './bookings.js';
+import { checkPlanLimit, PlanLimitError } from '../middleware/plan-limits.js';
 
 // ─── Request Interfaces ──────────────────────────────────────────────────────
 
@@ -70,6 +71,9 @@ export async function registerTripRoutes(
       const userId = request.user!.userId;
 
       try {
+        // Check plan limit for trips
+        await checkPlanLimit(db, userId, 'trips');
+
         const trip = await db
           .insertInto('trips')
           .values({
@@ -83,6 +87,18 @@ export async function registerTripRoutes(
 
         return reply.status(201).send(trip);
       } catch (error: unknown) {
+        if (error instanceof PlanLimitError) {
+          return reply.status(403).send({
+            statusCode: 403,
+            error: 'PLAN_LIMIT_REACHED',
+            message: error.message,
+            resource: error.resource,
+            limit: error.limit,
+            current: error.current,
+            planName: error.planName,
+            upgradeUrl: '/settings#subscription',
+          });
+        }
         request.log.error(error, 'Failed to create trip');
         return reply.status(500).send({
           statusCode: 500,

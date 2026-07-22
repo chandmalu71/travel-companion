@@ -19,6 +19,7 @@ import { type FastifyInstance, type FastifyRequest, type FastifyReply } from 'fa
 import { type Kysely } from 'kysely';
 import { type Database } from '../db/types.js';
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import { checkPlanLimit, PlanLimitError } from '../middleware/plan-limits.js';
 
 const MAX_FAMILY_MEMBERS = 20;
 const ENCRYPTION_KEY = process.env.PII_ENCRYPTION_KEY || 'default-dev-key-32-chars-long!!'; // 32 chars = 256 bits
@@ -206,10 +207,16 @@ export async function registerFamilyMemberRoutes(
         return reply.status(400).send({ statusCode: 400, error: 'VALIDATION_ERROR', message: `Invalid relationship. Valid: ${VALID_RELATIONSHIPS.join(', ')}` });
       }
 
-      // Check limit
-      const countResult = await db.selectFrom('family_members').select(db.fn.count<number>('id').as('count')).where('user_id', '=', userId).executeTakeFirst();
-      if ((countResult?.count ?? 0) >= MAX_FAMILY_MEMBERS) {
-        return reply.status(400).send({ statusCode: 400, error: 'LIMIT_REACHED', message: `Maximum ${MAX_FAMILY_MEMBERS} family members allowed` });
+      // Check limit — plan-based enforcement
+      try {
+        await checkPlanLimit(db, userId, 'family_members');
+      } catch (error: unknown) {
+        if (error instanceof PlanLimitError) {
+          return reply.status(403).send({
+            statusCode: 403, error: 'PLAN_LIMIT_REACHED', message: error.message,
+            resource: error.resource, limit: error.limit, current: error.current, planName: error.planName, upgradeUrl: '/settings#subscription',
+          });
+        }
       }
 
       // For connected mode (spouse/partner), look up linked user

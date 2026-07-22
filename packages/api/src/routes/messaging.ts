@@ -22,6 +22,7 @@ import { type FastifyInstance, type FastifyRequest, type FastifyReply } from 'fa
 import { type Kysely } from 'kysely';
 import { type Database } from '../db/types.js';
 import { randomUUID } from 'node:crypto';
+import { checkPlanLimit, PlanLimitError } from '../middleware/plan-limits.js';
 
 interface MessagingOptions {
   db: Kysely<Database>;
@@ -233,6 +234,18 @@ export async function registerMessagingRoutes(
   app.post('/api/conversations/:id/messages', async (request: FastifyRequest<{ Params: { id: string }; Body: any }>, reply: FastifyReply) => {
     const userId = (request as any).userId as string;
     if (!userId) return reply.status(401).send({ statusCode: 401, error: 'UNAUTHORIZED', message: 'Not authenticated' });
+
+    // Check plan limit for messages
+    try {
+      await checkPlanLimit(db, userId, 'messages');
+    } catch (error: unknown) {
+      if (error instanceof PlanLimitError) {
+        return reply.status(403).send({
+          statusCode: 403, error: 'PLAN_LIMIT_REACHED', message: error.message,
+          resource: error.resource, limit: error.limit, current: error.current, planName: error.planName, upgradeUrl: '/settings#subscription',
+        });
+      }
+    }
 
     const { id } = request.params;
     const { content, contentType, parentMessageId, metadata } = request.body as any;

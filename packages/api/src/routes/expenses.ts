@@ -20,6 +20,7 @@ import { type FastifyInstance, type FastifyRequest, type FastifyReply } from 'fa
 import { type Kysely } from 'kysely';
 import { type Database } from '../db/types.js';
 import { type CurrencyService } from '../services/currency.js';
+import { checkPlanLimit, PlanLimitError } from '../middleware/plan-limits.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -96,6 +97,9 @@ export async function registerExpenseRoutes(
       }
 
       try {
+        // Check plan limit for expenses
+        await checkPlanLimit(db, userId, 'expenses');
+
         // Convert to home currency (USD default)
         let convertedAmount = body.amount;
         let homeCurrency = 'USD';
@@ -142,6 +146,18 @@ export async function registerExpenseRoutes(
           data: expense,
         });
       } catch (error: unknown) {
+        if (error instanceof PlanLimitError) {
+          return reply.status(403).send({
+            statusCode: 403,
+            error: 'PLAN_LIMIT_REACHED',
+            message: error.message,
+            resource: error.resource,
+            limit: error.limit,
+            current: error.current,
+            planName: error.planName,
+            upgradeUrl: '/settings#subscription',
+          });
+        }
         request.log.error(error, 'Failed to create expense');
         return reply.status(500).send({
           statusCode: 500,
