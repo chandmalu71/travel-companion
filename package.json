@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Cross-platform travel planning application with AI-powered activity discovery and collaborative trip planning",
-  "packageManager": "pnpm@11.14.0",
+  "packageManager": "pnpm@9.15.4",
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
