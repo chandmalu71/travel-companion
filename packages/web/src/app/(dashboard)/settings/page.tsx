@@ -150,6 +150,9 @@ export default function SettingsPage() {
         <p className="text-sm text-gray-500">Manage your account settings and connections</p>
       </div>
 
+      {/* ─── Profile Name ─────────────────────────────────────────────── */}
+      <ProfileNameSection />
+
       {/* ─── Email Connection Quick Link ────────────────────────────── */}
       <section className="rounded-lg border border-primary-200 bg-primary-50 p-4">
         <div className="flex items-center justify-between">
@@ -679,6 +682,80 @@ function SubscriptionSection() {
             </button>
           )}
         </div>
+      </div>
+    </section>
+  );
+}
+
+
+// ─── Profile Name Section ────────────────────────────────────────────────────
+
+function ProfileNameSection() {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    api.get<{ data: any }>('/api/user/profile')
+      .then((res) => {
+        if (res.data) {
+          setFirstName(res.data.first_name ?? '');
+          setLastName(res.data.last_name ?? '');
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaved(false);
+    try {
+      await api.put('/api/user/profile', { first_name: firstName, last_name: lastName });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {}
+    finally { setSaving(false); }
+  };
+
+  if (loading) return null;
+
+  return (
+    <section className="rounded-lg border border-gray-200 bg-white p-4">
+      <h3 className="font-medium text-gray-900 mb-3">Your Name</h3>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">First Name</label>
+          <input
+            type="text"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+            placeholder="First name"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Last Name</label>
+          <input
+            type="text"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+            placeholder="Last name"
+          />
+        </div>
+      </div>
+      <div className="mt-3 flex items-center gap-3">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="rounded-md bg-primary-500 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-600 disabled:opacity-50"
+        >
+          {saving ? 'Saving...' : 'Save'}
+        </button>
+        {saved && <span className="text-sm text-green-600">Saved!</span>}
       </div>
     </section>
   );

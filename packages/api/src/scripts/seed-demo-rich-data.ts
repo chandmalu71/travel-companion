@@ -245,6 +245,38 @@ async function main() {
   }
   console.log(`  ✅ ${tips.length} AI trip tips with checklists`);
 
+  // ─── TRIP TIP CHAT (AI Q&A) ───────────────────────────────────────────────
+  const tipChats = [
+    // Barcelona AI chat
+    { tripId: TRIP_BARCELONA, role: 'user', message: 'What time should I arrive at Sagrada Familia to avoid crowds?' },
+    { tripId: TRIP_BARCELONA, role: 'assistant', message: 'I recommend arriving right at opening (9:00 AM) or going for a late afternoon slot around 4-5 PM. The afternoon light through the stained glass on the west side is spectacular. Midday (11 AM - 2 PM) is the busiest. Book your tickets for a specific time slot online — they sell out 1-2 weeks in advance for popular times.' },
+    { tripId: TRIP_BARCELONA, role: 'user', message: 'Any good vegetarian restaurants near the Gothic Quarter?' },
+    { tripId: TRIP_BARCELONA, role: 'assistant', message: 'Great options near the Gothic Quarter:\n\n1. **Flax & Kale** (Carrer dels Tallers) — Creative plant-based dishes, beautiful interior\n2. **Teresa Carles** (Carrer de Jovellanos) — Legendary vegetarian spot, excellent value lunch menu\n3. **The Green Spot** (Carrer de la Reina Cristina) — Upscale veggie with harbour views\n\n⚠️ For your nut allergy: Teresa Carles marks all allergens on their menu. At Flax & Kale, ask about the romesco-based sauces.' },
+    // Lapland AI chat
+    { tripId: TRIP_LAPLAND, role: 'user', message: 'Is it safe to do the husky safari with a 7-year-old?' },
+    { tripId: TRIP_LAPLAND, role: 'assistant', message: 'Absolutely! The husky safaris in Rovaniemi are very family-friendly. For a 7-year-old:\n\n- **Sit in the sled**: Oliver can ride as a passenger while you drive\n- **Dress warmly**: Full snow suit + balaclava (the wind chill during the ride is significant)\n- **Duration**: Choose the 1-hour "family safari" rather than the 2-hour wilderness tour\n- **Book morning**: Kids are more alert and it\'s slightly warmer (if -12°C counts as warm!)\n\nThe dogs are gentle and the guides are experienced with children. Many companies even let kids pet and feed the huskies afterwards.' },
+  ];
+
+  for (const chat of tipChats) {
+    await db.insertInto('trip_tip_chats').values({
+      trip_id: chat.tripId,
+      user_id: DEMO_ID,
+      role: chat.role,
+      message: chat.message,
+      ai_model: chat.role === 'assistant' ? 'anthropic.claude-3-5-haiku-20241022-v1:0' : null,
+    }).execute().catch(() => {});
+  }
+  console.log(`  ✅ ${tipChats.length} AI chat messages (Q&A)`);
+
+  // ─── MORE TRIP MEMBERS (groups) ────────────────────────────────────────────
+  // Add Charlie and Dana to the Greece trip
+  await db.insertInto('trip_members').values({ trip_id: TRIP_GREECE, user_id: CHARLIE_ID, access_level: 'view' }).onConflict((oc) => oc.columns(['trip_id', 'user_id']).doNothing()).execute();
+  // Add Bob to the Japan trip
+  await db.insertInto('trip_members').values({ trip_id: TRIP_JAPAN, user_id: BOB_ID, access_level: 'edit' }).onConflict((oc) => oc.columns(['trip_id', 'user_id']).doNothing()).execute();
+  // Add Charlie to the Lapland trip
+  await db.insertInto('trip_members').values({ trip_id: TRIP_LAPLAND, user_id: CHARLIE_ID, access_level: 'edit' }).onConflict((oc) => oc.columns(['trip_id', 'user_id']).doNothing()).execute();
+  console.log('  ✅ Additional trip members added');
+
   // ─── ACTIVITY FEED ─────────────────────────────────────────────────────────
   const activities = [
     { tripId: TRIP_BARCELONA, userId: DEMO_ID, action: 'created_trip', entityType: 'trip', entityId: TRIP_BARCELONA },

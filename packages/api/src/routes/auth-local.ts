@@ -223,4 +223,51 @@ export async function registerLocalAuthRoutes(
       });
     },
   );
+
+  // ─── GET /api/user/profile ───────────────────────────────────────────
+
+  app.get('/api/user/profile', async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = (request as any).userId as string;
+    if (!userId) return reply.status(401).send({ statusCode: 401, error: 'UNAUTHORIZED' });
+
+    const user = await db.selectFrom('users').selectAll().where('id', '=', userId).executeTakeFirst();
+    if (!user) return reply.status(404).send({ statusCode: 404, error: 'User not found' });
+
+    return reply.send({
+      statusCode: 200,
+      data: {
+        id: (user as any).id,
+        email: (user as any).email,
+        display_name: (user as any).display_name,
+        first_name: (user as any).first_name ?? null,
+        last_name: (user as any).last_name ?? null,
+        avatar_url: (user as any).avatar_url,
+        email_verified: (user as any).email_verified,
+        created_at: (user as any).created_at,
+      },
+    });
+  });
+
+  // ─── PUT /api/user/profile ───────────────────────────────────────────
+
+  app.put('/api/user/profile', async (request: FastifyRequest<{ Body: any }>, reply: FastifyReply) => {
+    const userId = (request as any).userId as string;
+    if (!userId) return reply.status(401).send({ statusCode: 401, error: 'UNAUTHORIZED' });
+
+    const { first_name, last_name, display_name } = request.body as any;
+
+    const updates: Record<string, any> = { updated_at: new Date() };
+    if (first_name !== undefined) updates.first_name = first_name;
+    if (last_name !== undefined) updates.last_name = last_name;
+    if (display_name !== undefined) updates.display_name = display_name;
+
+    // Auto-generate display_name from first+last if not explicitly set
+    if (first_name !== undefined && !display_name) {
+      updates.display_name = [first_name, last_name].filter(Boolean).join(' ');
+    }
+
+    await db.updateTable('users').set(updates).where('id', '=', userId).execute();
+
+    return reply.send({ statusCode: 200, message: 'Profile updated' });
+  });
 }
