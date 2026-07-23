@@ -1380,3 +1380,73 @@ Each trip card in the "My Trips" list displays a relevant destination hero image
 3. If no destination is set, show a generic travel placeholder
 4. Images are lazy-loaded for performance
 5. Image can be customized by user (upload own header photo) in future
+
+
+## Requirement 47: CRM & Marketing Automation Platform
+
+**Priority:** High  
+**Status:** Phase A in progress  
+**Full spec:** #[[file:docs/crm-marketing-requirements.md]]
+
+### Description
+
+Built-in CRM and marketing automation system in the admin panel. Manages lead capture, email campaigns (AI-powered), social media campaigns, and analytics. Eliminates need for external tools like Mailchimp/HubSpot.
+
+### Key Components
+1. **Lead capture** — landing page form with CAPTCHA, email validation, geo-detection, travel preferences
+2. **Contact management** — lifecycle tracking (Lead→Free→Trial→Pro→Premium→Churned), segments, tags
+3. **AI email campaigns** — Bedrock-powered content generation, automated sequences (welcome, trial conversion, re-engagement)
+4. **Social media campaigns** — AI content creation for Facebook, Instagram, Twitter, LinkedIn, TikTok (organic + paid ads)
+5. **Analytics** — email opens/clicks, social engagement/reach, conversion tracking, ROAS for ads
+6. **GDPR compliance** — cookie consent, privacy policy, terms of service, consent records
+
+### Acceptance Criteria
+1. Landing page has lead capture form with name, email, country (auto-detect), travel style, trips/year
+2. Form protected by reCAPTCHA v3 + email validation (format + MX)
+3. Leads stored in database with source tracking (UTM, referrer)
+4. Admin CRM shows all contacts with search, segments, lifecycle stage
+5. Welcome email series triggered automatically on lead signup
+6. Trial conversion series triggered on trial start
+7. AI generates email content from prompt + tone selection
+8. Social media posts can be created, scheduled, and published from admin
+9. AI generates platform-specific content (text + image + hashtags)
+10. Email analytics: open rate, click rate, unsubscribe rate
+11. Social analytics: impressions, engagement, follower growth
+12. Cookie consent banner with accept/reject/customize
+13. Privacy Policy, Terms of Service, Cookie Policy pages exist
+14. Registration form includes Terms consent checkbox
+15. All consent records auditable (GDPR compliance)
+
+---
+
+## Requirement 48: GDPR Compliance & Legal Pages
+
+**Priority:** Critical (legal requirement)  
+**Status:** Not started
+
+### Pages Required
+- `/privacy` — Privacy Policy
+- `/terms` — Terms of Service
+- `/cookies` — Cookie Policy
+
+### Registration Updates
+- Terms of Service checkbox (required)
+- Marketing consent checkbox (optional, pre-unchecked)
+- Consent timestamp + policy version stored
+
+### Cookie Consent
+- GDPR-compliant banner on first visit
+- Categories: Essential, Analytics, Marketing
+- Accept All / Reject All / Customize
+- Cookie stored + database record for audit
+
+### Acceptance Criteria
+1. Privacy Policy page exists and covers: data collected, storage, sharing, user rights
+2. Terms of Service page exists and covers: usage rules, liability, termination
+3. Cookie Policy page lists all cookies used
+4. Cookie banner appears on first visit with category options
+5. Registration form requires Terms acceptance
+6. Consent records stored with timestamp + version
+7. Users can withdraw consent from settings
+8. Data export available on request (GDPR Article 20)
+9. Account deletion removes all PII (GDPR Article 17)

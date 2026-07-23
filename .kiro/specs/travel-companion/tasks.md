@@ -1009,3 +1009,73 @@ This implementation plan builds the Travel Companion application incrementally, 
 - [x] 20.3 Destination pin on image
 - [x] 20.4 Lazy loading
 - [x] 20.5 Fallback image for unknown destinations
+
+
+## Phase 21: CRM & Marketing Automation (Req 47-48)
+
+### Phase A: Lead Capture + Legal (Priority: NOW)
+- [ ] 21.A.1 Create `crm_leads` database table + migration
+- [ ] 21.A.2 Lead capture form on landing page (name, email, travel style, trips/year)
+- [ ] 21.A.3 reCAPTCHA v3 integration (invisible bot protection)
+- [ ] 21.A.4 Email validation (format + MX record check)
+- [ ] 21.A.5 GeoIP auto-detection (country/city from IP)
+- [ ] 21.A.6 POST /api/leads endpoint with rate limiting
+- [ ] 21.A.7 Cookie consent banner (GDPR: Essential/Analytics/Marketing)
+- [ ] 21.A.8 Privacy Policy page (/privacy)
+- [ ] 21.A.9 Terms of Service page (/terms)
+- [ ] 21.A.10 Cookie Policy page (/cookies)
+- [ ] 21.A.11 Update registration: Terms checkbox + marketing consent
+- [ ] 21.A.12 Consent audit table (consent_records)
+
+### Phase B: Admin CRM UI
+- [ ] 21.B.1 Contacts list page (unified leads + users)
+- [ ] 21.B.2 Contact detail view (profile + activity timeline)
+- [ ] 21.B.3 Lifecycle stage tracking (auto-calculated)
+- [ ] 21.B.4 Tags system (auto + manual)
+- [ ] 21.B.5 Dynamic segments (filter builder)
+- [ ] 21.B.6 Import existing users into CRM
+- [ ] 21.B.7 Search + pagination + bulk actions
+
+### Phase C: Email Campaigns
+- [ ] 21.C.1 Email template builder (visual blocks editor)
+- [ ] 21.C.2 AI email generator (Bedrock Claude: prompt → email content)
+- [ ] 21.C.3 Personalization tokens ({{name}}, {{city}}, {{plan}})
+- [ ] 21.C.4 Welcome email series (4 emails, auto-triggered)
+- [ ] 21.C.5 Trial conversion series (5 emails, auto-triggered)
+- [ ] 21.C.6 SES delivery integration
+- [ ] 21.C.7 Unsubscribe management (one-click)
+
+### Phase D: Campaign Automation
+- [ ] 21.D.1 Automation rule engine (trigger → condition → action)
+- [ ] 21.D.2 Pre-built automations (inactive, plan limit hit, churn prevention)
+- [ ] 21.D.3 Campaign builder admin UI (create, preview, schedule, test send)
+- [ ] 21.D.4 Re-engagement campaign (7/14/30 day inactivity)
+- [ ] 21.D.5 Upgrade nudge (triggered on plan limit hit)
+
+### Phase E: Email Analytics
+- [ ] 21.E.1 Open tracking (pixel)
+- [ ] 21.E.2 Click tracking (link redirect)
+- [ ] 21.E.3 Bounce + unsubscribe handling
+- [ ] 21.E.4 Analytics dashboard (sent, opened, clicked, converted)
+- [ ] 21.E.5 Per-campaign performance view
+
+### Phase F: Social Media Campaigns
+- [ ] 21.F.1 Connected social accounts (OAuth per platform)
+- [ ] 21.F.2 AI content generator (platform-specific text + hashtags)
+- [ ] 21.F.3 Image selection/generation for posts
+- [ ] 21.F.4 Campaign types: organic post, paid ad, series, cross-platform
+- [ ] 21.F.5 Publishing flow: draft → review → schedule → publish
+- [ ] 21.F.6 Calendar view (all scheduled posts)
+- [ ] 21.F.7 Platforms: Facebook, Instagram, Twitter/X, LinkedIn, TikTok
+
+### Phase G: Social Media Analytics
+- [ ] 21.G.1 Per-post metrics (impressions, reach, engagement)
+- [ ] 21.G.2 Paid ad metrics (spend, CTR, CPC, ROAS)
+- [ ] 21.G.3 Follower growth tracking
+- [ ] 21.G.4 Unified dashboard (all platforms in one view)
+- [ ] 21.G.5 AI recommendations ("Your engagement is down — try Reels")
+
+### Phase H: Advanced
+- [ ] 21.H.1 A/B testing (subject lines, content)
+- [ ] 21.H.2 Lead scoring algorithm
+- [ ] 21.H.3 Referral tracking + rewards
