@@ -103,7 +103,10 @@ async function main() {
       role: t.role,
       status: 'active',
       traveller_type: 'adult',
-    }).onConflict((oc: any) => oc.columns(['trip_id', 'user_id']).doNothing()).execute().catch(() => {});
+    }).execute().catch((e: any) => {
+      // Only ignore duplicate key errors
+      if (!e.message?.includes('duplicate')) console.error(`  Failed to insert ${t.displayName}: ${e.message}`);
+    });
   }
   console.log(`\n  ✅ Trip travellers populated (${travellers.length} entries)`);
 
