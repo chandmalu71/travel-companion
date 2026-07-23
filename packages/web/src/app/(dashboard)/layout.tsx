@@ -11,6 +11,7 @@ const navItems = [
   { href: '/trips', label: 'Trips', icon: '✈️' },
   { href: '/bookings', label: 'Bookings', icon: '📋' },
   { href: '/expenses', label: 'Expenses', icon: '💰' },
+  { href: '/photos', label: 'Photos', icon: '📸' },
   { href: '/connections', label: 'My Network', icon: '👥' },
   { href: '/messages', label: 'Messages', icon: '💬' },
   { href: '/search', label: 'Search', icon: '🔍' },

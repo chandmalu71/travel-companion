@@ -152,7 +152,24 @@ export default function TripsPage() {
 
             return (
               <Link key={trip.id} href={`/trips/${trip.id}`}>
-                <div className="rounded-lg bg-white p-5 shadow-sm border border-gray-200 hover:border-primary-300 hover:shadow-md transition-all h-full">
+                <div className="rounded-lg bg-white shadow-sm border border-gray-200 hover:border-primary-300 hover:shadow-md transition-all h-full overflow-hidden">
+                  {/* Header image */}
+                  <div className="h-32 bg-gray-200 relative overflow-hidden">
+                    <img
+                      src={getTripHeaderImage(trip.name, trip.destination)}
+                      alt={trip.destination ?? trip.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                    {trip.destination && (
+                      <p className="absolute bottom-2 left-3 text-white text-xs font-medium drop-shadow-sm">
+                        📍 {trip.destination}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="p-4">
                   {/* Status + countdown */}
                   <div className="flex items-center justify-between mb-2">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${color}`}>
@@ -198,6 +215,7 @@ export default function TripsPage() {
                       <span>🏨 1</span>
                     </div>
                   </div>
+                  </div>{/* end p-4 */}
                 </div>
               </Link>
             );
@@ -206,4 +224,46 @@ export default function TripsPage() {
       )}
     </div>
   );
+}
+
+
+// ─── Trip Header Image Helper ────────────────────────────────────────────────
+
+const DESTINATION_IMAGES: Record<string, string> = {
+  barcelona: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=600&q=80',
+  spain: 'https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=600&q=80',
+  japan: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600&q=80',
+  tokyo: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80',
+  kyoto: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600&q=80',
+  greece: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=600&q=80',
+  santorini: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=600&q=80',
+  mykonos: 'https://images.unsplash.com/photo-1601581875039-e899893d520c?w=600&q=80',
+  'new york': 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=600&q=80',
+  nyc: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=600&q=80',
+  paris: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80',
+  france: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80',
+  london: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=600&q=80',
+  rome: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600&q=80',
+  italy: 'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=600&q=80',
+  bali: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600&q=80',
+  finland: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=600&q=80',
+  lapland: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=600&q=80',
+  rovaniemi: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=600&q=80',
+  dubai: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80',
+  thailand: 'https://images.unsplash.com/photo-1528181304800-259b08848526?w=600&q=80',
+  india: 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=600&q=80',
+  australia: 'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=600&q=80',
+  iceland: 'https://images.unsplash.com/photo-1504829857797-ddff29c27927?w=600&q=80',
+  maldives: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=600&q=80',
+  morocco: 'https://images.unsplash.com/photo-1489749798305-4fea3ae63d43?w=600&q=80',
+};
+
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&q=80';
+
+function getTripHeaderImage(name: string, destination?: string | null): string {
+  const searchText = (destination ?? name).toLowerCase();
+  for (const [key, url] of Object.entries(DESTINATION_IMAGES)) {
+    if (searchText.includes(key)) return url;
+  }
+  return FALLBACK_IMAGE;
 }

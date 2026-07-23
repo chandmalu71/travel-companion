@@ -1205,3 +1205,178 @@ Abstracted email service with provider support, admin-editable templates, and co
 - 45.9: Reply-to configuration per template
 - 45.10: Admin → Sender Addresses: add/remove/verify addresses
 - 45.11: Admin → Send Log: view history of all emails sent (to, template, status, time)
+
+
+## Requirement 44: Trip Photos & Gallery
+
+**Priority:** High (Premium Feature)  
+**Status:** UI Stub Only (implementation deferred to mobile app phase)  
+**Plan Gate:** Free=0 uploads, Pro=500MB, Premium=Unlimited (configurable in admin)
+
+### Description
+
+Users can upload, organize, and share photos within their trips. Photos are stored encrypted in S3, categorized by trip, and accessible from both the trip detail view and a global "Photos" section in the left sidebar.
+
+### Upload Sources
+- Mobile camera (direct capture)
+- Phone camera roll / gallery
+- Desktop file picker
+- Future: Auto-sync from phone gallery (background upload of new photos taken during trip dates)
+
+### Storage & Security
+- Photos stored in S3 with server-side encryption (AES-256)
+- Optional client-side encryption for sensitive photos
+- Thumbnails generated automatically (multiple sizes for performance)
+- EXIF data extracted for date/location metadata, then stripped from shared copies (privacy)
+
+### Organization
+- **Albums** within a trip (e.g., "Day 1", "Food & Restaurants", "Landmarks")
+- **Tags/labels** — user-defined (e.g., "sunset", "group photo", "food")
+- **Date-based auto-grouping** from EXIF data
+- **Drag-and-drop reordering** within albums
+
+### Visibility & Privacy
+- **Personal** — only the uploader can see (default for uploads)
+- **Shared** — all trip members can view
+- **Visibility changeable** after upload (toggle per photo or bulk)
+- **Connection sharing** — if enabled by uploader, network connections can see shared photos
+- **Public link** — generate a shareable link for non-members (time-limited, optional)
+
+### Interactions (on shared photos)
+- Like/react (emoji reactions)
+- Comments (text comments on individual photos)
+- Download — trip members can download shared photos
+- Flag/report inappropriate content
+
+### Global Photos View (Left Sidebar)
+- Shows ALL photos across ALL trips for the user
+- Filterable by: trip, date range, album, visibility (personal/shared), tags
+- Grid view with masonry layout
+- Slideshow mode
+
+### Plan Configuration (Admin)
+- Storage limit per tier (configurable in admin subscription management)
+- Upload count limit per month (optional)
+- Feature toggle: photo sharing, comments, public links
+- Free tier: disabled or limited (e.g., 10 photos total as a teaser)
+
+### Acceptance Criteria
+1. User can upload photos from camera/gallery/desktop within a trip
+2. Photos display in a "Photos" tab within the trip detail view
+3. User can create albums and assign photos to them
+4. User can tag photos and filter by tags
+5. Photos auto-group by date (from EXIF or upload date)
+6. User can toggle visibility between personal and shared
+7. Trip members can see shared photos, like them, and comment
+8. Global "Photos" in sidebar shows all user photos with trip filter
+9. Storage limits enforced per subscription tier
+10. Photos stored encrypted in S3
+11. Admin can configure storage limits per plan
+12. Premium upgrade prompt shown to Free users attempting to upload
+
+---
+
+## Requirement 45: AI-Powered Social Sharing
+
+**Priority:** Medium (Premium Feature)  
+**Status:** UI Stub Only (implementation deferred)  
+**Plan Gate:** Premium only (with upgrade hook for Free/Pro users)
+
+### Description
+
+AI generates engaging, shareable content (text + selected photos) from trip data that users can post to social media platforms. The flow is: AI generates → user reviews/edits → one-click share or copy.
+
+### AI Content Generation
+
+**Inputs used by AI:**
+- Trip destination, dates, and itinerary
+- Places visited (from bookings + timeline)
+- User-selected photos from the trip
+- User prompt (optional — "What do you want to highlight?")
+- Tone preference selection
+
+**Tone Options:**
+- Casual ("Had the best time exploring Barcelona!")
+- Professional ("Business trip to NYC with some cultural highlights")
+- Funny ("My GPS said turn left. I turned left into a gelato shop. No regrets.")
+- Inspirational ("There's something about watching the sun set over Santorini...")
+- Custom prompt
+
+**Output:**
+- Platform-appropriate text (character limits respected: Twitter 280, Instagram 2200, Facebook unlimited)
+- Suggested hashtags (auto-generated from destination + activities)
+- Photo selection (AI picks 1-4 best photos from trip gallery)
+- Optional shareable card/image (collage with text overlay)
+
+### Sharing Flow
+
+**V1 (Launch):**
+1. User triggers share (from trip menu or post-trip prompt)
+2. Select tone + optional prompt
+3. AI generates text + selects photos
+4. User reviews in preview (can edit text)
+5. "Copy to clipboard" + "Open [Facebook/Twitter/Instagram]" buttons
+6. User pastes in social platform
+
+**V2 (Future):**
+1. User connects social accounts (OAuth) in Settings → Connected Social Accounts
+2. Same generation flow
+3. One-click "Post to Facebook" / "Post to Instagram" / "Post to Twitter"
+4. Direct API posting (requires platform app approval)
+
+### Sharing Triggers
+- **Post-trip prompt** — after trip end date, show "Share your trip highlights?" notification
+- **Daily highlight** — during trip, offer "Share today's highlight" (end of day)
+- **Manual** — "Share" button in trip menu anytime
+- **After uploading photos** — suggest sharing after batch upload
+
+### Social Platforms
+- Facebook (text + photos)
+- Twitter/X (text + photo, respect 280 char limit)
+- Instagram (photo + caption)
+- WhatsApp (text + link)
+- LinkedIn (text + photo, professional tone default)
+- Copy link (generic)
+
+### Settings Section
+- Connected social accounts (OAuth tokens)
+- Default tone preference
+- Auto-suggest sharing (on/off)
+- Daily highlight notifications (on/off)
+
+### Premium Gate & Upgrade Hook
+- Free users: see the "Share" button, get a preview of what AI would generate (blurred/truncated), then "Upgrade to Premium to unlock AI Sharing"
+- Pro users: limited to 3 AI-generated shares per trip
+- Premium users: unlimited
+
+### Acceptance Criteria
+1. User can trigger social sharing from trip menu or post-trip prompt
+2. User can select tone (casual/professional/funny/inspirational/custom)
+3. AI generates platform-appropriate text with hashtags
+4. AI selects best photos from trip gallery for the share
+5. User can review and edit generated text before sharing
+6. "Copy to clipboard" works for all platforms (V1)
+7. Platform-specific buttons open the social network with pre-filled content where possible
+8. Post-trip notification prompts user to share highlights
+9. Settings page has Connected Social Accounts section (stub)
+10. Free/Pro users see upgrade prompt when trying to generate
+11. Admin can toggle feature and configure per-plan limits
+12. Share history shown in trip (what was shared and when)
+
+---
+
+## Requirement 46: Trip Card Header Images
+
+**Priority:** Low (UI Enhancement)  
+**Status:** Ready to Implement
+
+### Description
+
+Each trip card in the "My Trips" list displays a relevant destination hero image as the card header. Images are sourced from Unsplash based on the trip's destination/city name.
+
+### Acceptance Criteria
+1. Trip cards display a destination-relevant header image
+2. Images are fetched from Unsplash CDN (no API key needed for static URLs)
+3. If no destination is set, show a generic travel placeholder
+4. Images are lazy-loaded for performance
+5. Image can be customized by user (upload own header photo) in future
