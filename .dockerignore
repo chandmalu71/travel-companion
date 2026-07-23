@@ -1,0 +1,50 @@
+# Dependencies (reinstalled in container)
+node_modules
+**/node_modules
+
+# Build outputs (rebuilt in container)
+**/.next
+**/dist
+**/out
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+.kiro
+
+# Environment files (secrets injected at runtime)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Docker
+docker-compose.yml
+Dockerfile
+
+# Documentation
+docs/
+*.md
+!packages/*/README.md
+
+# Tests
+**/__tests__
+**/*.test.ts
+**/*.spec.ts
+**/coverage
+**/playwright-report
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Infrastructure (not needed in images)
+infrastructure/
+.github/
+scripts/
+
+# Prototype
+prototype/

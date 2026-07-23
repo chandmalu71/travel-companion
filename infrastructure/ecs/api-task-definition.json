@@ -1,0 +1,79 @@
+{
+  "family": "neyya-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::008582147209:role/neyya-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::008582147209:role/neyya-api-task-role",
+  "containerDefinitions": [
+    {
+      "name": "api",
+      "image": "008582147209.dkr.ecr.eu-west-1.amazonaws.com/neyya-api:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "PORT", "value": "3000" },
+        { "name": "HOST", "value": "0.0.0.0" },
+        { "name": "SES_REGION", "value": "eu-west-1" },
+        { "name": "S3_REGION", "value": "eu-west-1" },
+        { "name": "BEDROCK_REGION", "value": "eu-west-1" }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-1:008582147209:secret:neyya/DATABASE_URL"
+        },
+        {
+          "name": "REDIS_URL",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-1:008582147209:secret:neyya/REDIS_URL"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-1:008582147209:secret:neyya/JWT_SECRET"
+        },
+        {
+          "name": "GOOGLE_CLIENT_ID",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-1:008582147209:secret:neyya/GOOGLE_CLIENT_ID"
+        },
+        {
+          "name": "GOOGLE_CLIENT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-1:008582147209:secret:neyya/GOOGLE_CLIENT_SECRET"
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-1:008582147209:secret:neyya/STRIPE_SECRET_KEY"
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-1:008582147209:secret:neyya/STRIPE_WEBHOOK_SECRET"
+        },
+        {
+          "name": "PII_ENCRYPTION_KEY",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-1:008582147209:secret:neyya/PII_ENCRYPTION_KEY"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/neyya-api",
+          "awslogs-region": "eu-west-1",
+          "awslogs-stream-prefix": "api"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}

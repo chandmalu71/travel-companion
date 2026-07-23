@@ -1,0 +1,43 @@
+{
+  "family": "neyya-admin",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::008582147209:role/neyya-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::008582147209:role/neyya-admin-task-role",
+  "containerDefinitions": [
+    {
+      "name": "admin",
+      "image": "008582147209.dkr.ecr.eu-west-1.amazonaws.com/neyya-admin:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3002,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "PORT", "value": "3002" },
+        { "name": "HOSTNAME", "value": "0.0.0.0" },
+        { "name": "NEXT_PUBLIC_API_URL", "value": "https://api.neyya.ai" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/neyya-admin",
+          "awslogs-region": "eu-west-1",
+          "awslogs-stream-prefix": "admin"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -qO- http://localhost:3002/ || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      }
+    }
+  ]
+}

@@ -1,60 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { useAuth } from './auth-provider';
 
 export function AdminTopBar() {
   const pathname = usePathname();
-  const [user, setUser] = useState<{ email: string; display_name: string } | null>(null);
+  const { user, logout } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
 
-  useEffect(() => {
-    const stored = localStorage.getItem('admin_user');
-    if (stored) setUser(JSON.parse(stored));
-    // Listen for storage changes (login/logout in sidebar)
-    const handler = () => {
-      const s = localStorage.getItem('admin_user');
-      setUser(s ? JSON.parse(s) : null);
-    };
-    window.addEventListener('storage', handler);
-    return () => window.removeEventListener('storage', handler);
-  }, []);
-
-  // Re-check on every route change
-  useEffect(() => {
-    const stored = localStorage.getItem('admin_user');
-    setUser(stored ? JSON.parse(stored) : null);
-  }, [pathname]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('admin_token');
-    localStorage.removeItem('admin_user');
-    setUser(null);
-    setShowMenu(false);
-    window.location.reload();
-  };
+  const APP_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000').replace('api-', '').replace('api.', '');
 
   // Breadcrumb from pathname
   const segments = pathname.split('/').filter(Boolean);
-  const breadcrumb = segments.length === 0 ? 'Dashboard' : segments.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' › ');
+  const breadcrumb = segments.length === 0 ? 'Dashboard' : segments.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' / ');
 
   return (
     <header className="h-14 bg-gray-800/50 border-b border-gray-700 flex items-center justify-between px-6 flex-shrink-0">
       {/* Left: breadcrumb */}
       <div className="text-sm text-gray-400">
-        <span className="text-gray-500">Admin</span> <span className="text-gray-600 mx-1">›</span> <span className="text-gray-200">{breadcrumb}</span>
+        <span className="text-gray-500">Admin</span> <span className="text-gray-600 mx-1">/</span> <span className="text-gray-200">{breadcrumb}</span>
       </div>
 
       {/* Right: actions */}
       <div className="flex items-center gap-3">
-        {/* Link to main app */}
-        <a href="http://localhost:3001" target="_blank" rel="noopener noreferrer"
-          className="text-xs text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-gray-700">
-          🌐 Main App
-        </a>
-
         {/* User menu */}
-        {user ? (
+        {user && (
           <div className="relative">
             <button onClick={() => setShowMenu(!showMenu)}
               className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-gray-700 transition-colors">
@@ -74,19 +45,14 @@ export function AdminTopBar() {
                   <div className="px-3 py-2 border-b border-gray-700">
                     <p className="text-xs font-medium text-white">{user.display_name}</p>
                     <p className="text-[10px] text-gray-500">{user.email}</p>
+                    <p className="text-[10px] text-emerald-400 mt-0.5">{user.admin_role}</p>
                   </div>
-                  <a href="http://localhost:3001/settings" target="_blank" rel="noopener noreferrer"
-                    className="block px-3 py-2 text-sm text-gray-300 hover:bg-gray-700">⚙️ Settings</a>
-                  <a href="http://localhost:3001" target="_blank" rel="noopener noreferrer"
-                    className="block px-3 py-2 text-sm text-gray-300 hover:bg-gray-700">🌐 Switch to App</a>
-                  <button onClick={handleLogout}
-                    className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-gray-700">↪️ Log Out</button>
+                  <button onClick={() => { logout(); setShowMenu(false); }}
+                    className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-gray-700">Log Out</button>
                 </div>
               </>
             )}
           </div>
-        ) : (
-          <span className="text-xs text-gray-500">Not logged in</span>
         )}
       </div>
     </header>

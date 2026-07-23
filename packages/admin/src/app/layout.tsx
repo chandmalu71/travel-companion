@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { AdminSidebar } from './admin-sidebar';
-import { AdminTopBar } from './admin-topbar';
+import { AuthProvider } from './auth-provider';
+import { AuthGate } from './auth-gate';
 
 export const metadata: Metadata = {
   title: 'Neyya Admin',
@@ -13,15 +13,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head><link rel="icon" href="/favicon.svg" type="image/svg+xml" /></head>
       <body className="min-h-screen bg-gray-900 text-gray-100 font-sans antialiased">
-        <div className="flex min-h-screen">
-          <AdminSidebar />
-          <div className="flex-1 flex flex-col overflow-auto">
-            <AdminTopBar />
-            <main className="flex-1 p-8">
-              {children}
-            </main>
-          </div>
-        </div>
+        <AuthProvider>
+          <AuthGate>
+            {children}
+          </AuthGate>
+        </AuthProvider>
       </body>
     </html>
   );

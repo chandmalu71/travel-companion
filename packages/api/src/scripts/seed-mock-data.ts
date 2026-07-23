@@ -32,10 +32,10 @@ function hashPassword(password: string): string {
 // ─── Mock Users ──────────────────────────────────────────────────────────────
 
 const USERS = [
-  { id: '00000000-0000-4000-a000-000000000001', email: 'alice@demo.neyya.ai', displayName: 'Alice Johnson', password: 'Demo1234', adminRole: 'super-admin' },
+  { id: '00000000-0000-4000-a000-000000000001', email: 'alice@demo.neyya.ai', displayName: 'Alice Johnson', password: 'Demo1234', adminRole: null },
   { id: '00000000-0000-4000-a000-000000000002', email: 'bob@demo.neyya.ai', displayName: 'Bob Smith', password: 'Demo1234', adminRole: null },
   { id: '00000000-0000-4000-a000-000000000003', email: 'charlie@demo.neyya.ai', displayName: 'Charlie Brown', password: 'Demo1234', adminRole: null },
-  { id: '00000000-0000-4000-a000-000000000004', email: 'dana@demo.neyya.ai', displayName: 'Dana Wilson', password: 'Demo1234', adminRole: 'support' },
+  { id: '00000000-0000-4000-a000-000000000004', email: 'dana@demo.neyya.ai', displayName: 'Dana Wilson', password: 'Demo1234', adminRole: null },
   { id: '00000000-0000-4000-a000-000000000005', email: 'eve@demo.neyya.ai', displayName: 'Eve Martinez', password: 'Demo1234', adminRole: null },
 ];
 

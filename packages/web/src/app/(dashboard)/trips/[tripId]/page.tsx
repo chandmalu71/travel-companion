@@ -407,19 +407,52 @@ function StatusBadge({ status, checkedIn }: { status: string; checkedIn?: boolea
 }
 
 function MapTab({ tripId }: { tripId: string }) {
-  return (
-    <div className="rounded-lg bg-white border border-gray-200 shadow-sm overflow-hidden">
-      <div className="h-96 bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-4xl mb-2">🗺️</p>
-          <p className="text-gray-500 text-sm">
-            Map view requires Google Maps SDK.
-          </p>
-          <p className="text-gray-400 text-xs mt-1">
-            Configure NEXT_PUBLIC_GOOGLE_MAPS_KEY to enable.
-          </p>
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [trip, setTrip] = useState<any>(null);
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
+
+  useEffect(() => {
+    api.get<any>(`/api/trips/${tripId}`).then(r => setTrip(r.trip ?? r.data ?? r));
+    api.get<any>(`/api/bookings?tripId=${tripId}`).then(r => setBookings(r.bookings ?? r.data ?? []));
+  }, [tripId]);
+
+  if (!apiKey) {
+    return (
+      <div className="rounded-lg bg-white border border-gray-200 shadow-sm overflow-hidden">
+        <div className="h-96 bg-gray-100 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-4xl mb-2">🗺️</p>
+            <p className="text-gray-500 text-sm">Map view requires Google Maps API key.</p>
+            <p className="text-gray-400 text-xs mt-1">Configure NEXT_PUBLIC_GOOGLE_MAPS_KEY to enable.</p>
+          </div>
         </div>
       </div>
+    );
+  }
+
+  // Build map query from trip destination or hotel coordinates
+  const destination = trip?.destination ?? trip?.name ?? '';
+  const hotelBookings = bookings.filter((b: any) => b.type === 'hotel' && b.hotel_details);
+  const mapQuery = hotelBookings.length > 0
+    ? `${hotelBookings[0].hotel_details.hotel_name}, ${hotelBookings[0].hotel_details.address}`
+    : destination;
+
+  return (
+    <div className="rounded-lg bg-white border border-gray-200 shadow-sm overflow-hidden">
+      <div className="h-96">
+        <iframe
+          className="w-full h-full border-0"
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          src={`https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodeURIComponent(mapQuery)}&zoom=12`}
+          allowFullScreen
+        />
+      </div>
+      {hotelBookings.length > 0 && (
+        <div className="p-3 border-t border-gray-200 bg-gray-50">
+          <p className="text-xs text-gray-500">Showing: {hotelBookings[0].hotel_details?.hotel_name ?? destination}</p>
+        </div>
+      )}
     </div>
   );
 }

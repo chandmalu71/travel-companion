@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const AI_FEATURES = [
   { id: 'email_parsing', label: 'Email Parsing' },
@@ -85,6 +85,13 @@ export default function ConfigPage() {
             </label>
           ))}
         </div>
+      </section>
+
+      {/* OAuth Providers */}
+      <section className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <h2 className="text-lg font-semibold text-white mb-4">OAuth Providers</h2>
+        <p className="text-sm text-gray-400 mb-4">Control which sign-in methods are available to users. &quot;Coming Soon&quot; shows the button greyed out with a label.</p>
+        <OAuthProviders />
       </section>
 
       {/* Global Controls */}
@@ -370,6 +377,118 @@ export default function ConfigPage() {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+// ─── OAuth Providers Component ───────────────────────────────────────────────
+
+type ProviderStatus = 'enabled' | 'disabled' | 'coming_soon';
+
+interface OAuthProvider {
+  id: string;
+  name: string;
+  icon: string;
+  status: ProviderStatus;
+  configured: boolean;
+}
+
+const DEFAULT_PROVIDERS: OAuthProvider[] = [
+  { id: 'google', name: 'Google', icon: '🔵', status: 'enabled', configured: true },
+  { id: 'microsoft', name: 'Microsoft', icon: '🟦', status: 'enabled', configured: true },
+  { id: 'facebook', name: 'Facebook', icon: '🔷', status: 'enabled', configured: true },
+  { id: 'apple', name: 'Apple', icon: '🍎', status: 'coming_soon', configured: false },
+];
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+function OAuthProviders() {
+  const [providers, setProviders] = useState<OAuthProvider[]>(DEFAULT_PROVIDERS);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) return;
+    fetch(`${API_BASE}/api/admin/config`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => {
+        if (d.data?.oauthProviders) {
+          setProviders(d.data.oauthProviders);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const updateStatus = (id: string, status: ProviderStatus) => {
+    setProviders(prev => prev.map(p => p.id === id ? { ...p, status } : p));
+    setSaved(false);
+  };
+
+  const handleSave = async () => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) return;
+    setSaving(true);
+    try {
+      await fetch(`${API_BASE}/api/admin/config`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oauthProviders: providers }),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {}
+    finally { setSaving(false); }
+  };
+
+  const statusColors: Record<ProviderStatus, string> = {
+    enabled: 'bg-green-700 text-white',
+    disabled: 'bg-gray-600 text-gray-300',
+    coming_soon: 'bg-amber-700 text-amber-100',
+  };
+
+  const statusLabels: Record<ProviderStatus, string> = {
+    enabled: 'Enabled',
+    disabled: 'Disabled',
+    coming_soon: 'Coming Soon',
+  };
+
+  return (
+    <div className="space-y-3">
+      {providers.map((provider) => (
+        <div key={provider.id} className="flex items-center justify-between rounded-lg border border-gray-700 p-4 bg-gray-700/30">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">{provider.icon}</span>
+            <div>
+              <p className="text-sm font-medium text-white">{provider.name} Sign In</p>
+              <p className="text-xs text-gray-400">
+                {provider.configured ? 'Credentials configured' : 'Not configured — keys required'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={provider.status}
+              onChange={(e) => updateStatus(provider.id, e.target.value as ProviderStatus)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium border-0 cursor-pointer ${statusColors[provider.status]}`}
+            >
+              <option value="enabled">Enabled</option>
+              <option value="disabled">Disabled</option>
+              <option value="coming_soon">Coming Soon</option>
+            </select>
+          </div>
+        </div>
+      ))}
+      <div className="flex items-center justify-between pt-2">
+        <p className="text-xs text-gray-500">Changes affect the login page immediately after save.</p>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+        >
+          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
+        </button>
+      </div>
     </div>
   );
 }

@@ -61,10 +61,13 @@ export async function registerAdminRoutes(
   app.get(
     '/api/admin/users',
     async (request: FastifyRequest<{ Querystring: { search?: string; status?: string; limit?: string; offset?: string } }>, reply: FastifyReply) => {
-      const { search, status, limit = '50', offset = '0' } = request.query;
+      const { search, status, limit = '20', offset = '0' } = request.query;
 
       let query = db.selectFrom('users').selectAll().orderBy('created_at', 'desc')
         .limit(parseInt(limit)).offset(parseInt(offset));
+
+      // Hide demo account from admin user list
+      query = query.where('email', '!=', 'demo@neyya.ai');
 
       if (search) {
         query = query.where((eb) =>
@@ -83,7 +86,47 @@ export async function registerAdminRoutes(
 
       const users = await query.execute();
 
-      return reply.send({ statusCode: 200, data: users });
+      // Get total count for pagination
+      let countQuery = db.selectFrom('users').select(db.fn.count('id').as('count')).where('email', '!=', 'demo@neyya.ai');
+      if (search) {
+        countQuery = countQuery.where((eb) =>
+          eb.or([
+            eb('email', 'like', `%${search}%`),
+            eb('display_name', 'like', `%${search}%`),
+          ])
+        );
+      }
+      if (status === 'suspended') {
+        countQuery = countQuery.where('suspended', '=', true);
+      } else if (status === 'active') {
+        countQuery = countQuery.where('suspended', 'is', null);
+      }
+      const totalResult = await countQuery.executeTakeFirst();
+      const total = Number(totalResult?.count ?? 0);
+
+      // Enrich with subscription data (if table exists)
+      let subscriptions: any[] = [];
+      try {
+        subscriptions = await (db.selectFrom('user_subscriptions' as any) as any)
+          .innerJoin('subscription_plans' as any, 'subscription_plans.id', 'user_subscriptions.plan_id')
+          .select([
+            'user_subscriptions.user_id',
+            'subscription_plans.slug as plan_slug',
+            'user_subscriptions.status as sub_status',
+          ])
+          .execute();
+      } catch { /* table may not exist yet */ }
+
+      const subMap = new Map(subscriptions.map((s: any) => [s.user_id, { plan: s.plan_slug, status: s.sub_status }]));
+
+      const enriched = users.map((u: any) => ({
+        ...u,
+        password_hash: undefined, // never expose
+        subscription_plan: subMap.get(u.id)?.plan ?? 'free',
+        subscription_status: subMap.get(u.id)?.status ?? null,
+      }));
+
+      return reply.send({ statusCode: 200, data: enriched, pagination: { total, limit: parseInt(limit), offset: parseInt(offset) } });
     },
   );
 
@@ -179,6 +222,12 @@ export async function registerAdminRoutes(
           email_scanning: true, ai_search: true, receipt_scanning: true,
           social_sharing: false, expense_splitting: true, proactive_suggestions: true,
         },
+        oauthProviders: [
+          { id: 'google', name: 'Google', icon: '🔵', status: process.env.GOOGLE_CLIENT_ID && !process.env.GOOGLE_CLIENT_ID.includes('placeholder') ? 'enabled' : 'disabled', configured: !!process.env.GOOGLE_CLIENT_ID && !process.env.GOOGLE_CLIENT_ID.includes('placeholder') },
+          { id: 'microsoft', name: 'Microsoft', icon: '🟦', status: process.env.MICROSOFT_CLIENT_ID && !process.env.MICROSOFT_CLIENT_ID.includes('placeholder') ? 'enabled' : 'disabled', configured: !!process.env.MICROSOFT_CLIENT_ID },
+          { id: 'facebook', name: 'Facebook', icon: '🔷', status: process.env.FACEBOOK_APP_ID ? 'enabled' : 'disabled', configured: !!process.env.FACEBOOK_APP_ID },
+          { id: 'apple', name: 'Apple', icon: '🍎', status: 'coming_soon', configured: false },
+        ],
         emailScanningPaused: false,
         misuseDetectionEnabled: true,
       },

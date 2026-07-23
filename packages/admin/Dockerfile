@@ -8,39 +8,46 @@ WORKDIR /app
 # Copy workspace config
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.json ./
 COPY packages/shared/package.json packages/shared/tsconfig.json ./packages/shared/
-COPY packages/api/package.json packages/api/tsconfig.json ./packages/api/
+COPY packages/admin/package.json ./packages/admin/
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile --prod=false
 
 # Copy source
 COPY packages/shared/src ./packages/shared/src
-COPY packages/api/src ./packages/api/src
+COPY packages/admin/ ./packages/admin/
 
-# Build shared package
+# Ensure public dir exists (admin panel may not have static assets)
+RUN mkdir -p /app/packages/admin/public
+
+# Build shared package first
 RUN cd packages/shared && pnpm run build
+
+# Build Next.js in standalone mode
+ARG NEXT_PUBLIC_API_URL=http://localhost:3000
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+RUN cd packages/admin && pnpm run build
 
 # ─── Runtime Stage ────────────────────────────────────────────────────────────
 FROM node:20-alpine AS runtime
 
-RUN corepack enable && corepack prepare pnpm@9 --activate
-
 WORKDIR /app
 
-# Copy built artifacts and node_modules
-COPY --from=builder /app/pnpm-workspace.yaml /app/pnpm-lock.yaml /app/package.json ./
-COPY --from=builder /app/packages/shared ./packages/shared
-COPY --from=builder /app/packages/api ./packages/api
-COPY --from=builder /app/node_modules ./node_modules
+# Don't run as root
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
-# Install production dependencies only (keep tsx for runtime)
-RUN pnpm install --frozen-lockfile --prod && pnpm add tsx -w
+# Copy standalone output
+COPY --from=builder /app/packages/admin/.next/standalone ./
+COPY --from=builder /app/packages/admin/.next/static ./packages/admin/.next/static
+COPY --from=builder /app/packages/admin/public ./packages/admin/public
 
-EXPOSE 3000
+USER nextjs
+
+EXPOSE 3002
 
 ENV NODE_ENV=production
-ENV PORT=3000
-ENV HOST=0.0.0.0
+ENV PORT=3002
+ENV HOSTNAME=0.0.0.0
 
-# Use tsx to run TypeScript directly (simpler than compiling)
-CMD ["npx", "tsx", "packages/api/src/server.ts"]
+CMD ["node", "packages/admin/server.js"]

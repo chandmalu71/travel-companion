@@ -23,6 +23,17 @@ export async function registerLocalAuthRoutes(
   const { db } = options;
   const localAuth = new LocalAuthService();
 
+  // ─── GET /api/auth/providers — public, returns enabled OAuth providers ─────
+  app.get('/api/auth/providers', async (_request: FastifyRequest, reply: FastifyReply) => {
+    const providers = [
+      { id: 'google', name: 'Google', status: process.env.GOOGLE_CLIENT_ID && !process.env.GOOGLE_CLIENT_ID.includes('placeholder') ? 'enabled' : 'disabled' },
+      { id: 'microsoft', name: 'Microsoft', status: process.env.MICROSOFT_CLIENT_ID && !process.env.MICROSOFT_CLIENT_ID.includes('placeholder') ? 'enabled' : 'disabled' },
+      { id: 'facebook', name: 'Facebook', status: process.env.FACEBOOK_APP_ID ? 'enabled' : 'disabled' },
+      { id: 'apple', name: 'Apple', status: 'coming_soon' as const },
+    ];
+    return reply.send({ statusCode: 200, data: providers });
+  });
+
   // ─── POST /api/auth/register ─────────────────────────────────────────
 
   app.post(
@@ -125,7 +136,7 @@ export async function registerLocalAuthRoutes(
         // Look up user
         const user = await db
           .selectFrom('users')
-          .select(['id', 'email', 'display_name', 'password_hash', 'avatar_url', 'email_verified'])
+          .select(['id', 'email', 'display_name', 'password_hash', 'avatar_url', 'email_verified', 'admin_role'])
           .where('email', '=', email.toLowerCase())
           .executeTakeFirst();
 
@@ -161,6 +172,7 @@ export async function registerLocalAuthRoutes(
               display_name: user.display_name,
               avatar_url: user.avatar_url,
               email_verified: user.email_verified,
+              admin_role: user.admin_role || null,
             },
           },
         });
