@@ -11,6 +11,7 @@ interface Trip {
   end_date: string | null;
   budget: number | null;
   budget_currency: string | null;
+  destination?: string | null;
 }
 
 type StatusFilter = 'all' | 'upcoming' | 'active' | 'completed' | 'planning';
