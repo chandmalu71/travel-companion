@@ -2018,3 +2018,232 @@ trip_decisions
 - **New Conversation Modal**: DM or Group, select from Network
 - **Poll Form Modal**: question + N options
 - **Trip Decisions Panel**: vote yes/no, status badges
+
+
+---
+
+## Component 44: Trip Photos & Gallery (Premium)
+
+**Status:** UI stub created, backend deferred to mobile app phase
+
+### Data Model
+
+```sql
+-- Photo uploads
+CREATE TABLE trip_photos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+  album_id UUID REFERENCES photo_albums(id) ON DELETE SET NULL,
+  
+  -- File storage
+  s3_key TEXT NOT NULL,
+  s3_bucket TEXT NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  file_size INTEGER NOT NULL,
+  mime_type VARCHAR(50) NOT NULL,
+  width INTEGER,
+  height INTEGER,
+  
+  -- Thumbnails (generated on upload)
+  thumbnail_s3_key TEXT,
+  medium_s3_key TEXT,
+  
+  -- Metadata (from EXIF)
+  taken_at TIMESTAMPTZ,
+  latitude DECIMAL(9,6),
+  longitude DECIMAL(9,6),
+  camera_make VARCHAR(100),
+  
+  -- Visibility
+  visibility VARCHAR(20) NOT NULL DEFAULT 'personal', -- 'personal', 'shared', 'public_link'
+  public_link_token VARCHAR(64),
+  public_link_expires_at TIMESTAMPTZ,
+  
+  -- Encryption
+  encrypted BOOLEAN DEFAULT TRUE,
+  encryption_key_id TEXT,
+  
+  -- Organization
+  caption TEXT,
+  tags TEXT[] DEFAULT '{}',
+  
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Photo albums (within a trip)
+CREATE TABLE photo_albums (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL,
+  name VARCHAR(200) NOT NULL,
+  cover_photo_id UUID,
+  display_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Photo reactions (likes/emoji)
+CREATE TABLE photo_reactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  photo_id UUID NOT NULL REFERENCES trip_photos(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL,
+  emoji VARCHAR(10) NOT NULL DEFAULT '❤️',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (photo_id, user_id, emoji)
+);
+
+-- Photo comments
+CREATE TABLE photo_comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  photo_id UUID NOT NULL REFERENCES trip_photos(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /api/photos | Global photos (all trips, filtered) |
+| GET | /api/trips/:tripId/photos | Trip photos |
+| POST | /api/trips/:tripId/photos | Upload photo(s) |
+| PUT | /api/photos/:id | Update visibility/caption/tags |
+| DELETE | /api/photos/:id | Delete photo |
+| GET | /api/trips/:tripId/albums | List albums |
+| POST | /api/trips/:tripId/albums | Create album |
+| PUT | /api/photos/:id/album | Move photo to album |
+| POST | /api/photos/:id/reactions | Add reaction |
+| GET | /api/photos/:id/comments | Get comments |
+| POST | /api/photos/:id/comments | Add comment |
+| GET | /api/photos/:id/public-link | Generate public link |
+
+### Plan Limits (Admin Configurable)
+
+| Tier | Storage | Uploads/month | Sharing | Albums |
+|------|---------|---------------|---------|--------|
+| Free | 0 (disabled) | 0 | No | No |
+| Pro | 2 GB | 200 | Yes | 10 |
+| Premium | Unlimited | Unlimited | Yes | Unlimited |
+
+### UI Components
+- **Photos Tab** (in trip detail): grid view, album sidebar, upload button
+- **Global Photos Page** (/photos): masonry grid, trip filter, visibility filter, tag filter
+- **Photo Viewer**: full-screen lightbox, reactions, comments, download
+- **Upload Modal**: drag-drop + file picker, album assignment, visibility toggle
+- **Album Manager**: create/rename/delete albums, drag photos between
+
+---
+
+## Component 45: AI-Powered Social Sharing (Premium)
+
+**Status:** UI stub created, backend deferred
+
+### Data Model
+
+```sql
+-- Generated share posts
+CREATE TABLE share_posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id),
+  trip_id UUID NOT NULL REFERENCES trips(id),
+  
+  -- AI generation
+  tone VARCHAR(20) NOT NULL, -- 'casual', 'professional', 'funny', 'inspirational', 'custom'
+  custom_prompt TEXT,
+  generated_text TEXT NOT NULL,
+  suggested_hashtags TEXT[] DEFAULT '{}',
+  selected_photo_ids UUID[] DEFAULT '{}',
+  ai_model VARCHAR(100),
+  
+  -- Sharing status
+  status VARCHAR(20) DEFAULT 'draft', -- 'draft', 'shared', 'scheduled'
+  shared_to TEXT[] DEFAULT '{}', -- ['facebook', 'twitter', 'instagram']
+  shared_at TIMESTAMPTZ,
+  
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Connected social accounts (V2)
+CREATE TABLE connected_social_accounts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  platform VARCHAR(20) NOT NULL, -- 'facebook', 'twitter', 'instagram', 'linkedin'
+  platform_user_id TEXT,
+  platform_username VARCHAR(100),
+  access_token_encrypted TEXT,
+  refresh_token_encrypted TEXT,
+  token_expires_at TIMESTAMPTZ,
+  connected_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (user_id, platform)
+);
+```
+
+### API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | /api/trips/:tripId/share/generate | AI generates share content |
+| GET | /api/trips/:tripId/share/history | Past shares for this trip |
+| POST | /api/trips/:tripId/share/post | Post to connected platform (V2) |
+| GET | /api/settings/social-accounts | List connected accounts |
+| POST | /api/settings/social-accounts/:platform/connect | OAuth connect (V2) |
+| DELETE | /api/settings/social-accounts/:platform | Disconnect account |
+
+### AI Generation Flow
+
+```
+User triggers → Select tone + optional prompt
+  → API calls Bedrock Claude with:
+    - Trip destination + dates
+    - Places visited (from bookings/timeline)
+    - Photo metadata (if photos feature active)
+    - Tone instruction + platform constraints
+  → Returns: { text, hashtags, suggestedPhotoIds }
+  → User reviews/edits → Copy or Post
+```
+
+### Plan Limits
+
+| Tier | AI Generations | Direct Posting (V2) |
+|------|---------------|---------------------|
+| Free | 0 (see preview, upgrade prompt) | No |
+| Pro | 3 per trip | No |
+| Premium | Unlimited | Yes (when available) |
+
+---
+
+## Component 46: Trip Card Header Images
+
+**Status:** Implemented
+
+### Design
+- Unsplash CDN images mapped by destination keywords
+- 25+ destination mappings (Barcelona, Japan, Greece, NYC, etc.)
+- Fallback generic travel image for unknown destinations
+- Gradient overlay for text readability
+- Destination pin shown on image
+- Lazy loading for performance
+
+---
+
+## Infrastructure (Deployed July 2026)
+
+### Architecture
+- **API:** Node.js/Fastify on ECS Fargate (0.25 vCPU, 512MB)
+- **Web + Admin:** Next.js standalone on ECS Fargate
+- **Database:** RDS PostgreSQL 16.14 (db.t4g.micro)
+- **Cache:** ElastiCache Redis 7.0
+- **CDN:** ALB with ACM HTTPS (*.neyya.ai)
+- **Storage:** S3 (future — for photos/documents)
+- **AI:** AWS Bedrock (Claude, Nova — tiered)
+- **Secrets:** AWS Secrets Manager
+- **CI/CD:** GitHub Actions → ECR → ECS rolling deploy
+
+### Subscription Tables (Migration 019)
+- `subscription_plans` — Free/Pro/Premium with configurable limits
+- `user_subscriptions` — active subscriptions per user
+- `subscription_promotions` — time-limited discount campaigns
+- `subscription_campaigns` — discount codes (LAUNCH50, etc.)

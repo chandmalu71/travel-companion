@@ -888,3 +888,124 @@ This implementation plan builds the Travel Companion application incrementally, 
   - Campaigns tab: view/create/disable campaigns
   - User Overrides tab: grant free Premium to specific users
   - Settings tab: trial duration, grace period, retry attempts, auto-renew, Stripe config
+
+
+---
+
+## Phase 14: Infrastructure & Deployment (July 2026)
+
+- [x] 14.1 Docker containerization
+  - Dockerfiles for API, Web, Admin (multi-stage, linux/amd64)
+  - docker-compose.yml for local development
+  - .dockerignore for lean images
+- [x] 14.2 AWS infrastructure (CloudFormation)
+  - VPC, subnets, security groups (network.yml)
+  - ECR repositories (ecr.yml)
+  - ECS cluster, ALB, services (ecs-services.yml)
+  - RDS PostgreSQL + ElastiCache Redis
+- [x] 14.3 CI/CD pipeline
+  - GitHub Actions: test → build → push → deploy
+  - Auto-deploy to QA on push to develop
+  - Manual/main deploy to production
+- [x] 14.4 DNS & SSL
+  - ACM certificate for *.neyya.ai
+  - Route 53 records (api-qa, qa, admin-qa)
+  - HTTPS listener with host-based routing
+- [x] 14.5 Secrets management
+  - AWS Secrets Manager for all credentials
+  - OAuth, Stripe, DB, Redis, JWT, API keys
+- [x] 14.6 External services wired (QA)
+  - Google OAuth, Microsoft, Facebook
+  - Stripe (test mode)
+  - OpenWeatherMap, SES (domain verified)
+  - Google Maps Embed API
+- [ ] 14.7 Production deployment (pending)
+  - Deploy production stacks
+  - Production secrets + live Stripe keys
+  - DNS cutover (neyya.ai → production ALB)
+  - SES production access request
+
+## Phase 15: Admin Panel Enhancements
+
+- [x] 15.1 Auth gate (login required, admin_role check)
+- [x] 15.2 Users page — API integration, search, pagination, subscription column, impersonate
+- [x] 15.3 Translations page — seeded 350+ keys, auto-translate endpoint
+- [x] 15.4 OAuth provider management (enable/disable/coming soon)
+- [x] 15.5 Subscription plans seeded (Free €0, Pro €14.99, Premium €29.99)
+- [ ] 15.6 OAuth provider state persistence (save to Redis/DB, not just config response)
+- [ ] 15.7 Rate limits page — live configuration
+
+## Phase 16: Demo & Data Quality
+
+- [x] 16.1 Demo account (demo@neyya.ai) with Premium subscription
+- [x] 16.2 5 trips with bookings (flights, hotels, car rentals)
+- [x] 16.3 12 expenses (personal + shared, multi-currency)
+- [x] 16.4 Family members (spouse + child)
+- [x] 16.5 Conversations + messages (3 chats, 14 messages)
+- [x] 16.6 AI trip tips with checklists (6 tips)
+- [x] 16.7 AI tip chat Q&A (6 messages)
+- [x] 16.8 Trip travellers populated (13 entries across 5 trips)
+- [x] 16.9 User preferences (dietary, allergies, interests)
+- [x] 16.10 Nightly reset script (preserves seeded data)
+- [ ] 16.11 Fix Oliver (child) family member duplicate
+- [ ] 16.12 Add sample documents/boarding passes
+
+## Phase 17: Profile & User Settings
+
+- [x] 17.1 Migration 021: first_name + last_name columns on users table
+- [x] 17.2 GET/PUT /api/user/profile endpoint
+- [x] 17.3 Profile name section in Settings UI (first name + last name fields)
+- [x] 17.4 Translation keys for profile fields
+- [ ] 17.5 Avatar upload (S3 presigned URL)
+- [ ] 17.6 Password change flow
+- [ ] 17.7 Email verification flow (SES)
+- [ ] 17.8 Account deletion (GDPR)
+
+## Phase 18: Trip Photos & Gallery (Req 44) — DEFERRED
+
+**Target:** Mobile app phase  
+**Current:** UI stub only
+
+- [x] 18.1 Requirements written (12 acceptance criteria)
+- [x] 18.2 UI stub: /photos page with premium gate
+- [x] 18.3 Photos added to left sidebar navigation
+- [x] 18.4 Translation keys (13 keys)
+- [ ] 18.5 DB migration: trip_photos, photo_albums, photo_reactions, photo_comments
+- [ ] 18.6 S3 upload with presigned URLs + thumbnail generation
+- [ ] 18.7 Photo encryption (AES-256, optional client-side)
+- [ ] 18.8 EXIF extraction + auto-grouping by date
+- [ ] 18.9 Album CRUD API
+- [ ] 18.10 Visibility toggle API (personal/shared/public link)
+- [ ] 18.11 Reactions + comments API
+- [ ] 18.12 Global photos page with masonry grid
+- [ ] 18.13 Photo viewer lightbox
+- [ ] 18.14 Plan limit enforcement (storage per tier)
+- [ ] 18.15 Auto-sync from phone gallery (mobile only)
+
+## Phase 19: AI Social Sharing (Req 45) — DEFERRED
+
+**Target:** Post-launch, Premium feature  
+**Current:** UI stub only
+
+- [x] 19.1 Requirements written (12 acceptance criteria)
+- [x] 19.2 UI stub: /trips/:id/share page (3-step flow)
+- [x] 19.3 Translation keys (17 keys)
+- [ ] 19.4 DB migration: share_posts, connected_social_accounts
+- [ ] 19.5 AI generation endpoint (Bedrock Claude)
+- [ ] 19.6 Tone-based prompt templates
+- [ ] 19.7 Photo selection algorithm (pick best 1-4)
+- [ ] 19.8 Copy-to-clipboard flow (V1)
+- [ ] 19.9 Connected social accounts OAuth (V2)
+- [ ] 19.10 Direct posting API (V2)
+- [ ] 19.11 Post-trip trigger ("Share your highlights?")
+- [ ] 19.12 Daily highlight suggestion (during trip)
+- [ ] 19.13 Premium gate with upgrade hook
+- [ ] 19.14 Share history per trip
+
+## Phase 20: Trip Card Header Images (Req 46) — DONE
+
+- [x] 20.1 Unsplash destination image mapping (25+ cities)
+- [x] 20.2 Trip card UI with header image + gradient overlay
+- [x] 20.3 Destination pin on image
+- [x] 20.4 Lazy loading
+- [x] 20.5 Fallback image for unknown destinations
