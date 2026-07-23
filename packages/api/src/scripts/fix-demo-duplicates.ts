@@ -68,36 +68,41 @@ async function main() {
     console.log(`  ${(trip as any)?.name}: ${members.length} members [${members.map((m: any) => m.display_name).join(', ')}]`);
   }
 
-  // 5. Also add the demo user as a trip_traveller (some UIs use trip_travellers instead of trip_members)
+  // 5. Also populate trip_travellers (the Members tab uses this table)
   const ALICE_ID = '00000000-0000-4000-a000-000000000001';
   const BOB_ID = '00000000-0000-4000-a000-000000000002';
   const CHARLIE_ID = '00000000-0000-4000-a000-000000000003';
   const DANA_ID = '00000000-0000-4000-a000-000000000004';
   const EVE_ID = '00000000-0000-4000-a000-000000000005';
 
+  // Clear old broken entries (missing display_name) for demo trips
+  await sql`DELETE FROM trip_travellers WHERE trip_id = ANY(${sql.raw(`ARRAY['${tripIds.join("','")}']::uuid[]`)})`.execute(db);
+
   // Ensure trip_travellers are populated (some views use this table)
   const travellers = [
-    { tripId: tripIds[0], userId: DEMO_ID, role: 'organiser' },
-    { tripId: tripIds[0], userId: ALICE_ID, role: 'member' },
-    { tripId: tripIds[1], userId: DEMO_ID, role: 'organiser' },
-    { tripId: tripIds[1], userId: ALICE_ID, role: 'member' },
-    { tripId: tripIds[1], userId: BOB_ID, role: 'member' },
-    { tripId: tripIds[2], userId: DEMO_ID, role: 'organiser' },
-    { tripId: tripIds[2], userId: BOB_ID, role: 'member' },
-    { tripId: tripIds[2], userId: CHARLIE_ID, role: 'member' },
-    { tripId: tripIds[3], userId: DEMO_ID, role: 'organiser' },
-    { tripId: tripIds[4], userId: DEMO_ID, role: 'organiser' },
-    { tripId: tripIds[4], userId: EVE_ID, role: 'member' },
-    { tripId: tripIds[4], userId: DANA_ID, role: 'member' },
-    { tripId: tripIds[4], userId: CHARLIE_ID, role: 'member' },
+    { tripId: tripIds[0], userId: DEMO_ID, displayName: 'Sarah Thompson', role: 'organiser' },
+    { tripId: tripIds[0], userId: ALICE_ID, displayName: 'Alice Johnson', role: 'member' },
+    { tripId: tripIds[1], userId: DEMO_ID, displayName: 'Sarah Thompson', role: 'organiser' },
+    { tripId: tripIds[1], userId: ALICE_ID, displayName: 'Alice Johnson', role: 'member' },
+    { tripId: tripIds[1], userId: BOB_ID, displayName: 'Bob Smith', role: 'member' },
+    { tripId: tripIds[2], userId: DEMO_ID, displayName: 'Sarah Thompson', role: 'organiser' },
+    { tripId: tripIds[2], userId: BOB_ID, displayName: 'Bob Smith', role: 'member' },
+    { tripId: tripIds[2], userId: CHARLIE_ID, displayName: 'Charlie Brown', role: 'member' },
+    { tripId: tripIds[3], userId: DEMO_ID, displayName: 'Sarah Thompson', role: 'organiser' },
+    { tripId: tripIds[4], userId: DEMO_ID, displayName: 'Sarah Thompson', role: 'organiser' },
+    { tripId: tripIds[4], userId: EVE_ID, displayName: 'Eve Martinez', role: 'member' },
+    { tripId: tripIds[4], userId: DANA_ID, displayName: 'Dana Wilson', role: 'member' },
+    { tripId: tripIds[4], userId: CHARLIE_ID, displayName: 'Charlie Brown', role: 'member' },
   ];
 
   for (const t of travellers) {
     await db.insertInto('trip_travellers' as any).values({
       trip_id: t.tripId,
       user_id: t.userId,
+      display_name: t.displayName,
       role: t.role,
-      status: 'confirmed',
+      status: 'active',
+      traveller_type: 'adult',
     }).onConflict((oc: any) => oc.columns(['trip_id', 'user_id']).doNothing()).execute().catch(() => {});
   }
   console.log(`\n  ✅ Trip travellers populated (${travellers.length} entries)`);

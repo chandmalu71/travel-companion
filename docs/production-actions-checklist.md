@@ -2,67 +2,69 @@
 
 **Target:** Go live at https://neyya.ai  
 **Current:** QA live at https://qa.neyya.ai  
-**Estimated Total Effort:** 1-2 days
+**Estimated Total Effort:** 1-2 days  
+**Last Updated:** July 23, 2026
 
 ---
 
 ## Phase 1: Infrastructure (Day 1 Morning)
 
-- [ ] **1.1** Deploy production network stack
-  ```bash
-  ./scripts/deploy.sh setup -e production
-  ```
-- [ ] **1.2** Create production RDS (db.t4g.small, Multi-AZ, 50GB)
-- [ ] **1.3** Create production ElastiCache Redis (cache.t4g.small)
-- [ ] **1.4** Create production secrets in Secrets Manager (`neyya/production/*`)
-  - DATABASE_URL, REDIS_URL, JWT_SECRET, PII_ENCRYPTION_KEY
-  - GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
-  - MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET
-  - FACEBOOK_APP_ID, FACEBOOK_APP_SECRET
-  - STRIPE_SECRET_KEY (live key), STRIPE_WEBHOOK_SECRET, STRIPE_PUBLISHABLE_KEY
-  - OPENWEATHERMAP_API_KEY
-- [ ] **1.5** Request ACM certificate for production (`*.neyya.ai` in production account)
-- [ ] **1.6** Deploy production ECS stack (ecs-services.yml with production params)
-- [ ] **1.7** Build and push production Docker images
-  ```bash
-  ./scripts/deploy.sh deploy -e production
-  ```
+- [x] **1.1** Deploy ECR repositories (shared across environments)
+- [x] **1.2** Deploy QA network stack (VPC, subnets, security groups)
+- [x] **1.3** Create QA RDS PostgreSQL (db.t4g.micro)
+- [x] **1.4** Create QA ElastiCache Redis (cache.t4g.micro)
+- [x] **1.5** Create QA secrets in Secrets Manager (all keys)
+- [x] **1.6** Deploy QA ECS stack (cluster, ALB, 3 services)
+- [x] **1.7** QA ACM certificate issued (*.neyya.ai)
+- [x] **1.8** QA HTTPS listener configured
+- [ ] **1.9** Deploy production network stack
+- [ ] **1.10** Create production RDS (db.t4g.small, Multi-AZ, 50GB)
+- [ ] **1.11** Create production ElastiCache Redis (cache.t4g.small)
+- [ ] **1.12** Create production secrets in Secrets Manager (`neyya/production/*`)
+- [ ] **1.13** Request production ACM certificate
+- [ ] **1.14** Deploy production ECS stack
 
 ## Phase 2: DNS & SSL (Day 1 Afternoon)
 
-- [ ] **2.1** Add ACM DNS validation record for production cert
-- [ ] **2.2** Add HTTPS listener to production ALB (once cert is issued)
-- [ ] **2.3** Point Route 53 records:
+- [x] **2.1** QA ACM DNS validation record added
+- [x] **2.2** QA HTTPS listener on ALB
+- [x] **2.3** QA Route 53 records (api-qa, qa, admin-qa → ALB)
+- [x] **2.4** QA domains load correctly over HTTPS
+- [ ] **2.5** Production ACM DNS validation record
+- [ ] **2.6** Production HTTPS listener on ALB
+- [ ] **2.7** Production Route 53 records:
   - `neyya.ai` → production ALB (ALIAS record)
   - `api.neyya.ai` → production ALB
   - `admin.neyya.ai` → production ALB
-- [ ] **2.4** Verify all 3 domains load correctly over HTTPS
-- [ ] **2.5** Update CORS_ORIGINS in API to: `https://neyya.ai,https://admin.neyya.ai`
+- [ ] **2.8** Verify all production domains load over HTTPS
+- [ ] **2.9** Update CORS_ORIGINS in API to: `https://neyya.ai,https://admin.neyya.ai`
 
 ## Phase 3: External Services (Day 1 Afternoon)
 
-- [ ] **3.1** Google OAuth — add production redirect URI: `https://api.neyya.ai/api/auth/google/callback`
-- [ ] **3.2** Microsoft OAuth — add production redirect URI: `https://api.neyya.ai/api/auth/microsoft/callback`
-- [ ] **3.3** Facebook OAuth — add production redirect URI and domain
-- [ ] **3.4** Stripe — switch to live keys (`sk_live_`, `pk_live_`)
-- [ ] **3.5** Stripe — register production webhook: `https://api.neyya.ai/api/webhooks/stripe`
-  - Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`
-- [ ] **3.6** AWS SES — request production access (move out of sandbox)
-  - Go to SES → Account dashboard → Request production access
-  - Explain use case: transactional emails (verification, password reset, trip invites)
+- [x] **3.1** Google OAuth — QA credentials configured in Secrets Manager
+- [x] **3.2** Microsoft OAuth — QA credentials configured
+- [x] **3.3** Facebook OAuth — QA credentials configured
+- [x] **3.4** Stripe — test keys configured (`sk_test_`, `pk_test_`)
+- [x] **3.5** OpenWeatherMap — API key configured
+- [x] **3.6** AWS SES — domain verified (`neyya.ai`)
+- [ ] **3.7** Google OAuth — add production redirect URI: `https://api.neyya.ai/api/auth/google/callback`
+- [ ] **3.8** Microsoft OAuth — add production redirect URI
+- [ ] **3.9** Facebook OAuth — add production domain + redirect URI
+- [ ] **3.10** Stripe — switch to live keys (`sk_live_`, `pk_live_`)
+- [ ] **3.11** Stripe — register production webhook: `https://api.neyya.ai/api/webhooks/stripe`
+- [ ] **3.12** AWS SES — request production access (move out of sandbox)
   - **Wait time: 24-48 hours**
-- [ ] **3.7** Verify SES `neyya.ai` domain is verified in production account
 
 ## Phase 4: Data & Seed (Day 1 Evening)
 
-- [ ] **4.1** Verify migrations ran on first deploy (check API logs)
-- [ ] **4.2** Run demo + mock data seed:
-  ```bash
-  ./scripts/seed-environment.sh -e production
-  ```
-- [ ] **4.3** Create admin account (`chand.malu@gmail.com` with super-admin role)
-- [ ] **4.4** Verify subscription plans are seeded (Free/Pro/Premium at €14.99/€29.99)
-- [ ] **4.5** Verify translation keys are seeded (350 keys)
+- [x] **4.1** QA migrations ran (21 migrations applied)
+- [x] **4.2** QA demo + mock data seeded
+- [x] **4.3** QA admin account created (`chand.malu@gmail.com` with super-admin)
+- [x] **4.4** Subscription plans seeded (Free/Pro/Premium at €14.99/€29.99)
+- [x] **4.5** Translation keys seeded (350+ keys)
+- [ ] **4.6** Production migrations verified
+- [ ] **4.7** Production data seeded: `./scripts/seed-environment.sh -e production`
+- [ ] **4.8** Production admin account created
 
 ## Phase 5: Testing & Verification (Day 2 Morning)
 

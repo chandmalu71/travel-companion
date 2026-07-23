@@ -119,6 +119,7 @@ jobs:
             ${{ steps.ecr-login.outputs.registry }}/neyya-${{ matrix.service }}:${{ steps.image-tag.outputs.latest_tag }}
           build-args: |
             NEXT_PUBLIC_API_URL=${{ needs.determine-env.outputs.api_domain }}
+            NEXT_PUBLIC_GOOGLE_MAPS_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}
           cache-from: type=registry,ref=${{ steps.ecr-login.outputs.registry }}/neyya-${{ matrix.service }}:${{ steps.image-tag.outputs.latest_tag }}
           cache-to: type=inline
 
