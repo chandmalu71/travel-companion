@@ -24,12 +24,12 @@ async function main() {
   const tipsAfter = await db.selectFrom('trip_tips').select(db.fn.count('id').as('c')).where('user_id', '=', DEMO_ID).executeTakeFirst();
   console.log(`  Tips: ${(tipsBefore as any).c} → ${(tipsAfter as any).c} (removed duplicates)`);
 
-  // 2. Remove duplicate family members (keep earliest per user+first_name)
+  // 2. Remove duplicate family members (keep earliest per user+relationship+first_name)
   const famBefore = await db.selectFrom('family_members').select(db.fn.count('id').as('c')).where('user_id', '=', DEMO_ID).executeTakeFirst();
   await sql`
     DELETE FROM family_members WHERE id IN (
       SELECT id FROM (
-        SELECT id, ROW_NUMBER() OVER (PARTITION BY user_id, first_name ORDER BY created_at ASC) as rn
+        SELECT id, ROW_NUMBER() OVER (PARTITION BY user_id, relationship, first_name ORDER BY created_at ASC) as rn
         FROM family_members WHERE user_id = ${DEMO_ID}
       ) sub WHERE rn > 1
     )

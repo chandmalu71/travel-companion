@@ -82,25 +82,29 @@ async function main() {
     sharing_scope: 'all_trips',
     share_dietary: true,
     share_allergies: true,
-  }).onConflict((oc) => oc.columns(['user_id', 'linked_user_id'] as any).doNothing()).execute().catch(() => {});
-
-  await db.insertInto('family_members').values({
-    user_id: DEMO_ID,
-    mode: 'managed',
-    relationship: 'child',
-    first_name: 'Oliver',
-    last_name: 'Thompson',
-    date_of_birth: '2019-06-22',
-    gender: 'male',
-    dietary_preferences: [] as any,
-    allergies: ['dairy'] as any,
-    seat_preference: 'window',
-    meal_preference: 'child_meal',
-    sharing_scope: 'all_trips',
-    share_dietary: true,
-    share_allergies: true,
-    notes: 'Needs booster seat for car rentals',
   }).execute().catch(() => {});
+
+  // Check if Oliver already exists before inserting
+  const existingOliver = await db.selectFrom('family_members').select('id').where('user_id', '=', DEMO_ID).where('first_name', '=', 'Oliver').executeTakeFirst();
+  if (!existingOliver) {
+    await db.insertInto('family_members').values({
+      user_id: DEMO_ID,
+      mode: 'managed',
+      relationship: 'child',
+      first_name: 'Oliver',
+      last_name: 'Thompson',
+      date_of_birth: '2019-06-22',
+      gender: 'male',
+      dietary_preferences: [] as any,
+      allergies: ['dairy'] as any,
+      seat_preference: 'window',
+      meal_preference: 'child_meal',
+      sharing_scope: 'all_trips',
+      share_dietary: true,
+      share_allergies: true,
+      notes: 'Needs booster seat for car rentals',
+    }).execute().catch(() => {});
+  }
   console.log('  ✅ 2 family members (spouse + child)');
 
   // ─── CONVERSATIONS & MESSAGES ──────────────────────────────────────────────
