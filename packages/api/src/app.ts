@@ -41,6 +41,7 @@ import { registerEmailAliasRoutes } from './routes/email-aliases.js';
 import { registerSubscriptionRoutes, registerAdminPlanRoutes, registerAdminPromotionRoutes, registerAdminCampaignRoutes } from './routes/subscriptions.js';
 import { registerReceiptScanRoute } from './routes/receipt-scan.js';
 import { registerAnalyticsRoutes } from './routes/analytics.js';
+import { registerCrmRoutes } from './routes/crm.js';
 import { registerEmailAdminRoutes } from './routes/email-admin.js';
 import { registerOAuthRoutes, registerMicrosoftOAuthRoutes, registerFacebookOAuthRoutes } from './routes/oauth.js';
 import { registerTripTimelineRoute } from './routes/trip-timeline.js';
@@ -212,6 +213,11 @@ export async function buildApp(
   // Register weather routes
   if (options.db) {
     await registerWeatherRoutes(app, { db: options.db });
+  }
+
+  // Register CRM routes
+  if (options.db) {
+    await registerCrmRoutes(app, { db: options.db });
   }
 
   // Register messaging routes
