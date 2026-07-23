@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: '📊' },
   { href: '/trips', label: 'All Trips', icon: '✈️' },
   { href: '/users', label: 'Users', icon: '👥' },
+  { href: '/crm', label: 'CRM & Leads', icon: '🎯' },
   { href: '/roles', label: 'Roles', icon: '🔑' },
   { href: '/memberships', label: 'Memberships', icon: '🧑‍🤝‍🧑' },
   { href: '/i18n', label: 'Locale & i18n', icon: '🌐' },
