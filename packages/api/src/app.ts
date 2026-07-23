@@ -42,6 +42,7 @@ import { registerSubscriptionRoutes, registerAdminPlanRoutes, registerAdminPromo
 import { registerReceiptScanRoute } from './routes/receipt-scan.js';
 import { registerAnalyticsRoutes } from './routes/analytics.js';
 import { registerCrmRoutes } from './routes/crm.js';
+import { registerEmailCampaignRoutes } from './routes/email-campaigns.js';
 import { registerEmailAdminRoutes } from './routes/email-admin.js';
 import { registerOAuthRoutes, registerMicrosoftOAuthRoutes, registerFacebookOAuthRoutes } from './routes/oauth.js';
 import { registerTripTimelineRoute } from './routes/trip-timeline.js';
@@ -218,6 +219,7 @@ export async function buildApp(
   // Register CRM routes
   if (options.db) {
     await registerCrmRoutes(app, { db: options.db });
+    await registerEmailCampaignRoutes(app, { db: options.db });
   }
 
   // Register messaging routes
