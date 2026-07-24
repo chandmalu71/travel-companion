@@ -155,6 +155,15 @@ export async function registerCrmRoutes(
         }
       }
 
+      // Trigger welcome automation
+      try {
+        await fetch(`http://localhost:${process.env.PORT ?? 3000}/api/internal/trigger-automation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: 'lead_signup', email: email.toLowerCase().trim(), name: fullName, leadId: lead?.id }),
+        });
+      } catch { /* non-blocking */ }
+
       return reply.status(201).send({
         statusCode: 201,
         message: 'Thanks for signing up! Check your inbox for a welcome email.',

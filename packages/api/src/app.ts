@@ -43,6 +43,7 @@ import { registerReceiptScanRoute } from './routes/receipt-scan.js';
 import { registerAnalyticsRoutes } from './routes/analytics.js';
 import { registerCrmRoutes } from './routes/crm.js';
 import { registerEmailCampaignRoutes } from './routes/email-campaigns.js';
+import { registerAutomationRoutes } from './routes/email-automation.js';
 import { registerEmailAdminRoutes } from './routes/email-admin.js';
 import { registerOAuthRoutes, registerMicrosoftOAuthRoutes, registerFacebookOAuthRoutes } from './routes/oauth.js';
 import { registerTripTimelineRoute } from './routes/trip-timeline.js';
@@ -220,6 +221,7 @@ export async function buildApp(
   if (options.db) {
     await registerCrmRoutes(app, { db: options.db });
     await registerEmailCampaignRoutes(app, { db: options.db });
+    await registerAutomationRoutes(app, { db: options.db });
   }
 
   // Register messaging routes
