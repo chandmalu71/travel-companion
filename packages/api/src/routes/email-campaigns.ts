@@ -222,6 +222,74 @@ Respond in JSON format:
     });
   });
 
+  // ─── GET /api/email/track/open/:sendId — open tracking pixel ─────────────
+  app.get('/api/email/track/open/:sendId', async (request: FastifyRequest<{ Params: { sendId: string } }>, reply: FastifyReply) => {
+    const { sendId } = request.params;
+    // Record the open
+    await (db as any).updateTable('email_sends')
+      .set({ opened_at: new Date(), status: 'opened' })
+      .where('id', '=', sendId)
+      .where('opened_at', 'is', null)
+      .execute().catch(() => {});
+
+    // Return a 1x1 transparent GIF
+    const pixel = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+    return reply.header('Content-Type', 'image/gif').header('Cache-Control', 'no-store').send(pixel);
+  });
+
+  // ─── GET /api/email/track/click/:sendId — click tracking redirect ──────────
+  app.get('/api/email/track/click/:sendId', async (request: FastifyRequest<{ Params: { sendId: string }; Querystring: { url?: string } }>, reply: FastifyReply) => {
+    const { sendId } = request.params;
+    const { url } = request.query;
+
+    // Record the click
+    await (db as any).updateTable('email_sends')
+      .set({ clicked_at: new Date() })
+      .where('id', '=', sendId)
+      .where('clicked_at', 'is', null)
+      .execute().catch(() => {});
+
+    // Redirect to actual URL
+    const destination = url ?? 'https://neyya.ai';
+    return reply.redirect(302, destination);
+  });
+
+  // ─── GET /api/admin/email-analytics — overall email performance ────────────
+  app.get('/api/admin/email-analytics', async (_request: FastifyRequest, reply: FastifyReply) => {
+    const totalSent = await (db as any).selectFrom('email_sends').select(sql`count(*)`.as('c')).where('status', 'in', ['sent', 'opened']).executeTakeFirst();
+    const totalOpened = await (db as any).selectFrom('email_sends').select(sql`count(*)`.as('c')).where('opened_at', 'is not', null).executeTakeFirst();
+    const totalClicked = await (db as any).selectFrom('email_sends').select(sql`count(*)`.as('c')).where('clicked_at', 'is not', null).executeTakeFirst();
+    const totalBounced = await (db as any).selectFrom('email_sends').select(sql`count(*)`.as('c')).where('status', '=', 'bounced').executeTakeFirst();
+    const totalUnsubscribed = await (db as any).selectFrom('email_unsubscribes').select(sql`count(*)`.as('c')).executeTakeFirst();
+
+    const sent = Number(totalSent?.c ?? 0);
+    const opened = Number(totalOpened?.c ?? 0);
+    const clicked = Number(totalClicked?.c ?? 0);
+
+    // Recent sends (last 7 days)
+    const recentSends = await (db as any).selectFrom('email_sends')
+      .select([sql`DATE(sent_at)`.as('date'), sql`count(*)`.as('count')])
+      .where('sent_at', '>=', sql`NOW() - INTERVAL '7 days'`)
+      .where('sent_at', 'is not', null)
+      .groupBy(sql`DATE(sent_at)`)
+      .orderBy('date', 'asc')
+      .execute();
+
+    return reply.send({
+      statusCode: 200,
+      data: {
+        totalSent: sent,
+        totalOpened: opened,
+        totalClicked: clicked,
+        totalBounced: Number(totalBounced?.c ?? 0),
+        totalUnsubscribed: Number(totalUnsubscribed?.c ?? 0),
+        openRate: sent > 0 ? Math.round((opened / sent) * 100) : 0,
+        clickRate: sent > 0 ? Math.round((clicked / sent) * 100) : 0,
+        recentSends,
+      },
+    });
+  });
+
   // ─── GET /api/email/unsubscribe — one-click unsubscribe ────────────────────
   app.get('/api/email/unsubscribe', async (request: FastifyRequest<{ Querystring: { email?: string } }>, reply: FastifyReply) => {
     const { email } = request.query;
