@@ -210,7 +210,14 @@ export async function registerAdminRoutes(
   // ─── GET /api/admin/config ─────────────────────────────────────────
 
   app.get('/api/admin/config', async (_request: FastifyRequest, reply: FastifyReply) => {
-    // In production: read from Redis/DB. For now return defaults.
+    // Read persisted settings from DB
+    let landingCtaMode = 'early_access'; // default
+    try {
+      const { sql } = await import('kysely');
+      const row = await sql`SELECT value FROM site_config WHERE key = 'landing_cta_mode'`.execute(db) as any;
+      if (row?.rows?.[0]?.value) landingCtaMode = row.rows[0].value;
+    } catch { /* table may not exist yet — use default */ }
+
     return reply.send({
       statusCode: 200,
       data: {
@@ -221,6 +228,9 @@ export async function registerAdminRoutes(
         featureFlags: {
           email_scanning: true, ai_search: true, receipt_scanning: true,
           social_sharing: false, expense_splitting: true, proactive_suggestions: true,
+        },
+        landingPage: {
+          ctaMode: landingCtaMode, // 'early_access' | 'sign_up' | 'waitlist'
         },
         oauthProviders: [
           { id: 'google', name: 'Google', icon: '🔵', status: process.env.GOOGLE_CLIENT_ID && !process.env.GOOGLE_CLIENT_ID.includes('placeholder') ? 'enabled' : 'disabled', configured: !!process.env.GOOGLE_CLIENT_ID && !process.env.GOOGLE_CLIENT_ID.includes('placeholder') },
@@ -242,7 +252,15 @@ export async function registerAdminRoutes(
       const adminId = (request as any).userId as string;
       const config = request.body;
 
-      // In production: persist to Redis/DB for live reload
+      // Persist landing page CTA mode if provided
+      if (config.landingCtaMode) {
+        try {
+          const { sql } = await import('kysely');
+          await sql`INSERT INTO site_config (key, value, updated_at) VALUES ('landing_cta_mode', ${config.landingCtaMode as string}, NOW())
+            ON CONFLICT (key) DO UPDATE SET value = ${config.landingCtaMode as string}, updated_at = NOW()`.execute(db);
+        } catch { /* table may not exist — non-blocking */ }
+      }
+
       await logAdminAction(db, adminId, 'config_changed', 'system', JSON.stringify(config).slice(0, 200), request.ip);
 
       return reply.send({ statusCode: 200, message: 'Configuration updated' });

@@ -44,6 +44,18 @@ export async function registerCrmRoutes(
 ): Promise<void> {
   const { db } = options;
 
+  // ─── GET /api/config/landing — Public landing page config (no auth) ─────────
+  app.get('/api/config/landing', async (_request: FastifyRequest, reply: FastifyReply) => {
+    let ctaMode = 'early_access'; // default
+    try {
+      const { sql } = await import('kysely');
+      const row = await sql`SELECT value FROM site_config WHERE key = 'landing_cta_mode'`.execute(db) as any;
+      if (row?.rows?.[0]?.value) ctaMode = row.rows[0].value;
+    } catch { /* table may not exist — use default */ }
+
+    return reply.send({ statusCode: 200, data: { ctaMode } });
+  });
+
   // ─── POST /api/leads — Public lead capture ──────────────────────────────────
   app.post('/api/leads', async (request: FastifyRequest<{ Body: any }>, reply: FastifyReply) => {
     const body = request.body as any;

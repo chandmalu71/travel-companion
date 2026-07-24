@@ -124,6 +124,9 @@ export default function CrmDashboardPage() {
         )}
       </div>
 
+      {/* Landing Page CTA Mode */}
+      <LandingCtaModeToggle />
+
       {/* Quick Setup Guide */}
       <div className="bg-gray-800/50 rounded-lg border border-dashed border-gray-600 p-5">
         <h3 className="text-sm font-semibold text-gray-300 mb-2">Setup Checklist</h3>
@@ -172,5 +175,81 @@ function LeadStatusBadge({ status }: { status: string }) {
     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${styles[status] ?? 'bg-gray-500/20 text-gray-400'}`}>
       {status}
     </span>
+  );
+}
+
+
+function LandingCtaModeToggle() {
+  const [mode, setMode] = useState<string>('early_access');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token');
+    fetch(`${API_BASE}/api/admin/config`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => {
+        if (d.data?.landingPage?.ctaMode) setMode(d.data.landingPage.ctaMode);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleChange = async (newMode: string) => {
+    setMode(newMode);
+    setSaving(true);
+    const token = localStorage.getItem('admin_token');
+    try {
+      await fetch(`${API_BASE}/api/admin/config`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ landingCtaMode: newMode }),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {}
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="bg-gray-800 dark:bg-gray-800 rounded-lg border border-gray-700 p-5">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-300">Landing Page CTA</h3>
+          <p className="text-xs text-gray-500 mt-0.5">Controls what visitors see in the call-to-action section</p>
+        </div>
+        {saved && <span className="text-xs text-green-400">✓ Saved</span>}
+        {saving && <span className="text-xs text-gray-400">Saving...</span>}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => handleChange('early_access')}
+          className={`rounded-lg border p-3 text-left transition-all ${
+            mode === 'early_access'
+              ? 'border-emerald-500 bg-emerald-500/10'
+              : 'border-gray-600 hover:border-gray-500'
+          }`}
+        >
+          <p className={`text-sm font-medium ${mode === 'early_access' ? 'text-emerald-400' : 'text-gray-300'}`}>
+            📧 Early Access
+          </p>
+          <p className="text-xs text-gray-500 mt-1">Email capture form with waitlist messaging</p>
+        </button>
+
+        <button
+          onClick={() => handleChange('sign_up')}
+          className={`rounded-lg border p-3 text-left transition-all ${
+            mode === 'sign_up'
+              ? 'border-emerald-500 bg-emerald-500/10'
+              : 'border-gray-600 hover:border-gray-500'
+          }`}
+        >
+          <p className={`text-sm font-medium ${mode === 'sign_up' ? 'text-emerald-400' : 'text-gray-300'}`}>
+            🚀 Sign Up
+          </p>
+          <p className="text-xs text-gray-500 mt-1">Direct registration button (post-launch)</p>
+        </button>
+      </div>
+    </div>
   );
 }

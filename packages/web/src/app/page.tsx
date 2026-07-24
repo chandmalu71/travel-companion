@@ -373,27 +373,8 @@ export default function LandingPage() {
       {/* ─── Pricing Section ──────────────────────────────────────── */}
       <PricingSection />
 
-      {/* ─── CTA Section with Lead Capture ─────────────────────────── */}
-      <section className="py-20 px-4 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div className="text-center md:text-left">
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-                Ready to Transform Your Travel Experience?
-              </h2>
-              <p className="text-lg text-gray-600 mb-6">
-                Join thousands of travelers who plan smarter, not harder. Get early access and exclusive launch offers.
-              </p>
-              <div className="flex flex-wrap gap-4 justify-center md:justify-start text-sm text-gray-500">
-                <span className="flex items-center gap-1">✓ Free to join</span>
-                <span className="flex items-center gap-1">✓ No spam</span>
-                <span className="flex items-center gap-1">✓ Unsubscribe anytime</span>
-              </div>
-            </div>
-            <LeadCaptureForm source="landing_cta" />
-          </div>
-        </div>
-      </section>
+      {/* ─── CTA Section ─────────────────────────────────────────────── */}
+      <LandingCTA />
 
       {/* ─── Footer ─────────────────────────────────────────────────── */}
       <footer className="bg-gray-900 text-gray-300 py-12 px-4">
@@ -548,6 +529,60 @@ function PricingSection() {
           })}
         </div>
         <p className="text-center text-sm text-gray-500 mt-6">Annual billing saves 2 months. <Link href="/pricing" className="text-primary-600 hover:underline">View full comparison →</Link></p>
+      </div>
+    </section>
+  );
+}
+
+// ─── Dynamic Landing CTA (admin-configurable) ────────────────────────────────
+
+function LandingCTA() {
+  const [ctaMode, setCtaMode] = useState<string>('early_access');
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'}/api/config/landing`)
+      .then(r => r.json())
+      .then(d => { if (d.data?.ctaMode) setCtaMode(d.data.ctaMode); })
+      .catch(() => {});
+  }, []);
+
+  return (
+    <section className="py-20 px-4 bg-white">
+      <div className="max-w-4xl mx-auto">
+        {ctaMode === 'early_access' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div className="text-center md:text-left">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+                Ready to Transform Your Travel Experience?
+              </h2>
+              <p className="text-lg text-gray-600 mb-6">
+                Join thousands of travelers who plan smarter, not harder. Get early access and exclusive launch offers.
+              </p>
+              <div className="flex flex-wrap gap-4 justify-center md:justify-start text-sm text-gray-500">
+                <span className="flex items-center gap-1">✓ Free to join</span>
+                <span className="flex items-center gap-1">✓ No spam</span>
+                <span className="flex items-center gap-1">✓ Unsubscribe anytime</span>
+              </div>
+            </div>
+            <LeadCaptureForm source="landing_cta" />
+          </div>
+        ) : (
+          <div className="text-center">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Ready to Transform Your Travel Experience?
+            </h2>
+            <p className="text-lg text-gray-600 mb-8">
+              Join thousands of travelers who plan smarter, not harder.
+            </p>
+            <Link
+              href="/register"
+              className="inline-block rounded-lg bg-primary-500 px-10 py-4 text-lg font-semibold text-white shadow-lg hover:bg-primary-600 transition-all hover:scale-105"
+            >
+              Create Your Free Account
+            </Link>
+            <p className="mt-3 text-sm text-gray-500">Free plan includes 3 trips. No credit card required.</p>
+          </div>
+        )}
       </div>
     </section>
   );
