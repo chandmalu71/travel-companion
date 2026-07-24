@@ -32,6 +32,7 @@ function TemplatesTab() {
   const [editForm, setEditForm] = useState<any>({});
   const [testEmail, setTestEmail] = useState('');
   const [testResult, setTestResult] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'system' | 'marketing'>('all');
 
   useEffect(() => {
     fetch('http://localhost:3000/api/admin/email/templates').then(r => r.json())
@@ -69,11 +70,26 @@ function TemplatesTab() {
 
   if (loading) return <div className="animate-pulse h-40 bg-gray-700 rounded-lg" />;
 
+  const filteredTemplates = typeFilter === 'all'
+    ? templates
+    : templates.filter(t => (t.type ?? 'system') === typeFilter);
+
   return (
     <div className="space-y-3">
-      <p className="text-sm text-gray-400">Edit email templates. Use {'{{variable}}'} for dynamic content.</p>
+      {/* Type Filter */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-400">Edit email templates. Use {'{{variable}}'} for dynamic content.</p>
+        <div className="flex gap-1 bg-gray-700 rounded-md p-0.5">
+          {(['all', 'system', 'marketing'] as const).map(f => (
+            <button key={f} onClick={() => setTypeFilter(f)}
+              className={`px-3 py-1 text-xs rounded-md transition ${typeFilter === f ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}>
+              {f === 'all' ? 'All' : f === 'system' ? '🔒 System' : '📢 Marketing'}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      {templates.map((t: any) => (
+      {filteredTemplates.map((t: any) => (
         <div key={t.slug} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">

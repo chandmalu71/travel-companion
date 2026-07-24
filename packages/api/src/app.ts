@@ -57,6 +57,7 @@ import { registerSourceAttachmentsRoute } from './routes/source-attachments.js';
 import { registerChatConciergeRoutes } from './routes/chat-concierge.js';
 import { registerAbTestRoutes } from './routes/ab-tests.js';
 import { registerMilestoneRoutes } from './routes/milestones.js';
+import { registerDiscountCodeRoutes } from './routes/discount-codes.js';
 import { CognitoService } from './services/cognito.js';
 import { type Kysely } from 'kysely';
 import { type Database } from './db/types.js';
@@ -234,6 +235,7 @@ export async function buildApp(
   // Register milestone routes
   if (options.db) {
     await registerMilestoneRoutes(app, { db: options.db });
+    await registerDiscountCodeRoutes(app, { db: options.db });
   }
 
   // Register messaging routes
