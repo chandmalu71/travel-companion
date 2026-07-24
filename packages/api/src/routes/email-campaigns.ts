@@ -357,10 +357,4 @@ Respond in JSON format:
 
     return reply.send({ statusCode: 200, message: 'You have been unsubscribed. You will no longer receive marketing emails from Neyya.' });
   });
-
-  // ─── GET /api/admin/automations ────────────────────────────────────────────
-  app.get('/api/admin/automations', async (_request: FastifyRequest, reply: FastifyReply) => {
-    const automations = await (db as any).selectFrom('email_automations').selectAll().orderBy('created_at', 'asc').execute();
-    return reply.send({ statusCode: 200, data: automations });
-  });
 }
