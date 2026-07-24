@@ -29,7 +29,11 @@ export async function registerEmailCampaignRoutes(
 
   // ─── GET /api/admin/email-templates ────────────────────────────────────────
   app.get('/api/admin/email-templates', async (_request: FastifyRequest, reply: FastifyReply) => {
-    const templates = await (db as any).selectFrom('email_templates').selectAll().orderBy('created_at', 'desc').execute();
+    const templates = await (db as any).selectFrom('email_templates')
+      .selectAll()
+      .where('type', '=', 'marketing')
+      .orderBy('created_at', 'desc')
+      .execute();
     return reply.send({ statusCode: 200, data: templates });
   });
 

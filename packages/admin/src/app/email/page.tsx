@@ -72,7 +72,10 @@ function TemplatesTab() {
 
   const filteredTemplates = typeFilter === 'all'
     ? templates
-    : templates.filter(t => (t.type ?? 'system') === typeFilter);
+    : templates.filter(t => {
+        const tType = t.type ?? (t.category === 'transactional' || !t.slug?.startsWith('mkt_') ? 'system' : 'marketing');
+        return tType === typeFilter;
+      });
 
   return (
     <div className="space-y-3">
