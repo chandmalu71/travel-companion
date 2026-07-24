@@ -13,7 +13,10 @@ export async function up(db: Kysely<any>): Promise<void> {
   await sql`ALTER TABLE email_templates ADD COLUMN IF NOT EXISTS slug VARCHAR(100)`.execute(db);
   await sql`ALTER TABLE email_templates ADD COLUMN IF NOT EXISTS type VARCHAR(20) DEFAULT 'marketing'`.execute(db);
   await sql`ALTER TABLE email_templates ADD COLUMN IF NOT EXISTS sender_address VARCHAR(200)`.execute(db);
-  await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_email_templates_slug ON email_templates (slug) WHERE slug IS NOT NULL`.execute(db);
+  
+  // Add a proper unique constraint (not partial index) for ON CONFLICT to work
+  await sql`ALTER TABLE email_templates DROP CONSTRAINT IF EXISTS email_templates_slug_unique`.execute(db);
+  await sql`ALTER TABLE email_templates ADD CONSTRAINT email_templates_slug_unique UNIQUE (slug)`.execute(db);
 
   // Update existing templates with slugs
   await sql`UPDATE email_templates SET type = 'system' WHERE category = 'transactional' OR name ILIKE '%welcome%' OR name ILIKE '%verification%' OR name ILIKE '%reset%' OR name ILIKE '%invitation%'`.execute(db);

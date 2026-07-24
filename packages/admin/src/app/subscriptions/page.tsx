@@ -454,7 +454,7 @@ function CampaignsTab() {
   const [form, setForm] = useState({ code: '', name: '', discountPercent: 30, discountMonths: 3, applicablePlans: 'pro,premium', maxUses: 1000, validUntil: '' });
 
   const fetchCampaigns = () => {
-    fetch('http://localhost:3000/api/admin/campaigns').then(r => r.json())
+    fetch('http://localhost:3000/api/admin/promo-campaigns').then(r => r.json())
       .then(d => setCampaigns(d.data ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -462,7 +462,7 @@ function CampaignsTab() {
   useEffect(() => { fetchCampaigns(); }, []);
 
   const createCampaign = async () => {
-    await fetch('http://localhost:3000/api/admin/campaigns', {
+    await fetch('http://localhost:3000/api/admin/promo-campaigns', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         code: form.code, name: form.name, discountPercent: form.discountPercent,
@@ -476,7 +476,7 @@ function CampaignsTab() {
   };
 
   const toggleActive = async (c: any) => {
-    await fetch(`http://localhost:3000/api/admin/campaigns/${c.id}`, {
+    await fetch(`http://localhost:3000/api/admin/promo-campaigns/${c.id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isActive: !c.is_active }),
     });
@@ -494,7 +494,7 @@ function CampaignsTab() {
 
   const saveEdit = async () => {
     if (!editingId) return;
-    await fetch(`http://localhost:3000/api/admin/campaigns/${editingId}`, {
+    await fetch(`http://localhost:3000/api/admin/promo-campaigns/${editingId}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         code: editForm.code, name: editForm.name, discountPercent: editForm.discountPercent,
@@ -508,7 +508,7 @@ function CampaignsTab() {
 
   const deleteCampaign = async (id: string) => {
     if (!confirm('Delete this campaign code?')) return;
-    await fetch(`http://localhost:3000/api/admin/campaigns/${id}`, { method: 'DELETE' });
+    await fetch(`http://localhost:3000/api/admin/promo-campaigns/${id}`, { method: 'DELETE' });
     fetchCampaigns();
   };
 

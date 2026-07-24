@@ -459,14 +459,14 @@ export async function registerAdminCampaignRoutes(
 ): Promise<void> {
   const { db } = options;
 
-  // GET /api/admin/campaigns — list all campaigns
-  app.get('/api/admin/campaigns', async (_request: FastifyRequest, reply: FastifyReply) => {
+  // GET /api/admin/promo-campaigns — list all promotional campaigns
+  app.get('/api/admin/promo-campaigns', async (_request: FastifyRequest, reply: FastifyReply) => {
     const campaigns = await db.selectFrom('subscription_campaigns' as any).selectAll().orderBy('created_at', 'desc').execute();
     return reply.send({ statusCode: 200, data: campaigns });
   });
 
-  // POST /api/admin/campaigns — create campaign
-  app.post('/api/admin/campaigns', async (request: FastifyRequest<{ Body: any }>, reply: FastifyReply) => {
+  // POST /api/admin/promo-campaigns — create campaign
+  app.post('/api/admin/promo-campaigns', async (request: FastifyRequest<{ Body: any }>, reply: FastifyReply) => {
     const body = request.body as any;
     if (!body.code || !body.name || !body.discountPercent) {
       return reply.status(400).send({ statusCode: 400, error: 'code, name, discountPercent required' });
@@ -484,8 +484,8 @@ export async function registerAdminCampaignRoutes(
     return reply.status(201).send({ statusCode: 201, data: campaign });
   });
 
-  // PUT /api/admin/campaigns/:id — update campaign
-  app.put('/api/admin/campaigns/:id', async (request: FastifyRequest<{ Params: { id: string }; Body: any }>, reply: FastifyReply) => {
+  // PUT /api/admin/promo-campaigns/:id — update campaign
+  app.put('/api/admin/promo-campaigns/:id', async (request: FastifyRequest<{ Params: { id: string }; Body: any }>, reply: FastifyReply) => {
     const { id } = request.params;
     const body = request.body as any;
     const updates: Record<string, unknown> = {};
