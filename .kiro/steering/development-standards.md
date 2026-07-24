@@ -535,3 +535,25 @@ When adding a new "pick from list" feature:
 - Create public API: GET enabled only
 - Create admin UI page with toggles
 - User settings/forms fetch from the public API
+
+
+## 17. Admin Panel Sidebar Organisation
+
+The admin panel sidebar uses **grouped, collapsible navigation**. When adding new admin pages, place them in the correct group:
+
+| Group | Purpose | Pages |
+|-------|---------|-------|
+| **Overview** | High-level dashboards | Dashboard, Analytics |
+| **User Management** | User accounts & permissions | Users, Roles, Moderation |
+| **Content & Trips** | User-generated content | All Trips, Memberships |
+| **CRM & Marketing** | Leads, campaigns, engagement | Leads, Campaigns, Automations, Social Media |
+| **Subscriptions & Costs** | Billing & revenue | Plans & Pricing, Costs |
+| **Localisation** | Language & formatting | Locale & i18n, Translations, Preferences |
+| **System** | Infrastructure & ops | Configuration, Email, System Health, Audit Log |
+
+**Rules:**
+- New pages MUST be added to the appropriate group in `packages/admin/src/app/admin-sidebar.tsx`
+- If a page doesn't fit existing groups, discuss creating a new group
+- Each group should have 2-5 items (split if more than 5)
+- Group order reflects priority: business-critical at top, operational at bottom
+- Groups auto-expand when any child page is active

@@ -21,14 +21,20 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Content',
+    label: 'User Management',
+    icon: '👥',
+    items: [
+      { href: '/users', label: 'Users', icon: '👥' },
+      { href: '/roles', label: 'Roles', icon: '🔑' },
+      { href: '/moderation', label: 'Moderation', icon: '🛡️' },
+    ],
+  },
+  {
+    label: 'Content & Trips',
     icon: '✈️',
     items: [
       { href: '/trips', label: 'All Trips', icon: '✈️' },
-      { href: '/users', label: 'Users', icon: '👥' },
-      { href: '/roles', label: 'Roles', icon: '🔑' },
       { href: '/memberships', label: 'Memberships', icon: '🧑‍🤝‍🧑' },
-      { href: '/moderation', label: 'Moderation', icon: '🛡️' },
     ],
   },
   {
@@ -38,10 +44,11 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/crm', label: 'Leads', icon: '📋' },
       { href: '/crm/campaigns', label: 'Campaigns', icon: '📧' },
       { href: '/crm/automations', label: 'Automations', icon: '⚡' },
+      { href: '/crm/social', label: 'Social Media', icon: '📱' },
     ],
   },
   {
-    label: 'Subscriptions',
+    label: 'Subscriptions & Costs',
     icon: '💎',
     items: [
       { href: '/subscriptions', label: 'Plans & Pricing', icon: '💎' },
