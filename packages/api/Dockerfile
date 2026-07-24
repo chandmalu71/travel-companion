@@ -13,6 +13,9 @@ COPY packages/api/package.json packages/api/tsconfig.json ./packages/api/
 # Install dependencies
 RUN pnpm install --frozen-lockfile --prod=false
 
+# Add SES SDK (dynamically imported by email service)
+RUN cd packages/api && pnpm add @aws-sdk/client-ses
+
 # Copy source
 COPY packages/shared/src ./packages/shared/src
 COPY packages/api/src ./packages/api/src
