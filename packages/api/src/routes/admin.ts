@@ -393,7 +393,7 @@ export async function registerAdminTripsRoute(app: any, options: { db: any }): P
       .selectFrom('trips')
       .innerJoin('users', 'users.id', 'trips.owner_id')
       .select([
-        'trips.id', 'trips.name', 'trips.destination', 'trips.start_date',
+        'trips.id', 'trips.name', 'trips.start_date',
         'trips.end_date', 'trips.created_at',
         'users.display_name as owner_name', 'users.email as owner_email',
       ])

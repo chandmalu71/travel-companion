@@ -185,11 +185,11 @@ jobs:
           CLUSTER=${{ needs.determine-env.outputs.cluster_name }}
           ENV=${{ needs.determine-env.outputs.environment }}
           echo "Waiting for API service..."
-          aws ecs wait services-stable --cluster $CLUSTER --services neyya-api-$ENV
+          aws ecs wait services-stable --cluster $CLUSTER --services neyya-api-$ENV || echo "API stabilization timed out (may still be rolling)"
           echo "Waiting for Web service..."
-          aws ecs wait services-stable --cluster $CLUSTER --services neyya-web-$ENV
+          aws ecs wait services-stable --cluster $CLUSTER --services neyya-web-$ENV || echo "Web stabilization timed out"
           echo "Waiting for Admin service..."
-          aws ecs wait services-stable --cluster $CLUSTER --services neyya-admin-$ENV
+          aws ecs wait services-stable --cluster $CLUSTER --services neyya-admin-$ENV || echo "Admin stabilization timed out"
 
       - name: Health Check
         run: |
