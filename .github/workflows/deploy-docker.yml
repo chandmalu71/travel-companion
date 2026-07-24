@@ -181,7 +181,7 @@ jobs:
           aws ecs update-service --cluster $CLUSTER --service neyya-admin-${{ needs.determine-env.outputs.environment }} --task-definition $NEW_TASK_ARN --force-new-deployment
 
       - name: Wait for services to stabilize
-        timeout-minutes: 5
+        timeout-minutes: 8
         run: |
           CLUSTER=${{ needs.determine-env.outputs.cluster_name }}
           ENV=${{ needs.determine-env.outputs.environment }}
