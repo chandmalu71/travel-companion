@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { ChatWidget } from '@/components/chat-widget';
 import { ThemeProvider } from '@/components/theme-provider';
+import { CookieConsentBanner } from '@/components/cookie-consent';
 
 export const metadata: Metadata = {
   title: 'Neyya — Your Complete AI Travel Companion',
@@ -36,6 +37,7 @@ export default function RootLayout({
           <div className="flex min-h-screen flex-col">
             {children}
           </div>
+          <CookieConsentBanner />
           <ChatWidget />
         </ThemeProvider>
       </body>
