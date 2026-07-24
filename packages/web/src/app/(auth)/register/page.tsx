@@ -10,6 +10,8 @@ export default function RegisterPage() {
     confirmPassword: '',
     displayName: '',
   });
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -23,6 +25,11 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!termsAccepted) {
+      setError('You must accept the Terms of Service to create an account');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -33,6 +40,8 @@ export default function RegisterPage() {
           email: formData.email,
           password: formData.password,
           displayName: formData.displayName,
+          termsAccepted: true,
+          marketingConsent,
         }),
       });
 
@@ -155,6 +164,44 @@ export default function RegisterPage() {
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
               />
+            </div>
+          </div>
+
+          {/* Legal checkboxes */}
+          <div className="space-y-3">
+            <div className="flex items-start gap-2">
+              <input
+                id="terms"
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-400"
+                required
+              />
+              <label htmlFor="terms" className="text-sm text-gray-700">
+                I agree to the{' '}
+                <Link href="/terms" className="text-primary-600 hover:underline" target="_blank">
+                  Terms of Service
+                </Link>{' '}
+                and{' '}
+                <Link href="/privacy" className="text-primary-600 hover:underline" target="_blank">
+                  Privacy Policy
+                </Link>{' '}
+                <span className="text-red-400">*</span>
+              </label>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <input
+                id="marketing"
+                type="checkbox"
+                checked={marketingConsent}
+                onChange={(e) => setMarketingConsent(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-400"
+              />
+              <label htmlFor="marketing" className="text-sm text-gray-600">
+                I'd like to receive travel tips, product updates, and exclusive offers. You can unsubscribe anytime.
+              </label>
             </div>
           </div>
 

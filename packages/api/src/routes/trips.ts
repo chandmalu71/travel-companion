@@ -67,7 +67,7 @@ export async function registerTripRoutes(
         });
       }
 
-      const { name, start_date, end_date } = parseResult.data;
+      const { name, destination, start_date, end_date } = parseResult.data;
       const userId = request.user!.userId;
 
       try {
@@ -79,6 +79,7 @@ export async function registerTripRoutes(
           .values({
             owner_id: userId,
             name,
+            destination: destination ?? null,
             start_date: start_date ?? null,
             end_date: end_date ?? null,
           })
@@ -340,6 +341,9 @@ export async function registerTripRoutes(
 
         if (data.name !== undefined) {
           updateFields['name'] = data.name;
+        }
+        if (data.destination !== undefined) {
+          updateFields['destination'] = data.destination;
         }
         if (data.start_date !== undefined) {
           updateFields['start_date'] = data.start_date;

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { LeadCaptureForm } from '@/components/lead-capture-form';
 
 // ─── Hero Carousel Images (Unsplash, free to use) ────────────────────────────
 
@@ -372,21 +373,25 @@ export default function LandingPage() {
       {/* ─── Pricing Section ──────────────────────────────────────── */}
       <PricingSection />
 
-      {/* ─── CTA Section ────────────────────────────────────────────── */}
+      {/* ─── CTA Section with Lead Capture ─────────────────────────── */}
       <section className="py-20 px-4 bg-white">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Ready to Transform Your Travel Experience?
-          </h2>
-          <p className="text-lg text-gray-600 mb-8">
-            Join thousands of travelers who plan smarter, not harder.
-          </p>
-          <Link
-            href="/register"
-            className="inline-block rounded-lg bg-primary-500 px-10 py-4 text-lg font-semibold text-white shadow-lg hover:bg-primary-600 transition-all hover:scale-105"
-          >
-            Create Your Free Account
-          </Link>
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div className="text-center md:text-left">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+                Ready to Transform Your Travel Experience?
+              </h2>
+              <p className="text-lg text-gray-600 mb-6">
+                Join thousands of travelers who plan smarter, not harder. Get early access and exclusive launch offers.
+              </p>
+              <div className="flex flex-wrap gap-4 justify-center md:justify-start text-sm text-gray-500">
+                <span className="flex items-center gap-1">✓ Free to join</span>
+                <span className="flex items-center gap-1">✓ No spam</span>
+                <span className="flex items-center gap-1">✓ Unsubscribe anytime</span>
+              </div>
+            </div>
+            <LeadCaptureForm source="landing_cta" />
+          </div>
         </div>
       </section>
 

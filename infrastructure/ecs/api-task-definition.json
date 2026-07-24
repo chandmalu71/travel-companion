@@ -21,9 +21,12 @@
         { "name": "NODE_ENV", "value": "production" },
         { "name": "PORT", "value": "3000" },
         { "name": "HOST", "value": "0.0.0.0" },
+        { "name": "EMAIL_PROVIDER", "value": "ses" },
+        { "name": "SES_FROM_ADDRESS", "value": "noreply@neyya.ai" },
         { "name": "SES_REGION", "value": "eu-west-1" },
         { "name": "S3_REGION", "value": "eu-west-1" },
-        { "name": "BEDROCK_REGION", "value": "eu-west-1" }
+        { "name": "BEDROCK_REGION", "value": "eu-west-1" },
+        { "name": "API_URL", "value": "https://api-qa.neyya.ai" }
       ],
       "secrets": [
         {

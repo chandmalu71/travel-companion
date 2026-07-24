@@ -53,6 +53,7 @@ import { registerSharingRoutes } from './routes/sharing.js';
 import { registerSyncRoutes } from './routes/sync.js';
 import { registerActivityFeedRoutes } from './routes/activity-feed.js';
 import { registerSourceAttachmentsRoute } from './routes/source-attachments.js';
+import { registerChatConciergeRoutes } from './routes/chat-concierge.js';
 import { CognitoService } from './services/cognito.js';
 import { type Kysely } from 'kysely';
 import { type Database } from './db/types.js';
@@ -341,6 +342,11 @@ export async function buildApp(
   // Register activity feed routes (requires DB)
   if (options.db) {
     await registerActivityFeedRoutes(app, { db: options.db });
+  }
+
+  // Register AI Chat Concierge routes (requires DB)
+  if (options.db) {
+    await registerChatConciergeRoutes(app, { db: options.db });
   }
 
   // Register admin routes (requires DB + admin auth)

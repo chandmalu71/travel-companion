@@ -312,12 +312,18 @@ Resources:
               Value: '3000'
             - Name: HOST
               Value: '0.0.0.0'
+            - Name: EMAIL_PROVIDER
+              Value: ses
+            - Name: SES_FROM_ADDRESS
+              Value: noreply@neyya.ai
             - Name: SES_REGION
               Value: eu-west-1
             - Name: S3_REGION
               Value: eu-west-1
             - Name: BEDROCK_REGION
               Value: eu-west-1
+            - Name: API_URL
+              Value: !Sub 'https://${ApiDomainName}'
             - Name: APP_URL
               Value: !Sub 'https://${WebDomainName}'
             - Name: API_URL

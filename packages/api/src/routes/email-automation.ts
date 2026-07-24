@@ -152,21 +152,90 @@ async function processAutomations(db: Kysely<Database>): Promise<{ processed: nu
   let sent = 0;
   let errors = 0;
 
+  const { EmailService } = await import('../services/email.js');
+  const emailService = new EmailService(db);
+  const trackingBaseUrl = process.env.API_URL ?? 'https://api-qa.neyya.ai';
+
   for (const send of pendingSends) {
     try {
-      // TODO: Actually send via SES
-      // For now, mark as sent
-      await (db as any).updateTable('email_sends').set({
-        status: 'sent',
-        sent_at: new Date(),
-      }).where('id', '=', send.id).execute();
-      sent++;
-    } catch {
+      // Look up template content from automation steps or campaign template
+      let html = `<p>Hi ${send.recipient_name?.split(' ')[0] ?? 'there'},</p>`;
+      let subject = send.subject ?? 'Update from Neyya';
+
+      // If this send has an automation_id, fetch the step template
+      if (send.automation_id) {
+        const automation = await (db as any).selectFrom('email_automations')
+          .select('steps')
+          .where('id', '=', send.automation_id)
+          .executeTakeFirst();
+        if (automation) {
+          const steps = typeof automation.steps === 'string' ? JSON.parse(automation.steps) : automation.steps;
+          const matchingStep = steps.find((s: any) => s.subject === send.subject);
+          if (matchingStep?.html) {
+            html = matchingStep.html
+              .replace(/\{\{name\}\}/g, send.recipient_name?.split(' ')[0] ?? 'there')
+              .replace(/\{\{email\}\}/g, send.recipient_email ?? '');
+          } else if (matchingStep?.body) {
+            html = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;">${matchingStep.body.replace(/\{\{name\}\}/g, send.recipient_name?.split(' ')[0] ?? 'there')}</div>`;
+          }
+        }
+      }
+
+      // If this send has a campaign_id, fetch the campaign template
+      if (send.campaign_id && !send.automation_id) {
+        const campaign = await (db as any).selectFrom('email_campaigns')
+          .select('template_id')
+          .where('id', '=', send.campaign_id)
+          .executeTakeFirst();
+        if (campaign?.template_id) {
+          const template = await (db as any).selectFrom('email_templates')
+            .selectAll()
+            .where('id', '=', campaign.template_id)
+            .executeTakeFirst();
+          if (template) {
+            html = (template.body_html ?? template.bodyHtml ?? html)
+              .replace(/\{\{name\}\}/g, send.recipient_name?.split(' ')[0] ?? 'there')
+              .replace(/\{\{email\}\}/g, send.recipient_email ?? '');
+          }
+        }
+      }
+
+      // Add tracking pixel and unsubscribe link
+      html += `<img src="${trackingBaseUrl}/api/email/track/open/${send.id}" width="1" height="1" style="display:none" alt="" />`;
+      html += `<p style="font-size:11px;color:#999;text-align:center;margin-top:20px;"><a href="${trackingBaseUrl}/api/email/unsubscribe?email=${encodeURIComponent(send.recipient_email)}" style="color:#999;">Unsubscribe</a></p>`;
+
+      const result = await emailService.sendRaw({
+        to: send.recipient_email,
+        subject,
+        html,
+        from: 'Neyya <noreply@neyya.ai>',
+      });
+
+      if (result.success) {
+        await (db as any).updateTable('email_sends').set({
+          status: 'sent',
+          sent_at: new Date(),
+          message_id: result.messageId,
+        }).where('id', '=', send.id).execute();
+        sent++;
+      } else {
+        await (db as any).updateTable('email_sends').set({
+          status: 'failed',
+          error_message: result.error?.slice(0, 500),
+        }).where('id', '=', send.id).execute();
+        errors++;
+      }
+    } catch (err: any) {
       await (db as any).updateTable('email_sends').set({
         status: 'failed',
-        error_message: 'SES delivery not yet configured',
+        error_message: err.message?.slice(0, 500) ?? 'Unknown error',
       }).where('id', '=', send.id).execute();
       errors++;
+    }
+
+    // Rate limit: 14/second for SES sandbox
+    if (sent % 14 === 0 && sent > 0) {
+      await new Promise(resolve => setTimeout(resolve, 1100));
     }
   }
 

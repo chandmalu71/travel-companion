@@ -57,18 +57,74 @@ export default function GdprPage() {
           </ul>
 
           <h2>Data Processing</h2>
-          <table>
-            <thead>
-              <tr><th>Data Type</th><th>Purpose</th><th>Legal Basis</th><th>Retention</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Account info</td><td>Service delivery</td><td>Contract</td><td>Until deletion</td></tr>
-              <tr><td>Trip data</td><td>Core service</td><td>Contract</td><td>Until deletion</td></tr>
-              <tr><td>Email scans</td><td>Booking import</td><td>Consent</td><td>Until disconnected</td></tr>
-              <tr><td>Analytics</td><td>Service improvement</td><td>Legitimate interest</td><td>26 months</td></tr>
-              <tr><td>Marketing</td><td>Product updates</td><td>Consent</td><td>Until withdrawn</td></tr>
-            </tbody>
-          </table>
+          <div className="not-prose my-6 overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-900">Data Type</th>
+                  <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-900">Purpose</th>
+                  <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-900">Legal Basis</th>
+                  <th className="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-900">Retention</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-800 font-medium">Account information</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Name, email, profile — required to deliver the service and manage your account</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Performance of contract (Art. 6(1)(b))</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Until account deletion</td>
+                </tr>
+                <tr className="bg-gray-50/50">
+                  <td className="border border-gray-200 px-4 py-3 text-gray-800 font-medium">Trip & booking data</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Flights, hotels, car rentals, itineraries — core travel planning functionality</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Performance of contract (Art. 6(1)(b))</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Until account deletion</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-800 font-medium">Email inbox scanning</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Automatic extraction of booking confirmations from connected email accounts</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Explicit consent (Art. 6(1)(a))</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Until disconnected; raw emails deleted within 24 hours of processing</td>
+                </tr>
+                <tr className="bg-gray-50/50">
+                  <td className="border border-gray-200 px-4 py-3 text-gray-800 font-medium">Expense & financial data</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Amounts, merchants, currencies — budget tracking and expense splitting</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Performance of contract (Art. 6(1)(b))</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Until account deletion</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-800 font-medium">Family member data</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Names, ages, dietary needs, passport info (encrypted) — travel group management</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Explicit consent (Art. 6(1)(a))</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Until removed by user; passport data encrypted with AES-256-GCM</td>
+                </tr>
+                <tr className="bg-gray-50/50">
+                  <td className="border border-gray-200 px-4 py-3 text-gray-800 font-medium">Usage analytics</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Page views, feature usage, performance metrics — service improvement</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Legitimate interest (Art. 6(1)(f))</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">26 months (anonymised after 14 months)</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-800 font-medium">Marketing communications</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Product updates, travel tips, promotional offers</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Explicit consent (Art. 6(1)(a))</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Until consent withdrawn (one-click unsubscribe)</td>
+                </tr>
+                <tr className="bg-gray-50/50">
+                  <td className="border border-gray-200 px-4 py-3 text-gray-800 font-medium">Payment data</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Subscription billing — processed by Stripe (PCI DSS compliant)</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Performance of contract (Art. 6(1)(b))</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Card details stored only by Stripe; billing records retained 7 years (legal obligation)</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-800 font-medium">AI chat conversations</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Support queries, feedback, bug reports via chat widget</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">Legitimate interest (Art. 6(1)(f))</td>
+                  <td className="border border-gray-200 px-4 py-3 text-gray-600">12 months; anonymised after 6 months</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
           <h2>Data Controller</h2>
           <p>

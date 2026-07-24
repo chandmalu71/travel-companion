@@ -50,6 +50,7 @@ export const tripCreationSchema = z
       .string()
       .min(LIMITS.TRIP_NAME_MIN_LENGTH, 'Trip name is required')
       .max(LIMITS.TRIP_NAME_MAX_LENGTH, `Trip name must be at most ${LIMITS.TRIP_NAME_MAX_LENGTH} characters`),
+    destination: z.string().max(200, 'Destination must be at most 200 characters').optional(),
     start_date: z.iso.date().optional(),
     end_date: z.iso.date().optional(),
   })
@@ -74,6 +75,7 @@ export const tripUpdateSchema = z
       .min(LIMITS.TRIP_NAME_MIN_LENGTH, 'Trip name is required')
       .max(LIMITS.TRIP_NAME_MAX_LENGTH, `Trip name must be at most ${LIMITS.TRIP_NAME_MAX_LENGTH} characters`)
       .optional(),
+    destination: z.string().max(200, 'Destination must be at most 200 characters').nullable().optional(),
     start_date: z.iso.date().nullable().optional(),
     end_date: z.iso.date().nullable().optional(),
   })

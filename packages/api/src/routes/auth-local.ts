@@ -38,7 +38,7 @@ export async function registerLocalAuthRoutes(
 
   app.post(
     '/api/auth/register',
-    async (request: FastifyRequest<{ Body: { email: string; password: string; displayName?: string } }>, reply: FastifyReply) => {
+    async (request: FastifyRequest<{ Body: { email: string; password: string; displayName?: string; termsAccepted?: boolean; marketingConsent?: boolean } }>, reply: FastifyReply) => {
       const body = request.body ?? {};
 
       const parseResult = registrationSchema.safeParse(body);
@@ -57,6 +57,16 @@ export async function registerLocalAuthRoutes(
 
       const { email, password } = parseResult.data;
       const displayName = (body as any).displayName ?? email.split('@')[0] ?? email;
+      const termsAccepted = (body as any).termsAccepted === true;
+      const marketingConsent = (body as any).marketingConsent === true;
+
+      if (!termsAccepted) {
+        return reply.status(400).send({
+          statusCode: 400,
+          error: 'TERMS_REQUIRED',
+          message: 'You must accept the Terms of Service to create an account',
+        });
+      }
 
       try {
         // Check if user already exists
@@ -89,6 +99,29 @@ export async function registerLocalAuthRoutes(
           })
           .returning(['id', 'email', 'display_name'])
           .executeTakeFirstOrThrow();
+
+        // If marketing consent given, create/update CRM lead and trigger welcome automation
+        if (marketingConsent) {
+          try {
+            // Upsert into crm_leads (may already exist from landing page capture)
+            const { sql } = await import('kysely');
+            await sql`INSERT INTO crm_leads (email, full_name, source, status, marketing_consent, terms_consent, converted_user_id)
+              VALUES (${email.toLowerCase()}, ${displayName}, 'registration', 'converted', true, true, ${newUser.id})
+              ON CONFLICT (email) DO UPDATE SET
+                status = 'converted',
+                marketing_consent = true,
+                terms_consent = true,
+                converted_user_id = ${newUser.id},
+                converted_at = NOW()`.execute(db);
+
+            // Trigger welcome automation
+            await fetch(`http://localhost:${process.env.PORT ?? 3000}/api/internal/trigger-automation`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ event: 'lead_signup', email: email.toLowerCase(), name: displayName, userId: newUser.id }),
+            }).catch(() => {}); // Non-blocking
+          } catch { /* non-blocking CRM update */ }
+        }
 
         return reply.status(201).send({
           statusCode: 201,

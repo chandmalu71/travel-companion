@@ -52,6 +52,10 @@ export interface Database {
   polls: PollsTable;
   poll_votes: PollVotesTable;
   trip_decisions: TripDecisionsTable;
+  ai_chat_sessions: AiChatSessionsTable;
+  ai_chat_messages: AiChatMessagesTable;
+  feedback_items: FeedbackItemsTable;
+  feedback_votes: FeedbackVotesTable;
 }
 
 // --- Users ---
@@ -98,6 +102,7 @@ export interface TripsTable {
   id: Generated<string>;
   owner_id: string;
   name: string;
+  destination: string | null;
   start_date: string | null;
   end_date: string | null;
   budget: ColumnType<string | null, string | null, string | null>;
@@ -924,3 +929,76 @@ export interface TripDecisionsTable {
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
 }
+
+// --- AI Chat Sessions ---
+
+export interface AiChatSessionsTable {
+  id: Generated<string>;
+  user_id: string | null;
+  lead_id: string | null;
+  session_token: string | null;
+  source: Generated<string>; // 'landing_page' | 'in_app' | 'admin'
+  page_url: string | null;
+  started_at: Generated<Date>;
+  ended_at: Date | null;
+  message_count: Generated<number>;
+  ai_classification: string | null; // 'support' | 'bug' | 'feature_request' | 'general' | 'lead'
+  satisfaction_rating: number | null;
+  escalated: Generated<boolean>;
+  resolved: Generated<boolean>;
+}
+
+export type AiChatSession = Selectable<AiChatSessionsTable>;
+export type NewAiChatSession = Insertable<AiChatSessionsTable>;
+
+// --- AI Chat Messages ---
+
+export interface AiChatMessagesTable {
+  id: Generated<string>;
+  session_id: string;
+  role: string; // 'user' | 'assistant' | 'system'
+  content: string;
+  ai_model: string | null;
+  rag_sources: string | null;
+  intent_detected: string | null;
+  created_at: Generated<Date>;
+}
+
+export type AiChatMessage = Selectable<AiChatMessagesTable>;
+export type NewAiChatMessage = Insertable<AiChatMessagesTable>;
+
+// --- Feedback Items ---
+
+export interface FeedbackItemsTable {
+  id: Generated<string>;
+  chat_session_id: string | null;
+  user_id: string | null;
+  type: string; // 'bug' | 'feature_request' | 'feedback' | 'question'
+  title: string | null;
+  description: string | null;
+  severity: string | null; // 'low' | 'medium' | 'high' | 'critical'
+  page_url: string | null;
+  browser_info: string | null;
+  status: Generated<string>; // 'new' | 'triaged' | 'planned' | 'implemented' | 'closed' | 'rejected'
+  upvotes: Generated<number>;
+  admin_notes: string | null;
+  is_public: Generated<boolean>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export type FeedbackItem = Selectable<FeedbackItemsTable>;
+export type NewFeedbackItem = Insertable<FeedbackItemsTable>;
+export type FeedbackItemUpdate = Updateable<FeedbackItemsTable>;
+
+// --- Feedback Votes ---
+
+export interface FeedbackVotesTable {
+  id: Generated<string>;
+  feedback_item_id: string;
+  user_id: string;
+  created_at: Generated<Date>;
+}
+
+export type FeedbackVote = Selectable<FeedbackVotesTable>;
+export type NewFeedbackVote = Insertable<FeedbackVotesTable>;

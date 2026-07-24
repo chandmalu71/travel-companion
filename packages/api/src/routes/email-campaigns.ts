@@ -170,22 +170,75 @@ Respond in JSON format:
     const unsubSet = new Set(unsubscribed.map((u: any) => u.email));
     recipients = recipients.filter((r: any) => !unsubSet.has(r.email));
 
-    // Queue sends (in production, this would use SQS for async processing)
+    // Queue sends and deliver via SES
     let sentCount = 0;
+    let failedCount = 0;
+
+    // Get tracking base URL for open/click tracking
+    const trackingBaseUrl = process.env.API_URL ?? 'https://api-qa.neyya.ai';
+
     for (const recipient of recipients) {
       const personalizedSubject = template.subject.replace('{{name}}', recipient.full_name?.split(' ')[0] ?? 'there');
 
-      await (db as any).insertInto('email_sends').values({
+      // Create send record
+      const sendRecord = await (db as any).insertInto('email_sends').values({
         campaign_id: id,
         recipient_email: recipient.email,
         recipient_name: recipient.full_name,
         subject: personalizedSubject,
         status: 'queued',
-      }).execute().catch(() => {});
+      }).returning('id').executeTakeFirst().catch(() => null);
 
-      // TODO: Actually send via SES here
-      // For now, mark as sent
-      sentCount++;
+      if (!sendRecord) continue;
+
+      // Personalise HTML body with recipient data and tracking
+      let personalizedHtml = (template.body_html ?? template.bodyHtml ?? '')
+        .replace(/\{\{name\}\}/g, recipient.full_name?.split(' ')[0] ?? 'there')
+        .replace(/\{\{email\}\}/g, recipient.email)
+        .replace(/\{\{full_name\}\}/g, recipient.full_name ?? '');
+
+      // Add open tracking pixel
+      personalizedHtml += `<img src="${trackingBaseUrl}/api/email/track/open/${sendRecord.id}" width="1" height="1" style="display:none" alt="" />`;
+
+      // Add unsubscribe link
+      personalizedHtml += `<p style="font-size:11px;color:#999;text-align:center;margin-top:20px;">
+        <a href="${trackingBaseUrl}/api/email/unsubscribe?email=${encodeURIComponent(recipient.email)}" style="color:#999;">Unsubscribe</a>
+      </p>`;
+
+      // Send via EmailService (SES in production, console in dev)
+      try {
+        const { EmailService } = await import('../services/email.js');
+        const emailService = new EmailService(db);
+        const result = await emailService.sendRaw({
+          to: recipient.email,
+          subject: personalizedSubject,
+          html: personalizedHtml,
+          text: template.body_text ?? template.bodyText ?? undefined,
+          from: `Neyya <noreply@neyya.ai>`,
+        });
+
+        if (result.success) {
+          await (db as any).updateTable('email_sends').set({
+            status: 'sent', sent_at: new Date(), message_id: result.messageId,
+          }).where('id', '=', sendRecord.id).execute().catch(() => {});
+          sentCount++;
+        } else {
+          await (db as any).updateTable('email_sends').set({
+            status: 'failed', error_message: result.error,
+          }).where('id', '=', sendRecord.id).execute().catch(() => {});
+          failedCount++;
+        }
+      } catch (err: any) {
+        await (db as any).updateTable('email_sends').set({
+          status: 'failed', error_message: err.message?.slice(0, 500),
+        }).where('id', '=', sendRecord.id).execute().catch(() => {});
+        failedCount++;
+      }
+
+      // Rate limit: max 14 emails/second (SES sandbox limit)
+      if (sentCount % 14 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 1100));
+      }
     }
 
     // Update campaign stats
@@ -194,7 +247,7 @@ Respond in JSON format:
       total_recipients: recipients.length, total_sent: sentCount,
     }).where('id', '=', id).execute();
 
-    return reply.send({ statusCode: 200, message: `Campaign sent to ${sentCount} recipients`, data: { sent: sentCount, total: recipients.length } });
+    return reply.send({ statusCode: 200, message: `Campaign delivered: ${sentCount} sent, ${failedCount} failed`, data: { sent: sentCount, failed: failedCount, total: recipients.length } });
   });
 
   // ─── GET /api/admin/campaigns/:id/stats ────────────────────────────────────

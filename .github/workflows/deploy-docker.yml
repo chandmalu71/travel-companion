@@ -181,21 +181,52 @@ jobs:
           aws ecs update-service --cluster $CLUSTER --service neyya-admin-${{ needs.determine-env.outputs.environment }} --task-definition $NEW_TASK_ARN --force-new-deployment
 
       - name: Wait for services to stabilize
+        timeout-minutes: 5
         run: |
           CLUSTER=${{ needs.determine-env.outputs.cluster_name }}
           ENV=${{ needs.determine-env.outputs.environment }}
-          echo "Waiting for API service..."
-          aws ecs wait services-stable --cluster $CLUSTER --services neyya-api-$ENV || echo "API stabilization timed out (may still be rolling)"
-          echo "Waiting for Web service..."
-          aws ecs wait services-stable --cluster $CLUSTER --services neyya-web-$ENV || echo "Web stabilization timed out"
-          echo "Waiting for Admin service..."
-          aws ecs wait services-stable --cluster $CLUSTER --services neyya-admin-$ENV || echo "Admin stabilization timed out"
+          SERVICES=("neyya-api-$ENV" "neyya-web-$ENV" "neyya-admin-$ENV")
+          
+          # Poll services for up to 4 minutes (24 checks × 10s)
+          for i in $(seq 1 24); do
+            ALL_STABLE=true
+            for SVC in "${SERVICES[@]}"; do
+              RUNNING=$(aws ecs describe-services --cluster $CLUSTER --services $SVC \
+                --query 'services[0].deployments[?status==`PRIMARY`].runningCount' --output text 2>/dev/null || echo "0")
+              DESIRED=$(aws ecs describe-services --cluster $CLUSTER --services $SVC \
+                --query 'services[0].deployments[?status==`PRIMARY`].desiredCount' --output text 2>/dev/null || echo "1")
+              if [ "$RUNNING" != "$DESIRED" ] || [ "$RUNNING" == "0" ]; then
+                ALL_STABLE=false
+              fi
+            done
+            if [ "$ALL_STABLE" = true ]; then
+              echo "All services stable (running == desired)"
+              break
+            fi
+            echo "Check $i/24: waiting 10s for services to stabilize..."
+            sleep 10
+          done
+          
+          # Final status report
+          for SVC in "${SERVICES[@]}"; do
+            STATUS=$(aws ecs describe-services --cluster $CLUSTER --services $SVC \
+              --query 'services[0].{desired:desiredCount,running:runningCount,pending:pendingCount}' --output json 2>/dev/null)
+            echo "$SVC: $STATUS"
+          done
 
       - name: Health Check
         run: |
-          sleep 10
           API_URL="${{ needs.determine-env.outputs.api_domain }}"
-          curl -f ${API_URL}/api/health || echo "::warning::Health check pending — service may still be starting"
+          # Retry health check up to 6 times (60s total)
+          for i in $(seq 1 6); do
+            if curl -sf ${API_URL}/api/health > /dev/null 2>&1; then
+              echo "Health check passed"
+              exit 0
+            fi
+            echo "Health check attempt $i/6 failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "::warning::Health check did not pass within 60s — service may still be starting"
 
       - name: Deployment Summary
         run: |

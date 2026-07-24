@@ -18,6 +18,8 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/', label: 'Dashboard', icon: '📊' },
       { href: '/analytics', label: 'Analytics', icon: '📈' },
+      { href: '/trips', label: 'All Trips', icon: '✈️' },
+      { href: '/memberships', label: 'Memberships', icon: '🧑‍🤝‍🧑' },
     ],
   },
   {
@@ -27,14 +29,6 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/users', label: 'Users', icon: '👥' },
       { href: '/roles', label: 'Roles', icon: '🔑' },
       { href: '/moderation', label: 'Moderation', icon: '🛡️' },
-    ],
-  },
-  {
-    label: 'Content & Trips',
-    icon: '✈️',
-    items: [
-      { href: '/trips', label: 'All Trips', icon: '✈️' },
-      { href: '/memberships', label: 'Memberships', icon: '🧑‍🤝‍🧑' },
     ],
   },
   {
@@ -48,11 +42,10 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Subscriptions & Costs',
+    label: 'Subscriptions',
     icon: '💎',
     items: [
       { href: '/subscriptions', label: 'Plans & Pricing', icon: '💎' },
-      { href: '/costs', label: 'Costs', icon: '💰' },
     ],
   },
   {
@@ -69,6 +62,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: '⚙️',
     items: [
       { href: '/config', label: 'Configuration', icon: '⚙️' },
+      { href: '/costs', label: 'Costs', icon: '💰' },
       { href: '/email', label: 'Email', icon: '📨' },
       { href: '/health', label: 'System Health', icon: '🟢' },
       { href: '/audit', label: 'Audit Log', icon: '📋' },
@@ -82,7 +76,18 @@ export function AdminSidebar() {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const toggleGroup = (label: string) => {
-    setCollapsed(prev => ({ ...prev, [label]: !prev[label] }));
+    setCollapsed(prev => {
+      // Auto-collapse all other groups when opening a new one
+      const newState: Record<string, boolean> = {};
+      for (const group of NAV_GROUPS) {
+        if (group.label === label) {
+          newState[group.label] = !prev[group.label];
+        } else {
+          newState[group.label] = true; // collapse others
+        }
+      }
+      return newState;
+    });
   };
 
   const isGroupActive = (group: NavGroup) => {
