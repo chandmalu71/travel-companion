@@ -95,14 +95,14 @@ export function AdminSidebar() {
   };
 
   return (
-    <aside className="w-64 bg-gray-800 border-r border-gray-700 p-4 flex-shrink-0 flex flex-col">
+    <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 flex-shrink-0 flex flex-col">
       {/* Logo */}
       <div className="flex items-center gap-2 mb-6 px-2">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center">
           <span className="text-white text-sm font-bold">N</span>
         </div>
         <div>
-          <p className="font-bold text-white text-sm">Neyya <span className="text-emerald-400">Admin</span></p>
+          <p className="font-bold text-gray-900 dark:text-white text-sm">Neyya <span className="text-emerald-600 dark:text-emerald-400">Admin</span></p>
           <p className="text-[10px] text-gray-500">Operations Panel</p>
         </div>
       </div>
@@ -126,12 +126,14 @@ export function AdminSidebar() {
                   <span>{group.icon}</span>
                   {group.label}
                 </span>
-                <svg
-                  className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                <span className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`}>
+                  <svg
+                    className="w-3 h-3"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
               </button>
 
               {/* Group items */}
@@ -144,7 +146,7 @@ export function AdminSidebar() {
                         key={item.href}
                         href={item.href}
                         className={`flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                          itemActive ? 'bg-gray-700 text-white font-medium' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
+                          itemActive ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white'
                         }`}
                       >
                         <span className="text-xs">{item.icon}</span>
@@ -161,14 +163,14 @@ export function AdminSidebar() {
 
       {/* User section at bottom */}
       {user && (
-        <div className="border-t border-gray-700 pt-3 mt-3">
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
           <div className="flex items-center justify-between px-2">
             <div className="min-w-0">
-              <p className="text-xs font-medium text-white truncate">{user.display_name}</p>
+              <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{user.display_name}</p>
               <p className="text-[10px] text-gray-500 truncate">{user.email}</p>
-              <p className="text-[10px] text-emerald-400 truncate">{user.admin_role}</p>
+              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 truncate">{user.admin_role}</p>
             </div>
-            <button onClick={logout} className="text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded hover:bg-gray-700" title="Log out">
+            <button onClick={logout} className="text-xs text-red-500 dark:text-red-400 hover:text-red-400 dark:hover:text-red-300 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700" title="Log out">
               ↪️
             </button>
           </div>

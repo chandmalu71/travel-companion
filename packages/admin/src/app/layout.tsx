@@ -10,9 +10,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head><link rel="icon" href="/favicon.svg" type="image/svg+xml" /></head>
-      <body className="min-h-screen bg-gray-900 text-gray-100 font-sans antialiased">
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            try {
+              var t = localStorage.getItem('neyya-admin-theme');
+              if (t === 'light') document.documentElement.classList.remove('dark');
+            } catch(e) {}
+          })();
+        `}} />
+      </head>
+      <body className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans antialiased transition-colors">
         <AuthProvider>
           <AuthGate>
             {children}

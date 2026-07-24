@@ -22,10 +22,29 @@
     --ring: 120 61% 50%;
     --radius: 0.5rem;
   }
+
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 14%;
+    --card-foreground: 210 40% 98%;
+    --primary: 120 61% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 100% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 38 96% 74%;
+    --accent-foreground: 0 0% 13%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 217 33% 22%;
+    --ring: 120 61% 50%;
+  }
 }
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100;
   }
 }

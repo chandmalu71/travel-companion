@@ -29,6 +29,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
         <main className="flex-1 p-8">
           {children}
         </main>
+        <footer className="border-t border-gray-200 dark:border-gray-700 px-6 py-3 text-center text-xs text-gray-400 dark:text-gray-500">
+          <span>&copy; {new Date().getFullYear()} Neyya &middot; Samriddhi Capital Oy &middot; Made with <span className="text-red-500">&hearts;</span> in Finland</span>
+        </footer>
       </div>
     </div>
   );

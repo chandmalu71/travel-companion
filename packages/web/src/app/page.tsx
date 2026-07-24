@@ -444,20 +444,26 @@ export default function LandingPage() {
           </div>
 
           {/* Bottom bar */}
-          <div className="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-500">
-              &copy; {new Date().getFullYear()} Neyya. All rights reserved.
-            </p>
-            <div className="flex items-center gap-4">
-              <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">
-                GDPR Compliant
-              </span>
-              <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">
-                SOC 2
-              </span>
-              <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">
-                256-bit SSL
-              </span>
+          <div className="border-t border-gray-800 pt-8 flex flex-col items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-4">
+              <p className="text-sm text-gray-500">
+                &copy; {new Date().getFullYear()} Neyya. All rights reserved.
+              </p>
+              <div className="flex items-center gap-4">
+                <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">
+                  GDPR Compliant
+                </span>
+                <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">
+                  SOC 2
+                </span>
+                <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">
+                  256-bit SSL
+                </span>
+              </div>
+            </div>
+            <div className="text-center text-xs text-gray-500 space-y-1">
+              <p>Samriddhi Capital Oy &middot; Business ID: 3629801-3</p>
+              <p>Made with <span className="text-red-500">&hearts;</span> in Finland</p>
             </div>
           </div>
         </div>
