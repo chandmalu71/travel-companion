@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 type Tab = 'templates' | 'senders' | 'log';
 
@@ -118,25 +118,40 @@ function TemplatesTab() {
       {/* Edit modal */}
       {editingSlug && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={() => setEditingSlug(null)}>
-          <div className="bg-gray-800 rounded-xl p-6 w-[700px] max-h-[85vh] overflow-y-auto border border-gray-600 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-gray-800 rounded-xl p-6 w-[800px] max-h-[90vh] overflow-y-auto border border-gray-600 space-y-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-white">Edit Template: {editingSlug}</h3>
             <div className="space-y-3">
               <div><label className="text-xs text-gray-400 block mb-1">Name</label><input value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1.5 text-sm text-white" /></div>
               <div><label className="text-xs text-gray-400 block mb-1">Subject</label><input value={editForm.subject} onChange={e => setEditForm({...editForm, subject: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1.5 text-sm text-white" /></div>
               <div><label className="text-xs text-gray-400 block mb-1">Reply-To</label><input value={editForm.replyTo} onChange={e => setEditForm({...editForm, replyTo: e.target.value})} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1.5 text-sm text-white" placeholder="support@neyya.ai" /></div>
               <div>
-                <label className="text-xs text-gray-400 block mb-1">HTML Body</label>
-                <textarea value={editForm.htmlBody} onChange={e => setEditForm({...editForm, htmlBody: e.target.value})} rows={12} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1.5 text-xs text-white font-mono" />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs text-gray-400">Email Body</label>
+                  <div className="flex gap-1">
+                    <button onClick={() => setEditForm({...editForm, _viewMode: editForm._viewMode === 'code' ? 'visual' : 'code'})}
+                      className="text-[10px] px-2 py-0.5 rounded bg-gray-700 text-gray-300 hover:text-white">
+                      {editForm._viewMode === 'code' ? '🎨 Visual' : '< > Code'}
+                    </button>
+                  </div>
+                </div>
+                {editForm._viewMode === 'code' ? (
+                  <textarea value={editForm.htmlBody} onChange={e => setEditForm({...editForm, htmlBody: e.target.value})} rows={14} className="w-full rounded bg-gray-900 border border-gray-600 px-2 py-1.5 text-xs text-white font-mono" />
+                ) : (
+                  <WysiwygEditor
+                    value={editForm.htmlBody ?? ''}
+                    onChange={(html) => setEditForm({...editForm, htmlBody: html})}
+                  />
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" checked={editForm.isActive} onChange={e => setEditForm({...editForm, isActive: e.target.checked})} />
                 <span className="text-xs text-gray-300">Active</span>
               </div>
             </div>
-            {/* Preview */}
+            {/* Live Preview */}
             <div>
               <label className="text-xs text-gray-400 block mb-1">Preview</label>
-              <div className="bg-white rounded p-3 max-h-48 overflow-y-auto" dangerouslySetInnerHTML={{ __html: editForm.htmlBody ?? '' }} />
+              <div className="bg-white rounded p-4 max-h-60 overflow-y-auto border" dangerouslySetInnerHTML={{ __html: editForm.htmlBody ?? '' }} />
             </div>
             <div className="flex gap-2 pt-2">
               <button onClick={saveEdit} className="rounded bg-primary-600 px-4 py-1.5 text-sm text-white hover:bg-primary-500">Save</button>
@@ -275,5 +290,102 @@ function LogTab() {
         </div>
       )}
     </div>
+  );
+}
+
+// ─── WYSIWYG Editor Component ────────────────────────────────────────────────
+
+function WysiwygEditor({ value, onChange }: { value: string; onChange: (html: string) => void }) {
+  const editorRef = useRef<HTMLDivElement>(null);
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    if (editorRef.current && !initialized) {
+      editorRef.current.innerHTML = value;
+      setInitialized(true);
+    }
+  }, [value, initialized]);
+
+  const execCmd = (cmd: string, val?: string) => {
+    document.execCommand(cmd, false, val);
+    syncContent();
+  };
+
+  const syncContent = () => {
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+    }
+  };
+
+  const insertLink = () => {
+    const url = prompt('Enter URL:');
+    if (url) execCmd('createLink', url);
+  };
+
+  const insertImage = () => {
+    const url = prompt('Enter image URL:');
+    if (url) execCmd('insertImage', url);
+  };
+
+  const insertVariable = () => {
+    const vars = ['{{name}}', '{{email}}', '{{dashboardUrl}}', '{{resetUrl}}', '{{verifyUrl}}', '{{tripName}}', '{{inviterName}}', '{{planName}}', '{{unsubscribeUrl}}'];
+    const selected = prompt(`Insert variable:\n${vars.join('\n')}\n\nType one:`);
+    if (selected) {
+      document.execCommand('insertText', false, selected);
+      syncContent();
+    }
+  };
+
+  return (
+    <div className="border border-gray-600 rounded-lg overflow-hidden">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 bg-gray-900 border-b border-gray-600">
+        <ToolBtn onClick={() => execCmd('bold')} title="Bold">B</ToolBtn>
+        <ToolBtn onClick={() => execCmd('italic')} title="Italic"><em>I</em></ToolBtn>
+        <ToolBtn onClick={() => execCmd('underline')} title="Underline"><u>U</u></ToolBtn>
+        <span className="w-px h-5 bg-gray-600 mx-1" />
+        <ToolBtn onClick={() => execCmd('formatBlock', 'h1')} title="Heading 1">H1</ToolBtn>
+        <ToolBtn onClick={() => execCmd('formatBlock', 'h2')} title="Heading 2">H2</ToolBtn>
+        <ToolBtn onClick={() => execCmd('formatBlock', 'h3')} title="Heading 3">H3</ToolBtn>
+        <ToolBtn onClick={() => execCmd('formatBlock', 'p')} title="Paragraph">P</ToolBtn>
+        <span className="w-px h-5 bg-gray-600 mx-1" />
+        <ToolBtn onClick={() => execCmd('insertUnorderedList')} title="Bullet List">•</ToolBtn>
+        <ToolBtn onClick={() => execCmd('insertOrderedList')} title="Numbered List">1.</ToolBtn>
+        <span className="w-px h-5 bg-gray-600 mx-1" />
+        <ToolBtn onClick={() => execCmd('justifyLeft')} title="Align Left">⫷</ToolBtn>
+        <ToolBtn onClick={() => execCmd('justifyCenter')} title="Align Center">☰</ToolBtn>
+        <span className="w-px h-5 bg-gray-600 mx-1" />
+        <ToolBtn onClick={insertLink} title="Insert Link">🔗</ToolBtn>
+        <ToolBtn onClick={insertImage} title="Insert Image">🖼</ToolBtn>
+        <ToolBtn onClick={insertVariable} title="Insert Variable">{'{{x}}'}</ToolBtn>
+        <span className="w-px h-5 bg-gray-600 mx-1" />
+        <ToolBtn onClick={() => execCmd('foreColor', '#32CD32')} title="Green">🟢</ToolBtn>
+        <ToolBtn onClick={() => execCmd('foreColor', '#cc0000')} title="Red">🔴</ToolBtn>
+        <ToolBtn onClick={() => execCmd('removeFormat')} title="Clear Formatting">✕</ToolBtn>
+      </div>
+
+      {/* Editable area */}
+      <div
+        ref={editorRef}
+        contentEditable
+        onInput={syncContent}
+        onBlur={syncContent}
+        className="min-h-[250px] max-h-[400px] overflow-y-auto p-4 bg-white text-gray-900 text-sm focus:outline-none"
+        style={{ fontFamily: "'Segoe UI', Roboto, sans-serif" }}
+      />
+    </div>
+  );
+}
+
+function ToolBtn({ onClick, title, children }: { onClick: () => void; title: string; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className="px-1.5 py-0.5 text-xs text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-colors min-w-[24px] text-center"
+    >
+      {children}
+    </button>
   );
 }
