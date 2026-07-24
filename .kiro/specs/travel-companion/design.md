@@ -2247,3 +2247,81 @@ User triggers → Select tone + optional prompt
 - `user_subscriptions` — active subscriptions per user
 - `subscription_promotions` — time-limited discount campaigns
 - `subscription_campaigns` — discount codes (LAUNCH50, etc.)
+
+
+---
+
+## Component 47-49: CRM & Marketing Automation Platform
+
+**Status:** All 8 phases implemented (A-H), some wiring pending
+
+### Data Model (Migrations 022-024)
+
+```sql
+-- CRM Leads (022)
+crm_leads: id, email, full_name, country, city, travel_style, trips_per_year,
+  source_page, utm_source/medium/campaign, referrer, ip_address, user_agent, device_type,
+  converted_to_user, marketing_consent, terms_consent, status, tags[], notes
+
+-- Consent Records (022)
+consent_records: id, user_id, lead_id, consent_type, granted, policy_version, ip_address
+
+-- Email Templates (023)
+email_templates: id, name, subject, preview_text, body_html, body_text, category, is_active
+
+-- Email Campaigns (023)
+email_campaigns: id, name, template_id, segment, status, scheduled_at, sent_at,
+  total_recipients/sent/opened/clicked/unsubscribed/bounced
+
+-- Email Sends (023) — per-recipient tracking
+email_sends: id, campaign_id, automation_id, recipient_email/name/type,
+  lead_id, user_id, subject, status, ses_message_id, opened_at, clicked_at, bounced_at
+
+-- Email Automations (023) — trigger-based sequences
+email_automations: id, name, trigger_event, is_active, steps (JSONB)
+
+-- Email Unsubscribes (023)
+email_unsubscribes: id, email, reason, unsubscribed_at
+
+-- A/B Test Variants (024)
+ab_test_variants: id, campaign_id, variant_name, subject, percentage,
+  total_sent/opened/clicked, is_winner
+
+-- Lead Scores (024)
+lead_scores: id, lead_id, user_id, score, score_breakdown (JSONB), last_calculated_at
+
+-- Referrals (024)
+referrals: id, referrer_user_id, referral_code, referred_email, referred_user_id,
+  status, reward_type, reward_granted
+```
+
+### API Routes
+
+| File | Endpoints |
+|------|-----------|
+| `crm.ts` | POST /api/leads, GET/PUT /api/admin/crm/leads, GET /api/admin/crm/stats |
+| `email-campaigns.ts` | GET/POST /api/admin/campaigns, POST generate (AI), POST send, GET stats, open/click tracking, unsubscribe |
+| `email-automation.ts` | GET/PUT /api/admin/automations, POST process, POST trigger |
+| `crm-advanced.ts` | A/B test CRUD, lead scores leaderboard + recalculate, referral code + register + admin list |
+
+### Admin Pages
+
+| Page | Path | Group |
+|------|------|-------|
+| CRM Dashboard | /crm | CRM & Marketing |
+| Leads List | /crm/leads | CRM & Marketing |
+| Email Campaigns | /crm/campaigns | CRM & Marketing |
+| Automations | /crm/automations | CRM & Marketing |
+| Social Media | /crm/social | CRM & Marketing |
+
+### Pending Wiring (Not Yet Functional)
+
+| Item | What's Missing |
+|------|---------------|
+| SES email delivery | Actual `ses.sendEmail()` call in send flow |
+| Social media OAuth | Platform API connections (FB, IG, Twitter, LinkedIn, TikTok) |
+| Social media posting | Actual API calls to publish posts |
+| A/B variant assignment | Logic to split recipients during campaign send |
+| Lead score scheduler | Cron/EventBridge to auto-recalculate scores |
+| Referral auto-reward | Trigger reward when referred user upgrades |
+| Bedrock AI email gen | Verified working but needs model access in production |
