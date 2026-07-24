@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from 'react';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
 export default function AnalyticsPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/admin/analytics')
+    const token = localStorage.getItem('admin_token');
+    fetch(`${API_BASE}/api/admin/analytics`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(d => setData(d.data))
       .catch(() => {})

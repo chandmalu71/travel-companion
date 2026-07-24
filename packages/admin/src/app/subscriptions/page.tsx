@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
 // Plans data (in production: fetched from API)
 const PLANS = [
   { slug: 'free', name: 'Free', tier: 0, monthlyEur: 0, annualEur: 0, familyMonthly: null, familyAnnual: null, maxTrips: 3, maxExpenses: 20, maxStorage: 100, maxNetwork: 20, maxFamily: 3, maxAliases: 1, weather: 3 },
@@ -44,7 +46,7 @@ function PlansTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/plans').then(r => r.json())
+    fetch(`${API_BASE}/api/plans`).then(r => r.json())
       .then(d => setPlans(d.data ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -63,7 +65,7 @@ function PlansTab() {
   };
 
   const saveEdit = async (slug: string) => {
-    await fetch(`http://localhost:3000/api/admin/plans/${slug}`, {
+    await fetch(`${API_BASE}/api/admin/plans/${slug}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         priceMonthlyEur: parseFloat(editValues.monthlyEur) || 0,
@@ -81,7 +83,7 @@ function PlansTab() {
       }),
     });
     // Refresh plans
-    const res = await fetch('http://localhost:3000/api/plans');
+    const res = await fetch(`${API_BASE}/api/plans`);
     const d = await res.json();
     setPlans(d.data ?? []);
     setEditing(null);
@@ -160,7 +162,7 @@ function PromotionsTab() {
   const [form, setForm] = useState({ name: '', discountPercent: 50, appliesTo: 'pro,premium', billingCycles: 'monthly,annual', startsAt: '', endsAt: '', badgeText: '', eventType: 'general', themeColor: '#ef4444', bannerEmoji: '', bannerText: '' });
 
   const fetchPromos = () => {
-    fetch('http://localhost:3000/api/admin/promotions').then(r => r.json())
+    fetch(`${API_BASE}/api/admin/promotions`).then(r => r.json())
       .then(d => setPromos(d.data ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -169,7 +171,7 @@ function PromotionsTab() {
   useEffect(() => { fetchPromos(); }, []);
 
   const createPromo = async () => {
-    await fetch('http://localhost:3000/api/admin/promotions', {
+    await fetch(`${API_BASE}/api/admin/promotions`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: form.name,
@@ -190,7 +192,7 @@ function PromotionsTab() {
   };
 
   const toggleActive = async (promo: any) => {
-    await fetch(`http://localhost:3000/api/admin/promotions/${promo.id}`, {
+    await fetch(`${API_BASE}/api/admin/promotions/${promo.id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isActive: !promo.is_active }),
     });
@@ -199,7 +201,7 @@ function PromotionsTab() {
 
   const deletePromo = async (id: string) => {
     if (!confirm('Delete this promotion?')) return;
-    await fetch(`http://localhost:3000/api/admin/promotions/${id}`, { method: 'DELETE' });
+    await fetch(`${API_BASE}/api/admin/promotions/${id}`, { method: 'DELETE' });
     fetchPromos();
   };
 
@@ -215,7 +217,7 @@ function PromotionsTab() {
   };
 
   const saveEdit = async (id: string) => {
-    await fetch(`http://localhost:3000/api/admin/promotions/${id}`, {
+    await fetch(`${API_BASE}/api/admin/promotions/${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: editForm.name, discountPercent: editForm.discountPercent,
@@ -454,7 +456,7 @@ function CampaignsTab() {
   const [form, setForm] = useState({ code: '', name: '', discountPercent: 30, discountMonths: 3, applicablePlans: 'pro,premium', maxUses: 1000, validUntil: '' });
 
   const fetchCampaigns = () => {
-    fetch('http://localhost:3000/api/admin/promo-campaigns').then(r => r.json())
+    fetch(`${API_BASE}/api/admin/promo-campaigns`).then(r => r.json())
       .then(d => setCampaigns(d.data ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -462,7 +464,7 @@ function CampaignsTab() {
   useEffect(() => { fetchCampaigns(); }, []);
 
   const createCampaign = async () => {
-    await fetch('http://localhost:3000/api/admin/promo-campaigns', {
+    await fetch(`${API_BASE}/api/admin/promo-campaigns`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         code: form.code, name: form.name, discountPercent: form.discountPercent,
@@ -476,7 +478,7 @@ function CampaignsTab() {
   };
 
   const toggleActive = async (c: any) => {
-    await fetch(`http://localhost:3000/api/admin/promo-campaigns/${c.id}`, {
+    await fetch(`${API_BASE}/api/admin/promo-campaigns/${c.id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isActive: !c.is_active }),
     });
@@ -494,7 +496,7 @@ function CampaignsTab() {
 
   const saveEdit = async () => {
     if (!editingId) return;
-    await fetch(`http://localhost:3000/api/admin/promo-campaigns/${editingId}`, {
+    await fetch(`${API_BASE}/api/admin/promo-campaigns/${editingId}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         code: editForm.code, name: editForm.name, discountPercent: editForm.discountPercent,
@@ -508,7 +510,7 @@ function CampaignsTab() {
 
   const deleteCampaign = async (id: string) => {
     if (!confirm('Delete this campaign code?')) return;
-    await fetch(`http://localhost:3000/api/admin/promo-campaigns/${id}`, { method: 'DELETE' });
+    await fetch(`${API_BASE}/api/admin/promo-campaigns/${id}`, { method: 'DELETE' });
     fetchCampaigns();
   };
 
@@ -604,7 +606,7 @@ function UserOverridesTab() {
 
   // Fetch existing overrides on mount
   useEffect(() => {
-    fetch('http://localhost:3000/api/admin/subscription-overrides')
+    fetch(`${API_BASE}/api/admin/subscription-overrides`)
       .then(r => r.json())
       .then(d => setGranted(d.data ?? []))
       .catch(() => {});
@@ -621,7 +623,7 @@ function UserOverridesTab() {
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await fetch(`http://localhost:3000/api/admin/users?search=${encodeURIComponent(q)}&limit=8`);
+        const res = await fetch(`${API_BASE}/api/admin/users?search=${encodeURIComponent(q)}&limit=8`);
         const data = await res.json();
         setResults(data.data ?? []);
       } catch { setResults([]); }
@@ -640,7 +642,7 @@ function UserOverridesTab() {
     // In production: create/update user_subscriptions entry
     // For now: insert override subscription
     try {
-      const planData = await fetch('http://localhost:3000/api/plans').then(r => r.json());
+      const planData = await fetch(`${API_BASE}/api/plans`).then(r => r.json());
       const targetPlan = (planData.data ?? []).find((p: any) => p.slug === plan);
       if (!targetPlan) { setMessage('Plan not found'); return; }
 
@@ -652,13 +654,13 @@ function UserOverridesTab() {
       else if (duration === '1year') periodEnd = new Date(now.getTime() + 365 * 86400000).toISOString();
       // 'forever' = no period end
 
-      await fetch(`http://localhost:3000/api/admin/users/${selectedUser.id}/subscription`, {
+      await fetch(`${API_BASE}/api/admin/users/${selectedUser.id}/subscription`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ planSlug: plan, periodEnd }),
       });
       setMessage(`Granted ${plan} to ${selectedUser.display_name || selectedUser.email}`);
       // Refresh the overrides list from API
-      const res = await fetch('http://localhost:3000/api/admin/subscription-overrides');
+      const res = await fetch(`${API_BASE}/api/admin/subscription-overrides`);
       const d = await res.json();
       setGranted(d.data ?? []);
       setSelectedUser(null);
