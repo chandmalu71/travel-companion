@@ -2325,3 +2325,74 @@ referrals: id, referrer_user_id, referral_code, referred_email, referred_user_id
 | Lead score scheduler | Cron/EventBridge to auto-recalculate scores |
 | Referral auto-reward | Trigger reward when referred user upgrades |
 | Bedrock AI email gen | Verified working but needs model access in production |
+
+
+---
+
+## Landing Page CTA A/B Testing (Req 53)
+
+### Data Model
+
+```sql
+CREATE TABLE landing_ab_tests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(100) NOT NULL,
+  status VARCHAR(20) DEFAULT 'draft',  -- draft, active, completed
+  winner_variant_id UUID,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  started_at TIMESTAMPTZ,
+  ended_at TIMESTAMPTZ
+);
+
+CREATE TABLE landing_ab_variants (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  test_id UUID REFERENCES landing_ab_tests(id) ON DELETE CASCADE,
+  name VARCHAR(100) NOT NULL,           -- e.g., "Control", "Variant B"
+  mode VARCHAR(20) NOT NULL,            -- 'early_access' | 'sign_up'
+  content JSONB NOT NULL,               -- { headline, subtitle, badges/buttonText/subtext }
+  traffic_percent INTEGER NOT NULL,     -- 0-100, all variants in a test must sum to 100
+  views INTEGER DEFAULT 0,
+  conversions INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### API Endpoints
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | /api/config/landing | Public | Returns assigned variant for visitor (cookie-pinned) |
+| POST | /api/config/landing/convert | Public | Track conversion event for assigned variant |
+| GET | /api/admin/ab-tests | Admin | List all A/B tests |
+| POST | /api/admin/ab-tests | Admin | Create new test with variants |
+| PUT | /api/admin/ab-tests/:id | Admin | Update test (start, stop, declare winner) |
+| GET | /api/admin/ab-tests/:id/results | Admin | Get variant results (views, conversions, rate) |
+
+### Variant Assignment Logic
+
+```
+1. Check cookie `neyya_ab_variant` for existing assignment
+2. If cookie exists and variant still active → return that variant
+3. If no cookie or variant expired:
+   a. Get active test
+   b. Generate random 0-100
+   c. Walk variants in order, accumulating traffic_percent
+   d. Assign to first variant where cumulative >= random
+   e. Set cookie with variant_id (30-day expiry)
+   f. Increment variant views counter
+4. Return variant content (mode + content JSON)
+```
+
+### Admin UI (CRM → Leads page)
+
+- Create Test button → modal with name + N variants (each with content editor)
+- Active test shows results table: variant name, traffic %, views, conversions, rate
+- "Declare Winner" button → ends test, sets winner as default
+- Historical tests viewable in collapsed accordion
+
+### Conversion Tracking
+
+- For "early_access" mode: fired when lead capture form is submitted successfully
+- For "sign_up" mode: fired when user clicks the register button (client-side event)
+- POST /api/config/landing/convert with variant_id from cookie
+- Increments `landing_ab_variants.conversions` counter

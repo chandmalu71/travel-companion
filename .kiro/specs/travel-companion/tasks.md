@@ -1084,3 +1084,38 @@ This implementation plan builds the Travel Companion application incrementally, 
 - [ ] 21.H.6 A/B variant assignment during actual sends — PENDING
 - [ ] 21.H.7 Auto-reward on referral conversion — PENDING
 - [ ] 21.H.8 Lead score scheduled recalculation — PENDING
+
+
+## Phase 22: Session July 24 — AI Concierge, Scans, Dark Mode, CTA Editor
+
+- [x] 22.1 Fix ECS deploy pipeline timeout (polling instead of waiter)
+- [x] 22.2 Add trips.destination column (migration 025)
+- [x] 22.3 AI Chat Concierge backend (migration 026, Bedrock service, 12 API routes)
+- [x] 22.4 AI Chat Widget UI (floating bubble, chat panel, quick actions, rating)
+- [x] 22.5 Landing page lead capture form (connected to CRM POST /api/leads)
+- [x] 22.6 Wire SES email delivery (campaigns + automations)
+- [x] 22.7 Registration form Terms + marketing consent checkboxes
+- [x] 22.8 Dark/light mode toggle (web + admin)
+- [x] 22.9 Company footer (Samriddhi Capital Oy, Made with ❤️ in Finland)
+- [x] 22.10 Admin sidebar restructure (merge Content & Trips → Overview, Costs → System)
+- [x] 22.11 GDPR + Cookies pages styled tables
+- [x] 22.12 Cookie consent banner (GDPR, hidden for logged-in users)
+- [x] 22.13 User consent columns (migration 027: marketing_consent, terms_accepted_at)
+- [x] 22.14 Marketing consent toggle in Settings
+- [x] 22.15 Booking document scan (POST /api/bookings/scan, Bedrock Claude vision)
+- [x] 22.16 Bookings page Upload Confirmation button + modal
+- [x] 22.17 Admin-configurable landing CTA (migration 028: site_config, mode toggle)
+- [x] 22.18 Admin CTA content editor with WYSIWYG live preview
+- [x] 22.19 Fix duplicate route crash (FST_ERR_DUPLICATED_ROUTE on /api/admin/automations)
+- [x] 22.20 Password reset endpoint (POST /api/auth/password-reset with SES email)
+- [x] 22.21 Welcome email on registration via EmailService
+
+## Phase 23: Landing Page CTA A/B Testing (Req 53)
+
+- [ ] 23.1 Create DB migration: landing_ab_tests + landing_ab_variants tables
+- [ ] 23.2 Create admin API: CRUD for tests + variants, start/stop/declare winner
+- [ ] 23.3 Update GET /api/config/landing with variant assignment logic (cookie-pinned)
+- [ ] 23.4 Create POST /api/config/landing/convert (conversion tracking endpoint)
+- [ ] 23.5 Admin CRM UI: A/B test management panel with create/edit/results table
+- [ ] 23.6 Landing page: fire conversion event on form submit or sign-up click
+- [ ] 23.7 Admin results view: views, conversions, rate per variant, declare winner button

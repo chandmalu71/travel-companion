@@ -1485,3 +1485,75 @@ Floating AI chat widget on all pages (landing + in-app) that serves as help desk
 11. "Talk to human" escalates and creates CRM note
 12. Weekly AI summary of top themes and requests
 13. Campaign triggers based on chat content
+
+
+## Requirement 50: Dark/Light Mode
+
+### Description
+Users can toggle between dark and light themes across the web app and admin panel. The preference is persisted in localStorage and respects the system preference when set to "system" mode. A flash-of-unstyled-content prevention script ensures the correct theme is applied before first paint.
+
+### Acceptance Criteria
+1. Sun/moon toggle button visible in the web dashboard header
+2. Toggle button visible in the admin panel topbar
+3. Preference persists across sessions (localStorage)
+4. "System" option auto-follows OS dark mode preference
+5. Admin panel defaults to dark, can switch to light
+6. All sidebar, header, dropdown, and card elements respond to the dark class
+7. No flash of wrong theme on page load (inline script applies class before render)
+
+---
+
+## Requirement 51: Booking Document Scan
+
+### Description
+Users can upload a screenshot or photo of a booking confirmation (flight, hotel, or car rental). The system uses AI (Bedrock Claude vision) to extract structured booking details from the image and automatically creates the booking in the database.
+
+### Acceptance Criteria
+1. "Upload Confirmation" button on the Bookings page
+2. Modal accepts JPEG, PNG, WebP images up to 10MB
+3. File preview shown before scanning
+4. AI extracts: booking type, airline/hotel/company, dates, locations, confirmation number
+5. Confidence score returned with extraction result
+6. Booking auto-created in database on successful extraction
+7. Error displayed if extraction confidence < 30% or image is unrecognizable
+8. Graceful fallback if Bedrock is unavailable (503 with retry suggestion)
+9. Loading state with spinner during AI processing
+
+---
+
+## Requirement 52: Admin-Configurable Landing Page CTA
+
+### Description
+The landing page call-to-action section content is fully configurable from the admin panel without requiring a code deployment. Admins can switch between "Early Access" (email capture form) and "Sign Up" (registration button) modes, and customise the headline, subtitle, trust badges, button text, and sub-text for each mode. A live WYSIWYG preview shows how changes will appear on the landing page.
+
+### Acceptance Criteria
+1. Admin CRM dashboard shows "Landing Page CTA" editor section
+2. Mode selector: Early Access vs Sign Up (visual card toggle)
+3. Content fields adapt to selected mode (badges for early access, button text for sign up)
+4. Live preview renders a miniature version of how the CTA will look
+5. "Save Changes" persists immediately to database (site_config table)
+6. Landing page fetches config from `GET /api/config/landing` on load
+7. Content changes are reflected on the landing page without redeployment
+8. Sensible defaults used when no admin configuration has been saved
+9. API is public (no auth required) so landing page can fetch without login
+
+---
+
+## Requirement 53: Landing Page CTA A/B Testing
+
+### Description
+Admins can create multiple variants of the landing page CTA section and run A/B tests to determine which version converts better. Each visitor is randomly assigned to a variant (weighted by traffic percentage), pinned via cookie so they consistently see the same variant. The system tracks views and conversions per variant. The admin dashboard shows real-time results with conversion rates and can declare a winner.
+
+### Acceptance Criteria
+1. Admin can create multiple CTA variants (each with its own headline, subtitle, badges/button text)
+2. Each variant has a configurable traffic weight (e.g., 50%/50% or 70%/30%)
+3. Admin can enable/disable a test (when disabled, the default/winner variant is shown)
+4. Visitors are randomly assigned to a variant based on traffic weights
+5. Assignment is sticky per visitor (stored in cookie, same visitor always sees same variant)
+6. Each variant impression (page view) is tracked as a "view"
+7. Form submission or sign-up click is tracked as a "conversion"
+8. Admin dashboard shows results table: variant name, traffic %, views, conversions, conversion rate
+9. Admin can declare a winner (winning variant becomes the default, test ends)
+10. Historical test results are preserved for reference
+11. Maximum 5 active variants per test
+12. A/B test data accessible via admin API endpoints
