@@ -1557,3 +1557,51 @@ Admins can create multiple variants of the landing page CTA section and run A/B 
 10. Historical test results are preserved for reference
 11. Maximum 5 active variants per test
 12. A/B test data accessible via admin API endpoints
+
+
+## Requirement 54: Branded Email Templates, Automations & Discount Codes
+
+### Description
+The system provides 10 branded system email templates (transactional) and 10 branded marketing email templates, all with consistent Neyya branding (logo header, green gradient banner, company footer). Ten automation sequences are pre-configured (all disabled by default, admin enables selectively). A discount code system allows admins to create manual or auto-generated one-time-use codes, linked to automations for re-engagement offers.
+
+### Acceptance Criteria — Templates
+1. 10 system templates seeded: welcome, email verification, password reset, trip invitation, alias verification, subscription confirmed/cancelled, payment failed, account deletion, security alert
+2. 10 marketing templates seeded: trial ending, upgrade nudge, re-engagement, weekly digest, feature announcement, referral, post-trip feedback, seasonal promo, birthday wishes, milestone celebration
+3. All templates have branded HTML: Neyya logo header (green gradient), content area, company footer (Samriddhi Capital Oy)
+4. Marketing templates include unsubscribe link in footer
+5. Templates are editable via admin panel (subject, body, active toggle)
+6. Admin email page has System / Marketing filter tabs
+7. Each template has a slug for programmatic lookup
+
+### Acceptance Criteria — Automations
+8. 10 automations seeded (all disabled by default): welcome series, trial conversion, re-engagement, plan limit nudge, post-trip feedback (Day 1/3/7/15 with suppression), referral reminder, 3rd trip upsell, booking streak, life events/birthdays, first expense
+9. Each automation has trigger_event, steps (JSONB with day + subject + template_slug or body)
+10. Admin can enable/disable each automation independently
+11. Post-trip feedback automation stops if user responds (suppression logic)
+
+### Acceptance Criteria — Discount Codes
+12. discount_codes table with code, discount_percent, is_one_time, max_uses, valid_from/until
+13. Admin can create codes manually (custom code) or auto-generate (NEYYA-XXXXXX format)
+14. Admin can bulk-generate up to 100 one-time codes in a single request
+15. Public validate endpoint (POST /api/discount-codes/validate) checks code validity
+16. Codes track current_uses and reject when max_uses reached or expired
+
+---
+
+## Requirement 55: User Profile & Life Events
+
+### Description
+Extends the user profile with personal details (DOB, anniversary, nationality, location) and a milestones system for tracking life events. Login device detection sends security alerts on new device logins. These fields power automation triggers for birthday wishes, anniversary reminders, and city/country milestone celebrations.
+
+### Acceptance Criteria
+1. Users table extended: date_of_birth, anniversary_date, nationality, current_city, current_country, moved_to_city_date, moved_to_country_date, phone, gender
+2. user_milestones table: id, user_id, type (7 types), title, date, recurring, notes, related_person
+3. Milestone types: birthday, anniversary, move_city, move_country, years_in_city, years_in_country, custom
+4. CRUD API: GET/POST/PUT/DELETE /api/user/milestones
+5. GET /api/user/profile returns all extended fields
+6. PUT /api/user/profile accepts and persists all extended fields
+7. Settings UI: "Personal Details" section with DOB, anniversary, gender, phone, nationality, city/country + move dates
+8. login_sessions table tracks IP, user-agent, device fingerprint per login
+9. New device detection: SHA-256 fingerprint of UA+IP, compared against previous sessions
+10. Security alert email sent on first login from unrecognized device
+11. Email includes: IP address, device info, login time, change-password link
