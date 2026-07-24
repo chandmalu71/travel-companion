@@ -96,7 +96,9 @@ export async function registerLocalAuthRoutes(
             display_name: displayName,
             email_verified: true,
             password_hash: passwordHash,
-          })
+            marketing_consent: marketingConsent,
+            terms_accepted_at: new Date(),
+          } as any)
           .returning(['id', 'email', 'display_name'])
           .executeTakeFirstOrThrow();
 
@@ -293,6 +295,8 @@ export async function registerLocalAuthRoutes(
         last_name: (user as any).last_name ?? null,
         avatar_url: (user as any).avatar_url,
         email_verified: (user as any).email_verified,
+        marketing_consent: (user as any).marketing_consent ?? false,
+        terms_accepted_at: (user as any).terms_accepted_at ?? null,
         created_at: (user as any).created_at,
       },
     });
@@ -304,12 +308,13 @@ export async function registerLocalAuthRoutes(
     const userId = (request as any).userId as string;
     if (!userId) return reply.status(401).send({ statusCode: 401, error: 'UNAUTHORIZED' });
 
-    const { first_name, last_name, display_name } = request.body as any;
+    const { first_name, last_name, display_name, marketing_consent } = request.body as any;
 
     const updates: Record<string, any> = { updated_at: new Date() };
     if (first_name !== undefined) updates.first_name = first_name;
     if (last_name !== undefined) updates.last_name = last_name;
     if (display_name !== undefined) updates.display_name = display_name;
+    if (marketing_consent !== undefined) updates.marketing_consent = marketing_consent;
 
     // Auto-generate display_name from first+last if not explicitly set
     if (first_name !== undefined && !display_name) {

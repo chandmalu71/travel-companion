@@ -195,6 +195,9 @@ export default function SettingsPage() {
       {/* ─── Subscription ─────────────────────────────────────────────── */}
       <SubscriptionSection />
 
+      {/* ─── Privacy & Communications ─────────────────────────────────── */}
+      <MarketingConsentSection />
+
       {/* ═══════════════════════════════════════════════════════════════
           SECTION 2: Travel Preferences
           ═══════════════════════════════════════════════════════════════ */}
@@ -757,6 +760,72 @@ function ProfileNameSection() {
         </button>
         {saved && <span className="text-sm text-green-600">Saved!</span>}
       </div>
+    </section>
+  );
+}
+
+// ─── Marketing Consent Section ───────────────────────────────────────────────
+
+function MarketingConsentSection() {
+  const [consent, setConsent] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    api.get<{ data: any }>('/api/user/profile')
+      .then((res) => {
+        setConsent(res.data?.marketing_consent ?? false);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleToggle = async () => {
+    const newValue = !consent;
+    setSaving(true);
+    try {
+      await api.put('/api/user/profile', { marketing_consent: newValue });
+      setConsent(newValue);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {}
+    finally { setSaving(false); }
+  };
+
+  if (loading) return null;
+
+  return (
+    <section className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Privacy & Communications</h3>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Manage how we communicate with you</p>
+
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-800 dark:text-gray-200">Marketing emails</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Travel tips, product updates, and exclusive offers</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {saved && <span className="text-xs text-green-600">Saved</span>}
+          <button
+            onClick={handleToggle}
+            disabled={saving}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              consent ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
+            }`}
+            role="switch"
+            aria-checked={consent}
+          >
+            <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+              consent ? 'translate-x-6' : 'translate-x-1'
+            }`} />
+          </button>
+        </div>
+      </div>
+
+      <p className="text-[10px] text-gray-400 mt-3">
+        You can change this at any time. We never share your email with third parties.
+      </p>
     </section>
   );
 }

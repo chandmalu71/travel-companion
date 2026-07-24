@@ -50,7 +50,12 @@ export function CookieConsentBanner() {
   const [marketing, setMarketing] = useState(false);
 
   useEffect(() => {
-    // Show banner if no consent stored
+    // Don't show for logged-in users (they accepted Terms at registration)
+    if (typeof window !== 'undefined' && localStorage.getItem('accessToken')) {
+      return;
+    }
+
+    // Show banner if no consent stored (anonymous visitors only)
     const existing = getStoredConsent();
     if (!existing) {
       // Delay slightly to not flash on page load
