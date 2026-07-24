@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
 type Tab = 'templates' | 'senders' | 'log';
 
 export default function EmailPage() {
@@ -35,7 +37,8 @@ function TemplatesTab() {
   const [typeFilter, setTypeFilter] = useState<'all' | 'system' | 'marketing'>('all');
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/admin/email/templates').then(r => r.json())
+    const token = localStorage.getItem('admin_token');
+    fetch(`${API_BASE}/api/admin/email/templates`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json())
       .then(d => setTemplates(d.data ?? []))
       .finally(() => setLoading(false));
   }, []);
@@ -47,19 +50,19 @@ function TemplatesTab() {
 
   const saveEdit = async () => {
     if (!editingSlug) return;
-    await fetch(`http://localhost:3000/api/admin/email/templates/${editingSlug}`, {
+    await fetch(`${API_BASE}/api/admin/email/templates/${editingSlug}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editForm),
     });
     setEditingSlug(null);
-    const res = await fetch('http://localhost:3000/api/admin/email/templates');
+    const res = await fetch(`${API_BASE}/api/admin/email/templates`);
     const d = await res.json();
     setTemplates(d.data ?? []);
   };
 
   const sendTest = async (slug: string) => {
     if (!testEmail) return;
-    const res = await fetch(`http://localhost:3000/api/admin/email/templates/${slug}/test`, {
+    const res = await fetch(`${API_BASE}/api/admin/email/templates/${slug}/test`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ to: testEmail }),
     });
@@ -171,14 +174,14 @@ function SendersTab() {
   const [form, setForm] = useState({ email: '', name: '', purpose: 'transactional' });
 
   const fetchSenders = () => {
-    fetch('http://localhost:3000/api/admin/email/senders').then(r => r.json())
+    fetch(`${API_BASE}/api/admin/email/senders`).then(r => r.json())
       .then(d => setSenders(d.data ?? []))
       .finally(() => setLoading(false));
   };
   useEffect(() => { fetchSenders(); }, []);
 
   const createSender = async () => {
-    await fetch('http://localhost:3000/api/admin/email/senders', {
+    await fetch(`${API_BASE}/api/admin/email/senders`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
     });
@@ -189,7 +192,7 @@ function SendersTab() {
 
   const deleteSender = async (id: string) => {
     if (!confirm('Delete this sender address?')) return;
-    await fetch(`http://localhost:3000/api/admin/email/senders/${id}`, { method: 'DELETE' });
+    await fetch(`${API_BASE}/api/admin/email/senders/${id}`, { method: 'DELETE' });
     fetchSenders();
   };
 
@@ -249,7 +252,7 @@ function LogTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/admin/email/log?limit=50').then(r => r.json())
+    fetch(`${API_BASE}/api/admin/email/log?limit=50`).then(r => r.json())
       .then(d => setLogs(d.data ?? []))
       .finally(() => setLoading(false));
   }, []);
