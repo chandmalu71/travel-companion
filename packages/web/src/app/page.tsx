@@ -539,6 +539,7 @@ function PricingSection() {
 function LandingCTA() {
   const [ctaMode, setCtaMode] = useState<string>('early_access');
   const [content, setContent] = useState<any>(null);
+  const [variantId, setVariantId] = useState<string | null>(null);
 
   const defaults = {
     early_access: {
@@ -560,6 +561,7 @@ function LandingCTA() {
       .then(d => {
         if (d.data?.ctaMode) setCtaMode(d.data.ctaMode);
         if (d.data?.content) setContent(d.data.content);
+        if (d.data?.variantId) setVariantId(d.data.variantId);
       })
       .catch(() => {});
   }, []);
@@ -585,7 +587,7 @@ function LandingCTA() {
                 ))}
               </div>
             </div>
-            <LeadCaptureForm source="landing_cta" />
+            <LeadCaptureForm source="landing_cta" abVariantId={variantId} />
           </div>
         ) : (
           <div className="text-center">
@@ -597,6 +599,15 @@ function LandingCTA() {
             </p>
             <Link
               href="/register"
+              onClick={() => {
+                if (variantId) {
+                  fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'}/api/config/landing/convert`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ variant_id: variantId }),
+                  }).catch(() => {});
+                }
+              }}
               className="inline-block rounded-lg bg-primary-500 px-10 py-4 text-lg font-semibold text-white shadow-lg hover:bg-primary-600 transition-all hover:scale-105"
             >
               {signUp.buttonText ?? 'Create Your Free Account'}

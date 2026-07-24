@@ -55,6 +55,7 @@ import { registerSyncRoutes } from './routes/sync.js';
 import { registerActivityFeedRoutes } from './routes/activity-feed.js';
 import { registerSourceAttachmentsRoute } from './routes/source-attachments.js';
 import { registerChatConciergeRoutes } from './routes/chat-concierge.js';
+import { registerAbTestRoutes } from './routes/ab-tests.js';
 import { CognitoService } from './services/cognito.js';
 import { type Kysely } from 'kysely';
 import { type Database } from './db/types.js';
@@ -225,6 +226,7 @@ export async function buildApp(
     await registerCrmRoutes(app, { db: options.db });
     await registerEmailCampaignRoutes(app, { db: options.db });
     await registerAutomationRoutes(app, { db: options.db });
+    await registerAbTestRoutes(app, { db: options.db });
     await registerCrmAdvancedRoutes(app, { db: options.db });
   }
 

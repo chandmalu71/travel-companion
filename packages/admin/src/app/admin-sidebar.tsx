@@ -38,6 +38,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/crm', label: 'Leads', icon: '📋' },
       { href: '/crm/campaigns', label: 'Campaigns', icon: '📧' },
       { href: '/crm/automations', label: 'Automations', icon: '⚡' },
+      { href: '/crm/ab-tests', label: 'A/B Tests', icon: '🧪' },
       { href: '/crm/social', label: 'Social Media', icon: '📱' },
     ],
   },

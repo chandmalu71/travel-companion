@@ -45,18 +45,90 @@ export async function registerCrmRoutes(
   const { db } = options;
 
   // ─── GET /api/config/landing — Public landing page config (no auth) ─────────
-  app.get('/api/config/landing', async (_request: FastifyRequest, reply: FastifyReply) => {
-    let ctaMode = 'early_access'; // default
-    let ctaContent: any = null;
+  app.get('/api/config/landing', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { sql } = await import('kysely');
+
+      // Check for active A/B test first
+      const activeTest = await (db as any)
+        .selectFrom('landing_ab_tests')
+        .selectAll()
+        .where('status', '=', 'active')
+        .executeTakeFirst();
+
+      if (activeTest) {
+        // Get variants for this test
+        const variants = await (db as any)
+          .selectFrom('landing_ab_variants')
+          .selectAll()
+          .where('test_id', '=', activeTest.id)
+          .orderBy('created_at', 'asc')
+          .execute();
+
+        if (variants.length > 0) {
+          // Check for existing assignment cookie
+          const cookieHeader = request.headers.cookie ?? '';
+          const cookieMatch = cookieHeader.match(/neyya_ab_variant=([^;]+)/);
+          const existingVariantId = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+
+          // Check if existing assignment is still valid
+          let assignedVariant = existingVariantId
+            ? variants.find((v: any) => v.id === existingVariantId)
+            : null;
+
+          if (!assignedVariant) {
+            // Random assignment based on traffic weights
+            const rand = Math.random() * 100;
+            let cumulative = 0;
+            for (const v of variants) {
+              cumulative += v.traffic_percent;
+              if (rand <= cumulative) {
+                assignedVariant = v;
+                break;
+              }
+            }
+            if (!assignedVariant) assignedVariant = variants[variants.length - 1];
+
+            // Increment views for newly assigned variant
+            await (db as any)
+              .updateTable('landing_ab_variants')
+              .set({ views: sql`views + 1` })
+              .where('id', '=', assignedVariant.id)
+              .execute();
+          }
+
+          // Set cookie for sticky assignment (30 days)
+          reply.header('Set-Cookie', `neyya_ab_variant=${assignedVariant.id}; Path=/; Max-Age=${30 * 24 * 60 * 60}; SameSite=Lax`);
+
+          const content = typeof assignedVariant.content === 'string'
+            ? JSON.parse(assignedVariant.content)
+            : assignedVariant.content;
+
+          return reply.send({
+            statusCode: 200,
+            data: {
+              ctaMode: assignedVariant.mode,
+              content: { [assignedVariant.mode]: content },
+              variantId: assignedVariant.id,
+              testActive: true,
+            },
+          });
+        }
+      }
+
+      // No active test — fall back to site_config
+      let ctaMode = 'early_access';
+      let ctaContent: any = null;
       const row = await sql`SELECT value FROM site_config WHERE key = 'landing_cta_mode'`.execute(db) as any;
       if (row?.rows?.[0]?.value) ctaMode = row.rows[0].value;
       const contentRow = await sql`SELECT value FROM site_config WHERE key = 'landing_cta_content'`.execute(db) as any;
       if (contentRow?.rows?.[0]?.value) ctaContent = JSON.parse(contentRow.rows[0].value);
-    } catch { /* table may not exist — use default */ }
 
-    return reply.send({ statusCode: 200, data: { ctaMode, content: ctaContent } });
+      return reply.send({ statusCode: 200, data: { ctaMode, content: ctaContent, testActive: false } });
+    } catch {
+      // Fallback if tables don't exist yet
+      return reply.send({ statusCode: 200, data: { ctaMode: 'early_access', content: null, testActive: false } });
+    }
   });
 
   // ─── POST /api/leads — Public lead capture ──────────────────────────────────

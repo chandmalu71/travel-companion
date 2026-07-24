@@ -7,9 +7,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 interface LeadCaptureFormProps {
   source?: string;
   variant?: 'inline' | 'card';
+  abVariantId?: string | null;
 }
 
-export function LeadCaptureForm({ source = 'landing_page', variant = 'card' }: LeadCaptureFormProps) {
+export function LeadCaptureForm({ source = 'landing_page', variant = 'card', abVariantId }: LeadCaptureFormProps) {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [marketingConsent, setMarketingConsent] = useState(false);
@@ -55,11 +56,26 @@ export function LeadCaptureForm({ source = 'landing_page', variant = 'card' }: L
 
       if (res.ok) {
         setSubmitted(true);
+        // Track A/B test conversion
+        if (abVariantId) {
+          fetch(`${API_URL}/api/config/landing/convert`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ variant_id: abVariantId }),
+          }).catch(() => {});
+        }
       } else {
         const data = await res.json();
         if (res.status === 409) {
           // Already exists — still show success (don't leak)
           setSubmitted(true);
+          if (abVariantId) {
+            fetch(`${API_URL}/api/config/landing/convert`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ variant_id: abVariantId }),
+            }).catch(() => {});
+          }
         } else {
           setError(data.error || 'Something went wrong. Please try again.');
         }
