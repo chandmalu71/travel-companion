@@ -40,6 +40,7 @@ import { registerMessagingRoutes } from './routes/messaging.js';
 import { registerEmailAliasRoutes } from './routes/email-aliases.js';
 import { registerSubscriptionRoutes, registerAdminPlanRoutes, registerAdminPromotionRoutes, registerAdminCampaignRoutes } from './routes/subscriptions.js';
 import { registerReceiptScanRoute } from './routes/receipt-scan.js';
+import { registerBookingScanRoute } from './routes/booking-scan.js';
 import { registerAnalyticsRoutes } from './routes/analytics.js';
 import { registerCrmRoutes } from './routes/crm.js';
 import { registerEmailCampaignRoutes } from './routes/email-campaigns.js';
@@ -247,6 +248,11 @@ export async function buildApp(
 
   // Register receipt scanning route
   await registerReceiptScanRoute(app);
+
+  // Register booking scan route (requires DB + auth)
+  if (options.db) {
+    await registerBookingScanRoute(app, { db: options.db });
+  }
 
   // Register analytics routes
   if (options.db) {
