@@ -538,13 +538,34 @@ function PricingSection() {
 
 function LandingCTA() {
   const [ctaMode, setCtaMode] = useState<string>('early_access');
+  const [content, setContent] = useState<any>(null);
+
+  const defaults = {
+    early_access: {
+      headline: 'Ready to Transform Your Travel Experience?',
+      subtitle: 'Join thousands of travelers who plan smarter, not harder. Get early access and exclusive launch offers.',
+      badges: ['Free to join', 'No spam', 'Unsubscribe anytime'],
+    },
+    sign_up: {
+      headline: 'Ready to Transform Your Travel Experience?',
+      subtitle: 'Join thousands of travelers who plan smarter, not harder.',
+      buttonText: 'Create Your Free Account',
+      subtext: 'Free plan includes 3 trips. No credit card required.',
+    },
+  };
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'}/api/config/landing`)
       .then(r => r.json())
-      .then(d => { if (d.data?.ctaMode) setCtaMode(d.data.ctaMode); })
+      .then(d => {
+        if (d.data?.ctaMode) setCtaMode(d.data.ctaMode);
+        if (d.data?.content) setContent(d.data.content);
+      })
       .catch(() => {});
   }, []);
+
+  const earlyAccess = content?.early_access ?? defaults.early_access;
+  const signUp = content?.sign_up ?? defaults.sign_up;
 
   return (
     <section className="py-20 px-4 bg-white">
@@ -553,15 +574,15 @@ function LandingCTA() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div className="text-center md:text-left">
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-                Ready to Transform Your Travel Experience?
+                {earlyAccess.headline}
               </h2>
               <p className="text-lg text-gray-600 mb-6">
-                Join thousands of travelers who plan smarter, not harder. Get early access and exclusive launch offers.
+                {earlyAccess.subtitle}
               </p>
               <div className="flex flex-wrap gap-4 justify-center md:justify-start text-sm text-gray-500">
-                <span className="flex items-center gap-1">✓ Free to join</span>
-                <span className="flex items-center gap-1">✓ No spam</span>
-                <span className="flex items-center gap-1">✓ Unsubscribe anytime</span>
+                {(earlyAccess.badges ?? []).map((badge: string, i: number) => (
+                  <span key={i} className="flex items-center gap-1">✓ {badge}</span>
+                ))}
               </div>
             </div>
             <LeadCaptureForm source="landing_cta" />
@@ -569,18 +590,18 @@ function LandingCTA() {
         ) : (
           <div className="text-center">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Ready to Transform Your Travel Experience?
+              {signUp.headline}
             </h2>
             <p className="text-lg text-gray-600 mb-8">
-              Join thousands of travelers who plan smarter, not harder.
+              {signUp.subtitle}
             </p>
             <Link
               href="/register"
               className="inline-block rounded-lg bg-primary-500 px-10 py-4 text-lg font-semibold text-white shadow-lg hover:bg-primary-600 transition-all hover:scale-105"
             >
-              Create Your Free Account
+              {signUp.buttonText ?? 'Create Your Free Account'}
             </Link>
-            <p className="mt-3 text-sm text-gray-500">Free plan includes 3 trips. No credit card required.</p>
+            <p className="mt-3 text-sm text-gray-500">{signUp.subtext}</p>
           </div>
         )}
       </div>

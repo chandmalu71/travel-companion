@@ -212,10 +212,13 @@ export async function registerAdminRoutes(
   app.get('/api/admin/config', async (_request: FastifyRequest, reply: FastifyReply) => {
     // Read persisted settings from DB
     let landingCtaMode = 'early_access'; // default
+    let landingCtaContent: any = null;
     try {
       const { sql } = await import('kysely');
       const row = await sql`SELECT value FROM site_config WHERE key = 'landing_cta_mode'`.execute(db) as any;
       if (row?.rows?.[0]?.value) landingCtaMode = row.rows[0].value;
+      const contentRow = await sql`SELECT value FROM site_config WHERE key = 'landing_cta_content'`.execute(db) as any;
+      if (contentRow?.rows?.[0]?.value) landingCtaContent = JSON.parse(contentRow.rows[0].value);
     } catch { /* table may not exist yet — use default */ }
 
     return reply.send({
@@ -231,6 +234,7 @@ export async function registerAdminRoutes(
         },
         landingPage: {
           ctaMode: landingCtaMode, // 'early_access' | 'sign_up' | 'waitlist'
+          content: landingCtaContent,
         },
         oauthProviders: [
           { id: 'google', name: 'Google', icon: '🔵', status: process.env.GOOGLE_CLIENT_ID && !process.env.GOOGLE_CLIENT_ID.includes('placeholder') ? 'enabled' : 'disabled', configured: !!process.env.GOOGLE_CLIENT_ID && !process.env.GOOGLE_CLIENT_ID.includes('placeholder') },
@@ -259,6 +263,16 @@ export async function registerAdminRoutes(
           await sql`INSERT INTO site_config (key, value, updated_at) VALUES ('landing_cta_mode', ${config.landingCtaMode as string}, NOW())
             ON CONFLICT (key) DO UPDATE SET value = ${config.landingCtaMode as string}, updated_at = NOW()`.execute(db);
         } catch { /* table may not exist — non-blocking */ }
+      }
+
+      // Persist landing page CTA content if provided
+      if (config.landingCtaContent) {
+        try {
+          const { sql } = await import('kysely');
+          const contentJson = JSON.stringify(config.landingCtaContent);
+          await sql`INSERT INTO site_config (key, value, updated_at) VALUES ('landing_cta_content', ${contentJson}, NOW())
+            ON CONFLICT (key) DO UPDATE SET value = ${contentJson}, updated_at = NOW()`.execute(db);
+        } catch { /* non-blocking */ }
       }
 
       await logAdminAction(db, adminId, 'config_changed', 'system', JSON.stringify(config).slice(0, 200), request.ip);

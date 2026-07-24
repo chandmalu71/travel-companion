@@ -47,13 +47,16 @@ export async function registerCrmRoutes(
   // ─── GET /api/config/landing — Public landing page config (no auth) ─────────
   app.get('/api/config/landing', async (_request: FastifyRequest, reply: FastifyReply) => {
     let ctaMode = 'early_access'; // default
+    let ctaContent: any = null;
     try {
       const { sql } = await import('kysely');
       const row = await sql`SELECT value FROM site_config WHERE key = 'landing_cta_mode'`.execute(db) as any;
       if (row?.rows?.[0]?.value) ctaMode = row.rows[0].value;
+      const contentRow = await sql`SELECT value FROM site_config WHERE key = 'landing_cta_content'`.execute(db) as any;
+      if (contentRow?.rows?.[0]?.value) ctaContent = JSON.parse(contentRow.rows[0].value);
     } catch { /* table may not exist — use default */ }
 
-    return reply.send({ statusCode: 200, data: { ctaMode } });
+    return reply.send({ statusCode: 200, data: { ctaMode, content: ctaContent } });
   });
 
   // ─── POST /api/leads — Public lead capture ──────────────────────────────────
