@@ -1450,3 +1450,38 @@ Built-in CRM and marketing automation system in the admin panel. Manages lead ca
 7. Users can withdraw consent from settings
 8. Data export available on request (GDPR Article 20)
 9. Account deletion removes all PII (GDPR Article 17)
+
+
+## Requirement 49: AI Chat Concierge & Feedback System
+
+**Priority:** High (CRM engagement)  
+**Status:** Requirements complete, implementation planned  
+**Full spec:** #[[file:docs/ai-chat-concierge-requirements.md]]
+
+### Description
+
+Floating AI chat widget on all pages (landing + in-app) that serves as help desk, feedback collector, lead generator, and engagement tool. Uses RAG from documentation for answers, auto-classifies conversations, and routes feedback to appropriate channels.
+
+### Key Capabilities
+1. **Help/Support** — answers questions from RAG knowledge base (docs, FAQ, pricing)
+2. **Bug Reports** — collects details, auto-captures URL/browser, assigns severity
+3. **Feature Requests** — captures requests, admin moderates before public voting
+4. **Lead Generation** — captures landing page visitors as CRM leads
+5. **Proactive Engagement** — asks for feedback at key moments (3rd trip, trial day 14)
+6. **Auto-Classification** — AI categorizes every conversation (support/bug/feature/lead)
+7. **CRM Integration** — all chats linked to contacts, triggers campaigns based on content
+
+### Acceptance Criteria
+1. Floating chat widget visible on all pages (landing + in-app)
+2. AI answers product questions using RAG from documentation
+3. AI detects intent and switches mode automatically (help/bug/feature/feedback)
+4. Bug reports captured with page URL, browser info, and severity
+5. Feature requests stored and admin-moderated before public voting
+6. Landing page visitors captured as leads through chat
+7. All conversations stored and linked to CRM contacts
+8. Admin can view all chat sessions with AI classification
+9. Users can vote on approved feature requests
+10. Proactive messages trigger at key moments
+11. "Talk to human" escalates and creates CRM note
+12. Weekly AI summary of top themes and requests
+13. Campaign triggers based on chat content
