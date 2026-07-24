@@ -153,6 +153,9 @@ export default function SettingsPage() {
       {/* ─── Profile Name ─────────────────────────────────────────────── */}
       <ProfileNameSection />
 
+      {/* ─── Extended Profile (DOB, Anniversary, Location) ────────────── */}
+      <ExtendedProfileSection />
+
       {/* ─── Email Connection Quick Link ────────────────────────────── */}
       <section className="rounded-lg border border-primary-200 bg-primary-50 p-4">
         <div className="flex items-center justify-between">
@@ -825,6 +828,135 @@ function MarketingConsentSection() {
 
       <p className="text-[10px] text-gray-400 mt-3">
         You can change this at any time. We never share your email with third parties.
+      </p>
+    </section>
+  );
+}
+
+
+// ─── Extended Profile Section ────────────────────────────────────────────────
+
+function ExtendedProfileSection() {
+  const [profile, setProfile] = useState({
+    date_of_birth: '',
+    anniversary_date: '',
+    nationality: '',
+    current_city: '',
+    current_country: '',
+    moved_to_city_date: '',
+    moved_to_country_date: '',
+    phone: '',
+    gender: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get<{ data: any }>('/api/user/profile')
+      .then((res) => {
+        if (res.data) {
+          setProfile(prev => ({
+            ...prev,
+            date_of_birth: res.data.date_of_birth ?? '',
+            anniversary_date: res.data.anniversary_date ?? '',
+            nationality: res.data.nationality ?? '',
+            current_city: res.data.current_city ?? '',
+            current_country: res.data.current_country ?? '',
+            moved_to_city_date: res.data.moved_to_city_date ?? '',
+            moved_to_country_date: res.data.moved_to_country_date ?? '',
+            phone: res.data.phone ?? '',
+            gender: res.data.gender ?? '',
+          }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.put('/api/user/profile', profile);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {}
+    finally { setSaving(false); }
+  };
+
+  if (loading) return null;
+
+  return (
+    <section className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Personal Details</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Used for travel recommendations and milestone reminders</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {saved && <span className="text-xs text-green-600">Saved!</span>}
+          <button onClick={handleSave} disabled={saving} className="rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-500 disabled:opacity-50">
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Date of Birth</label>
+          <input type="date" value={profile.date_of_birth} onChange={e => setProfile(p => ({ ...p, date_of_birth: e.target.value }))}
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 text-gray-900 dark:text-white" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Anniversary</label>
+          <input type="date" value={profile.anniversary_date} onChange={e => setProfile(p => ({ ...p, anniversary_date: e.target.value }))}
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 text-gray-900 dark:text-white" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Gender</label>
+          <select value={profile.gender} onChange={e => setProfile(p => ({ ...p, gender: e.target.value }))}
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 text-gray-900 dark:text-white">
+            <option value="">Prefer not to say</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="non-binary">Non-binary</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
+          <input type="tel" value={profile.phone} onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))} placeholder="+358 40 123 4567"
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 text-gray-900 dark:text-white" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nationality</label>
+          <input type="text" value={profile.nationality} onChange={e => setProfile(p => ({ ...p, nationality: e.target.value }))} placeholder="Finnish"
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 text-gray-900 dark:text-white" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Current City</label>
+          <input type="text" value={profile.current_city} onChange={e => setProfile(p => ({ ...p, current_city: e.target.value }))} placeholder="Helsinki"
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 text-gray-900 dark:text-white" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Current Country</label>
+          <input type="text" value={profile.current_country} onChange={e => setProfile(p => ({ ...p, current_country: e.target.value }))} placeholder="Finland"
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 text-gray-900 dark:text-white" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Moved to City</label>
+          <input type="date" value={profile.moved_to_city_date} onChange={e => setProfile(p => ({ ...p, moved_to_city_date: e.target.value }))}
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 text-gray-900 dark:text-white" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Moved to Country</label>
+          <input type="date" value={profile.moved_to_country_date} onChange={e => setProfile(p => ({ ...p, moved_to_country_date: e.target.value }))}
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 text-gray-900 dark:text-white" />
+        </div>
+      </div>
+
+      <p className="text-[10px] text-gray-400 dark:text-gray-500">
+        This info helps us send birthday wishes, anniversary reminders, and local travel suggestions. Never shared publicly.
       </p>
     </section>
   );

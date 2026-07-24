@@ -212,6 +212,59 @@ export async function registerLocalAuthRoutes(
         // Generate tokens
         const authResult = await localAuth.signIn(user.email, user.id);
 
+        // Track login session for security (device detection)
+        try {
+          const ip = request.ip ?? (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? 'unknown';
+          const userAgent = request.headers['user-agent'] ?? 'unknown';
+          const crypto = await import('crypto');
+          const fingerprint = crypto.createHash('sha256').update(`${userAgent}:${ip}`).digest('hex').slice(0, 64);
+
+          // Check if this device has been seen before
+          const existingDevice = await (db as any)
+            .selectFrom('login_sessions')
+            .select('id')
+            .where('user_id', '=', user.id)
+            .where('device_fingerprint', '=', fingerprint)
+            .executeTakeFirst();
+
+          const isNewDevice = !existingDevice;
+
+          // Record the session
+          await (db as any).insertInto('login_sessions').values({
+            user_id: user.id,
+            ip_address: ip,
+            user_agent: userAgent,
+            device_fingerprint: fingerprint,
+            is_new_device: isNewDevice,
+          }).execute();
+
+          // Send security alert for new device
+          if (isNewDevice && user.email_verified) {
+            const { EmailService } = await import('../services/email.js');
+            const emailService = new EmailService(db);
+            await emailService.sendRaw({
+              to: user.email,
+              subject: 'New login to your Neyya account',
+              html: `
+                <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+                  <h2 style="color:#333;">New Login Detected</h2>
+                  <p>Hi ${(user.display_name ?? 'there').split(' ')[0]},</p>
+                  <p>We noticed a new login to your Neyya account:</p>
+                  <table style="border-collapse:collapse;margin:16px 0;">
+                    <tr><td style="padding:4px 12px;color:#666;">IP Address</td><td style="padding:4px 12px;font-weight:600;">${ip}</td></tr>
+                    <tr><td style="padding:4px 12px;color:#666;">Device</td><td style="padding:4px 12px;font-weight:600;">${userAgent.slice(0, 80)}</td></tr>
+                    <tr><td style="padding:4px 12px;color:#666;">Time</td><td style="padding:4px 12px;font-weight:600;">${new Date().toISOString()}</td></tr>
+                  </table>
+                  <p>If this was you, no action is needed. If you didn't log in, please change your password immediately.</p>
+                  <hr style="border:none;border-top:1px solid #eee;margin:20px 0;" />
+                  <p style="font-size:11px;color:#999;">Neyya Security Team</p>
+                </div>
+              `,
+              from: 'Neyya Security <security@neyya.ai>',
+            }).catch(() => {}); // Non-blocking
+          }
+        } catch { /* device tracking is non-blocking */ }
+
         return reply.send({
           statusCode: 200,
           data: {
@@ -297,6 +350,15 @@ export async function registerLocalAuthRoutes(
         email_verified: (user as any).email_verified,
         marketing_consent: (user as any).marketing_consent ?? false,
         terms_accepted_at: (user as any).terms_accepted_at ?? null,
+        date_of_birth: (user as any).date_of_birth ?? null,
+        anniversary_date: (user as any).anniversary_date ?? null,
+        nationality: (user as any).nationality ?? null,
+        current_city: (user as any).current_city ?? null,
+        current_country: (user as any).current_country ?? null,
+        moved_to_city_date: (user as any).moved_to_city_date ?? null,
+        moved_to_country_date: (user as any).moved_to_country_date ?? null,
+        phone: (user as any).phone ?? null,
+        gender: (user as any).gender ?? null,
         created_at: (user as any).created_at,
       },
     });
@@ -308,13 +370,24 @@ export async function registerLocalAuthRoutes(
     const userId = (request as any).userId as string;
     if (!userId) return reply.status(401).send({ statusCode: 401, error: 'UNAUTHORIZED' });
 
-    const { first_name, last_name, display_name, marketing_consent } = request.body as any;
+    const { first_name, last_name, display_name, marketing_consent,
+      date_of_birth, anniversary_date, nationality, current_city, current_country,
+      moved_to_city_date, moved_to_country_date, phone, gender } = request.body as any;
 
     const updates: Record<string, any> = { updated_at: new Date() };
     if (first_name !== undefined) updates.first_name = first_name;
     if (last_name !== undefined) updates.last_name = last_name;
     if (display_name !== undefined) updates.display_name = display_name;
     if (marketing_consent !== undefined) updates.marketing_consent = marketing_consent;
+    if (date_of_birth !== undefined) updates.date_of_birth = date_of_birth || null;
+    if (anniversary_date !== undefined) updates.anniversary_date = anniversary_date || null;
+    if (nationality !== undefined) updates.nationality = nationality || null;
+    if (current_city !== undefined) updates.current_city = current_city || null;
+    if (current_country !== undefined) updates.current_country = current_country || null;
+    if (moved_to_city_date !== undefined) updates.moved_to_city_date = moved_to_city_date || null;
+    if (moved_to_country_date !== undefined) updates.moved_to_country_date = moved_to_country_date || null;
+    if (phone !== undefined) updates.phone = phone || null;
+    if (gender !== undefined) updates.gender = gender || null;
 
     // Auto-generate display_name from first+last if not explicitly set
     if (first_name !== undefined && !display_name) {
